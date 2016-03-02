@@ -16,6 +16,9 @@ if (Meteor.isClient) {
     Template.header.events({
         "submit .new-post": function (event) {
             // Prevent default browser form submit
+
+            console.log("New post submitted");
+
             event.preventDefault();
 
             // Get value from form element
