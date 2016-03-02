@@ -1,7 +1,7 @@
 #Poster
 This is a simple web app allowing users to post plain text messages.
 
-The posts are seen by everybody.
+The posts are seen by everybody. Only logged in users may post.
 
 ##Where to find stuff:
 

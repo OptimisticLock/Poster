@@ -13,6 +13,9 @@
         {{#if currentUser}}
             <form class="new-post">
                 <input type="text" name="text" placeholder="Type to add new posts"/>
+
+                {{>photoButton}}
+
             </form>
         {{/if}}
     </header>
@@ -30,4 +33,11 @@
         <div class="username"> {{username}} </div>
         <div class="postText"> {{text}} </div>
     </li>
+</template>
+
+<template name="photoButton">
+    <button class="btn glyphButton" id="buttonTakePhoto" data-toggle="tooltip" data-placement="bottom"
+            title="Take Photo">
+        <span class="glyphicon glyphicon-camera"></span>
+    </button>
 </template>
