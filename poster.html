@@ -3,28 +3,10 @@
 </head>
 
 <body>
-
-
-<div class="container">
-    <header>
-        <h1>Poster</h1>
-        {{> loginButtons}}
-
-        {{#if currentUser}}
-            <form class="new-post">
-                <input type="text" name="text" placeholder="Type a new post" autocomplete='off'/>
-                {{>photoButton}}
-
-            </form>
-        {{/if}}
-    </header>
-
-    <ul>
-        {{#each posts}}
-            {{> post}}
-        {{/each}}
-    </ul>
-</div>
+    <div class="container">
+        {{> header }}
+        {{> posts }}
+    </div>
 </body>
 
 <template name="post">
@@ -39,4 +21,27 @@
             title="Take Photo">
         <span class="glyphicon glyphicon-camera"></span>
     </button>
+</template>
+
+<template name="header">
+    <header>
+        <h1>Poster</h1>
+        {{> loginButtons}}
+
+        {{#if currentUser}}
+            <form class="new-post">
+                <input type="text" name="text" placeholder="Type a new post" autocomplete='off'/>
+                {{>photoButton}}
+
+            </form>
+        {{/if}}
+    </header>
+</template>
+
+<template name="posts">
+    <ul>
+        {{#each posts}}
+            {{> post}}
+        {{/each}}
+    </ul>
 </template>

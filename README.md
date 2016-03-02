@@ -5,11 +5,11 @@ The posts are seen by everybody. Only logged in users may post.
 
 ##Where to find stuff:
 
-### Demo:
+### Demo
 http://stuffposter.meteor.com
 First load can be slow.. hey, it's free hosting!
 
-### Source Code:
+### Source Code
 https://github.com/OptimisticLock/Poster
 
 ### Agile project management
@@ -20,7 +20,7 @@ Make sure you see all the completed (green) tasks. Feel free to add your own and
 
 
 
-TODO:
+### TODO:
 Check license for the favicon (should be Creative Commons)
 http://www.favicon.cc/?action=icon&file_id=758235
 

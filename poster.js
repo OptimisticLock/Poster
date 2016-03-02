@@ -7,13 +7,13 @@ if (Meteor.isClient) {
     });
 
     // This code only runs on the client
-    Template.body.helpers({
+    Template.posts.helpers({
         posts: function () {
             return Posts.find({}, {sort: {createdAt: -1}});
         }
     });
 
-    Template.body.events({
+    Template.header.events({
         "submit .new-post": function (event) {
             // Prevent default browser form submit
             event.preventDefault();
