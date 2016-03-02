@@ -1,14 +1,21 @@
 <head>
-  <title>poster</title>
+    <title>Poster</title>
 </head>
 
 <body>
-  <h1>Welcome to Meteor!</h1>
+<div class="container">
+    <header>
+        <h1>Poster</h1>
+    </header>
 
-  {{> hello}}
+    <ul>
+        {{#each posts}}
+            {{> post}}
+        {{/each}}
+    </ul>
+</div>
 </body>
 
-<template name="hello">
-  <button>Click Me</button>
-  <p>You've pressed the button {{counter}} times.</p>
+<template name="post">
+    <li>{{text}}</li>
 </template>
