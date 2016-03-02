@@ -9,10 +9,12 @@
     <header>
         <h1>Poster</h1>
         {{> loginButtons}}
-
-        <form class="new-post">
-            <input type="text" name="text" placeholder="Type to add new posts" />
-        </form>
+        
+        {{#if currentUser}}
+            <form class="new-post">
+                <input type="text" name="text" placeholder="Type to add new posts"/>
+            </form>
+        {{/if}}
     </header>
 
     <ul>
