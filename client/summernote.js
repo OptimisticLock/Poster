@@ -2,7 +2,7 @@ Template.mySummerNote.rendered = function () {
     console.log("mySummerNote rendered");
     $('#summernote').summernote({
         //   airMode: true
-    //    height: 300,                 // set editor height
+        height: 80,                 // set editor height
         minHeight: null,             // set minimum height of editor
         maxHeight: null,             // set maximum height of editor
         focus: true,                  // set focus to editable area after initializing summernote
