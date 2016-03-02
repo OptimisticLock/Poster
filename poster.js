@@ -5,7 +5,7 @@ if (Meteor.isClient) {
   // This code only runs on the client
   Template.body.helpers({
     posts: function () {
-      return Tasks.find({}, {sort: {createdAt: -1}});
+      return Posts.find({}, {sort: {createdAt: -1}});
     }
   });
 
