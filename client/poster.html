@@ -24,10 +24,9 @@
         <!-- h1>Poster</h1 -->
         {{> loginButtons}}
 
-        {{> mySummerNote }}
-
         {{#if currentUser}}
             <form class="new-post">
+                {{> mySummerNote }}
                 <input type="text" name="text" placeholder="Type a new post" autocomplete='off'/>
                 {{>photoButton}}
 
@@ -52,12 +51,12 @@
 
         {{> avatar shape="circle" size="small" user="{{user}}" }}
         <div class="username"> {{username}} </div>
-        <div class="postText"> {{text}} </div>
+        <div class="postText"> {{{text}}} </div>
     </li>
 </template>
 
 <template name="mySummerNote">
     Summernote goes here:
-    <div id="summernote">Hello Summernote</div>
+    <div id="summernote"></div>
     <button id="post" type="button" class="btn btn-info">Post</button>
 </template>
