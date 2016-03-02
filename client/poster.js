@@ -9,39 +9,7 @@ Template.posts.helpers({
     }
 });
 
-Template.header.events({
-    "submit .new-post": function (event) {
-        // Prevent default browser form submit
 
-        console.log("New post submitted");
-
-        event.preventDefault();
-
-        // Get value from form element
-        var text = event.target.text.value;
-
-        // If new post is not empty, insert it
-        if ($.trim(text) != '') {
-
-            var me = Meteor.user();
-
-            // me.sername if user logged in with password.
-            // me.profile.name if user logged in with Facebook and maybe other OAuth services.
-            var username = me.username || me.profile.name
-
-            // Insert a post into the collection
-            Posts.insert({
-                text: text,
-                createdAt: new Date(),            // current time
-                author: Meteor.userId(),           // _id of logged in user
-                username: username  // username of logged in user
-            });
-
-            // Clear form
-            event.target.text.value = "";
-        }
-    }
-});
 // TODO: make sure the server only allows user to remove own posts
 Template.post.events({
     "click .delete": function () {
