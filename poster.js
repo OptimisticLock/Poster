@@ -21,17 +21,21 @@ if (Meteor.isClient) {
             // Get value from form element
             var text = event.target.text.value;
 
-            // Insert a post into the collection
-            Posts.insert({
-                text: text,
-                createdAt: new Date(),            // current time
-                owner: Meteor.userId(),           // _id of logged in user
-                aaa: "bbb",
-                username: Meteor.user().username  // username of logged in user
-            });
+            // If new post is not empty, insert it
+            if ($.trim(text) != '') {
 
-            // Clear form
-            event.target.text.value = "";
+                // Insert a post into the collection
+                Posts.insert({
+                    text: text,
+                    createdAt: new Date(),            // current time
+                    owner: Meteor.userId(),           // _id of logged in user
+                    aaa: "bbb",
+                    username: Meteor.user().username  // username of logged in user
+                });
+
+                // Clear form
+                event.target.text.value = "";
+            }
         }
     });
 }
