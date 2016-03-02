@@ -1,4 +1,6 @@
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="user-scalable=no, initial-scale=1, minimal-ui, maximum-scale=1, minimum-scale=1" />
     <title>Poster</title>
 </head>
 
@@ -9,11 +11,14 @@
     </div>
 </body>
 
-<template name="post">
+    <template name="post">
     <li>
-        {{> avatar user=this shape="circle" size="small"}}
-        <div class="username"> {{username}} </div>
+        {{> avatar shape="circle" size="small" userId="IR" }}
+        <div class="username"> {{username}} </div> owner: {{owner}}
         <div class="postText"> {{text}} </div>
+        <button class="delete">&times;</button>
+        <a class="js-delete-item delete-item" href="#"><span class="icon-trash"></span></a>
+
     </li>
 </template>
 
@@ -26,7 +31,7 @@
 
 <template name="header">
     <header>
-        <h1>Poster</h1>
+        <!-- h1>Poster</h1 -->
         {{> loginButtons}}
 
         {{#if currentUser}}

@@ -1,5 +1,4 @@
 
-
 .glyphButton {
     background: transparent;
     padding: 0px;
@@ -7,17 +6,38 @@
 
 .username {
     font-weight: bold;
-  /*  font-style: italic; */
-  /*  font-size: 1.2em; */
+    /*  font-style: italic; */
+    /*  font-size: 1.2em; */
 }
 
 .postText {
-  /*  padding-left: 1em; */
+    /*  padding-left: 1em; */
 }
 
+.delete-item {
+    display: inline-block;
+    color: blue;
+    line-height: 3rem;
+    text-align: center;
+}
 
+.icon-trash:before {
+    content: "\e607";
+}
 
-/* Just copied this CSS from somewhere */
+.icon-trash { font-size: 1.1em; }
+
+.delete-item:hover {
+    color: red;
+}
+
+.delete-item:active {
+    color: green;
+}
+
+.icon-trash {
+    font-size: 1.1em;
+}
 
 body {
     font-family: sans-serif;
@@ -79,7 +99,7 @@ form {
     font-size: 1em;
 }
 
-.new-post input:focus{
+.new-post input:focus {
     outline: 0;
 }
 
@@ -143,4 +163,6 @@ header .hide-completed {
     .new-post input {
         padding-bottom: 5px;
     }
-}/* CSS declarations go here */
+}
+
+/* CSS declarations go here */
