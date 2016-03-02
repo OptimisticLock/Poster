@@ -74,7 +74,13 @@ Template.post.helpers({
 
 Template.mySummerNote.rendered = function () {
     console.log("mySummerNote rendered");
-    $('#summernote').summernote();
+    $('#summernote').summernote({
+     //   airMode: true
+        height: 300,                 // set editor height
+        minHeight: null,             // set minimum height of editor
+        maxHeight: null,             // set maximum height of editor
+        focus: true                  // set focus to editable area after initializing summernote
+    });
 };
 
 Template.mySummerNote.events({
@@ -112,7 +118,11 @@ Template.mySummerNote.events({
             });
 
             // Clear form
+            $('#summernote').summernote('code', "");
          //   event.target.text.value = "";
         }
     }
 });
+
+// TODO do we ever need to do   $('#summernote').summernote('destroy'); ?
+// TODO sanitize html output of Summernote https://github.com/search?l=JavaScript&q=sanitize+html
