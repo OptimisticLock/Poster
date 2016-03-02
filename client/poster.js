@@ -43,3 +43,11 @@ Template.post.events({
         Posts.remove(this._id);
     }
 });
+
+Template.post.helpers({
+    isMyPost: function() {
+        var result = ( Meteor.userId() == this.owner);
+        console.log("Hello", this, result);
+        return result;
+    }
+});

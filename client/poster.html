@@ -11,16 +11,6 @@
     </div>
 </body>
 
-    <template name="post">
-    <li>
-        {{> avatar shape="circle" size="small" userId="IR" }}
-        <div class="username"> {{username}} </div> owner: {{owner}}
-        <div class="postText"> {{text}} </div>
-        <button class="delete">&times;</button>
-        <a class="js-delete-item delete-item" href="#"><span class="icon-trash"></span></a>
-
-    </li>
-</template>
 
 <template name="photoButton">
     <button class="btn glyphButton" id="buttonTakePhoto" data-toggle="tooltip" data-placement="bottom"
@@ -50,4 +40,16 @@
             {{> post}}
         {{/each}}
     </ul>
+</template>
+
+<template name="post">
+    <li>
+        {{#if isMyPost}}
+            <button class="delete">&times;</button>
+        {{/if}}
+        
+        {{> avatar shape="circle" size="small" userId="IR" }}
+        <div class="username"> {{username}} </div> owner: {{owner}}
+        <div class="postText"> {{text}} </div>
+    </li>
 </template>
