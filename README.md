@@ -12,13 +12,17 @@ First load can be slow.. hey, it's free hosting!
 ### Source Code:
 https://github.com/OptimisticLock/Poster
 
-### Agile project management (tasks completed, tasks being worked on, roadmap, discussions, random rambling):
+### Agile project management
+Tasks completed, tasks being worked on, roadmap, discussions, random rambling
+
 https://www.pivotaltracker.com/n/projects/1547177
 Make sure you see all the completed (green) tasks. Feel free to add your own and comment.
 
 
 
-
+TODO:
+Check license for the favicon (should be Creative Commons)
+http://www.favicon.cc/?action=icon&file_id=758235
 
 
 
