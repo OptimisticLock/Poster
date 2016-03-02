@@ -2,6 +2,11 @@
 Posts = new Mongo.Collection("posts");
 
 if (Meteor.isClient) {
+
+  Accounts.ui.config({
+    passwordSignupFields: "USERNAME_ONLY"
+  });
+
   // This code only runs on the client
   Template.body.helpers({
     posts: function () {
@@ -22,6 +27,7 @@ if (Meteor.isClient) {
         text: text,
         createdAt: new Date(),            // current time
         owner: Meteor.userId(),           // _id of logged in user
+        aaa: "bbb",
         username: Meteor.user().username  // username of logged in user
       });
 
