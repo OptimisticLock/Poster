@@ -27,7 +27,7 @@ Template.header.events({
             Posts.insert({
                 text: text,
                 createdAt: new Date(),            // current time
-                owner: Meteor.userId(),           // _id of logged in user
+                author: Meteor.userId(),           // _id of logged in user
                 aaa: "bbb",
                 username: Meteor.user().username  // username of logged in user
             });
@@ -37,7 +37,7 @@ Template.header.events({
         }
     }
 });
-
+// TODO: make sure the server only allows user to remove own posts
 Template.post.events({
     "click .delete": function () {
         Posts.remove(this._id);
@@ -46,8 +46,14 @@ Template.post.events({
 
 Template.post.helpers({
     isMyPost: function() {
-        var result = ( Meteor.userId() == this.owner);
+        var result = ( Meteor.userId() == this.author);
         console.log("Hello", this, result);
         return result;
+    },
+
+    user: function() {
+        var u = Meteor.user();
+        console.log("User is ", u);
+        return u;
     }
 });

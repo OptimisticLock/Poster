@@ -22,3 +22,6 @@ accounts-ui
 accounts-password
 twbs:bootstrap
 utilities:avatar
+accounts-facebook
+accounts-twitter
+accounts-github
