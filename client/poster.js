@@ -23,13 +23,18 @@ Template.header.events({
         // If new post is not empty, insert it
         if ($.trim(text) != '') {
 
+            var me = Meteor.user();
+
+            // me.sername if user logged in with password.
+            // me.profile.name if user logged in with Facebook and maybe other OAuth services.
+            var username = me.username || me.profile.name
+
             // Insert a post into the collection
             Posts.insert({
                 text: text,
                 createdAt: new Date(),            // current time
                 author: Meteor.userId(),           // _id of logged in user
-                aaa: "bbb",
-                username: Meteor.user().username  // username of logged in user
+                username: username  // username of logged in user
             });
 
             // Clear form
@@ -45,9 +50,18 @@ Template.post.events({
 });
 
 Template.post.helpers({
+
+    // Returns true if this post is mine
     isMyPost: function() {
-        var result = ( Meteor.userId() == this.author);
-        console.log("Hello", this, result);
+        var me = Meteor.userId();
+
+        // If I am not logged in, none of the posts are recognized as "mine"
+        if (!me)
+            return false;
+
+        // TODO: Renamed "owner" into "author" and never did a db migration.
+        // "Owner" is here only for historical reasons.
+        var result = ( me == this.author || me == this.owner);
         return result;
     },
 
@@ -55,5 +69,17 @@ Template.post.helpers({
         var u = Meteor.user();
         console.log("User is ", u);
         return u;
+    }
+});
+
+Template.mySummerNote.rendered = function () {
+    console.log("mySummerNote rendered");
+    $('#summernote').summernote();
+};
+
+Template.mySummerNote.events({
+    "click #post": function () {
+        var html = $('#summernote').summernote('code');
+        console.log(html);
     }
 });
