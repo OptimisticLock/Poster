@@ -1,4 +1,15 @@
 /* Just copied this CSS from somewhere */
+
+.username {
+    font-weight: bold;
+  /*  font-style: italic; */
+  /*  font-size: 1.2em; */
+}
+
+.postText {
+  /*  padding-left: 1em; */
+}
+
 body {
     font-family: sans-serif;
     background-color: #315481;

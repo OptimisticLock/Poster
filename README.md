@@ -1,12 +1,24 @@
 #Poster
+This is a simple web app allowing users to post plain text messages.
+
+The posts are seen by everybody.
 
 ##Where to find stuff:
 
-### Pivotal:  https://www.pivotaltracker.com/n/projects/1547177
-Make sure you see all the completed (green) stories.
+### Demo:
+http://stuffposter.meteor.com
+First load can be slow.. hey, it's free hosting!
 
-### Github: https://github.com/OptimisticLock/Poster
+### Source Code:
+https://github.com/OptimisticLock/Poster
 
-### Demo: http://stuffposter.meteor.com
+### Agile project management (tasks completed, tasks being worked on, roadmap, discussions, random rambling):
+https://www.pivotaltracker.com/n/projects/1547177
+Make sure you see all the completed (green) tasks. Feel free to add your own and comment.
+
+
+
+
+
 
 
