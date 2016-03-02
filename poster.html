@@ -11,6 +11,7 @@
 
 <template name="post">
     <li>
+        {{> avatar user=this shape="circle" size="small"}}
         <div class="username"> {{username}} </div>
         <div class="postText"> {{text}} </div>
     </li>
