@@ -52,6 +52,10 @@ Template.mySummerNote.events({
     }
 });
 
-// TODO do we ever need to do   $('#summernote').summernote('destroy'); ?
+Template.mySummerNote.destroyed = function() {
+    console.log("Template destroyed");
+    $('#summernote').summernote('destroy');
+}
+
 // TODO sanitize html output of Summernote https://github.com/search?l=JavaScript&q=sanitize+html
 
