@@ -1,4 +1,9 @@
-/* Just copied this CSS from somewhere */
+
+
+.glyphButton {
+    background: transparent;
+    padding: 0px;
+}
 
 .username {
     font-weight: bold;
@@ -9,6 +14,10 @@
 .postText {
   /*  padding-left: 1em; */
 }
+
+
+
+/* Just copied this CSS from somewhere */
 
 body {
     font-family: sans-serif;
