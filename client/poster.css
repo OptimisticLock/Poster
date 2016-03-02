@@ -14,30 +14,6 @@
     /*  padding-left: 1em; */
 }
 
-.delete-item {
-    display: inline-block;
-    color: blue;
-    line-height: 3rem;
-    text-align: center;
-}
-
-.icon-trash:before {
-    content: "\e607";
-}
-
-.icon-trash { font-size: 1.1em; }
-
-.delete-item:hover {
-    color: red;
-}
-
-.delete-item:active {
-    color: green;
-}
-
-.icon-trash {
-    font-size: 1.1em;
-}
 
 body {
     font-family: sans-serif;

@@ -37,3 +37,9 @@ Template.header.events({
         }
     }
 });
+
+Template.post.events({
+    "click .delete": function () {
+        Posts.remove(this._id);
+    }
+});
