@@ -35,6 +35,7 @@ Template.post.helpers({
 
     author: function() {
 
+        // TODO db migration from owner to author
         var authorId = this.author || this.owner;
         var author = Meteor.users.findOne({_id: authorId});
         console.log("Found author: " + "for " + authorId, author);

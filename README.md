@@ -1,5 +1,5 @@
 #Poster
-This is a simple web app allowing users to post plain text messages.
+This is a simple web app allowing users to post rich text messages with photos and videos.
 
 The posts are seen by everybody. Only logged in users may post.
 
