@@ -33,10 +33,12 @@ Template.post.helpers({
         return result;
     },
 
-    user: function() {
-        var u = Meteor.user();
-        console.log("User is ", u);
-        return u;
+    author: function() {
+
+        var authorId = this.author || this.owner;
+        var author = Meteor.users.findOne({_id: authorId});
+        console.log("Found author: " + "for " + authorId, author);
+        return author;
     }
 });
 

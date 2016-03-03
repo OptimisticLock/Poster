@@ -25,5 +25,5 @@ utilities:avatar
 accounts-facebook
 accounts-twitter
 accounts-github
-service-configuration
+# service-configuration
 summernote:standalone
