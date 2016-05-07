@@ -11,15 +11,16 @@
 (function () {
 
 /* Imports */
-var meteorEnv = Package.meteor.meteorEnv;
 var Meteor = Package.meteor.Meteor;
 var global = Package.meteor.global;
+var meteorEnv = Package.meteor.meteorEnv;
+var _ = Package.underscore._;
 var meteorInstall = Package['modules-runtime'].meteorInstall;
 
 /* Package-scope variables */
 var Buffer, process;
 
-var require = meteorInstall({"node_modules":{"meteor":{"modules":{"client.js":["./stubs.js","./buffer.js","./process.js","./css",function(require,exports){
+var require = meteorInstall({"node_modules":{"meteor":{"modules":{"client.js":["./install-packages.js","./stubs.js","./buffer.js","./process.js","./css",function(require,exports){
 
 ////////////////////////////////////////////////////////////////////////////
 //                                                                        //
@@ -27,12 +28,13 @@ var require = meteorInstall({"node_modules":{"meteor":{"modules":{"client.js":["
 //                                                                        //
 ////////////////////////////////////////////////////////////////////////////
                                                                           //
-require("./stubs.js");                                                    // 1
-require("./buffer.js");                                                   // 2
-require("./process.js");                                                  // 3
-                                                                          // 4
-exports.addStyles = require("./css").addStyles;                           // 5
-                                                                          // 6
+require("./install-packages.js");                                         // 1
+require("./stubs.js");                                                    // 2
+require("./buffer.js");                                                   // 3
+require("./process.js");                                                  // 4
+                                                                          // 5
+exports.addStyles = require("./css").addStyles;                           // 6
+                                                                          // 7
 ////////////////////////////////////////////////////////////////////////////
 
 }],"buffer.js":["buffer",function(require){
@@ -81,6 +83,122 @@ exports.addStyles = function (css) {                                      // 4
                                                                           // 22
 ////////////////////////////////////////////////////////////////////////////
 
+},"install-packages.js":function(require,exports,module){
+
+////////////////////////////////////////////////////////////////////////////
+//                                                                        //
+// packages/modules/install-packages.js                                   //
+//                                                                        //
+////////////////////////////////////////////////////////////////////////////
+                                                                          //
+function install(name) {                                                  // 1
+  var meteorDir = {};                                                     // 2
+                                                                          // 3
+  // Given a package name <name>, install a stub module in the            // 4
+  // /node_modules/meteor directory called <name>.js, so that             // 5
+  // require.resolve("meteor/<name>") will always return                  // 6
+  // /node_modules/meteor/<name>.js instead of something like             // 7
+  // /node_modules/meteor/<name>/index.js, in the rare but possible event
+  // that the package contains a file called index.js (#6590).            // 9
+  meteorDir[name + ".js"] = function (r, e, module) {                     // 10
+    module.exports = Package[name];                                       // 11
+  };                                                                      // 12
+                                                                          // 13
+  meteorInstall({                                                         // 14
+    node_modules: {                                                       // 15
+      meteor: meteorDir                                                   // 16
+    }                                                                     // 17
+  });                                                                     // 18
+}                                                                         // 19
+                                                                          // 20
+// This file will be modified during computeJsOutputFilesMap to include   // 21
+// install(<name>) calls for every Meteor package.                        // 22
+                                                                          // 23
+install("underscore");                                                    // 24
+install("meteor");                                                        // 25
+install("meteor-base");                                                   // 26
+install("mobile-experience");                                             // 27
+install("babel-compiler");                                                // 28
+install("ecmascript");                                                    // 29
+install("base64");                                                        // 30
+install("ejson");                                                         // 31
+install("id-map");                                                        // 32
+install("ordered-dict");                                                  // 33
+install("tracker");                                                       // 34
+install("modules-runtime");                                               // 35
+install("modules");                                                       // 36
+install("es5-shim");                                                      // 37
+install("promise");                                                       // 38
+install("ecmascript-runtime");                                            // 39
+install("babel-runtime");                                                 // 40
+install("random");                                                        // 41
+install("mongo-id");                                                      // 42
+install("diff-sequence");                                                 // 43
+install("geojson-utils");                                                 // 44
+install("minimongo");                                                     // 45
+install("check");                                                         // 46
+install("retry");                                                         // 47
+install("ddp-common");                                                    // 48
+install("reload");                                                        // 49
+install("ddp-client");                                                    // 50
+install("ddp");                                                           // 51
+install("ddp-server");                                                    // 52
+install("allow-deny");                                                    // 53
+install("insecure");                                                      // 54
+install("mongo");                                                         // 55
+install("blaze-html-templates");                                          // 56
+install("reactive-dict");                                                 // 57
+install("session");                                                       // 58
+install("jquery");                                                        // 59
+install("autopublish");                                                   // 60
+install("ddp-rate-limiter");                                              // 61
+install("localstorage");                                                  // 62
+install("callback-hook");                                                 // 63
+install("deps");                                                          // 64
+install("htmljs");                                                        // 65
+install("observe-sequence");                                              // 66
+install("reactive-var");                                                  // 67
+install("blaze");                                                         // 68
+install("accounts-base");                                                 // 69
+install("service-configuration");                                         // 70
+install("spacebars");                                                     // 71
+install("templating");                                                    // 72
+install("url");                                                           // 73
+install("oauth");                                                         // 74
+install("accounts-oauth");                                                // 75
+install("npm-bcrypt");                                                    // 76
+install("sha");                                                           // 77
+install("srp");                                                           // 78
+install("accounts-password");                                             // 79
+install("less");                                                          // 80
+install("accounts-ui-unstyled");                                          // 81
+install("accounts-ui");                                                   // 82
+install("twbs:bootstrap");                                                // 83
+install("jparker:crypto-core");                                           // 84
+install("jparker:crypto-md5");                                            // 85
+install("jparker:gravatar");                                              // 86
+install("utilities:avatar");                                              // 87
+install("oauth2");                                                        // 88
+install("facebook");                                                      // 89
+install("accounts-facebook");                                             // 90
+install("http");                                                          // 91
+install("oauth1");                                                        // 92
+install("twitter");                                                       // 93
+install("accounts-twitter");                                              // 94
+install("github");                                                        // 95
+install("accounts-github");                                               // 96
+install("summernote:standalone");                                         // 97
+install("standard-minifier-css");                                         // 98
+install("standard-minifier-js");                                          // 99
+install("webapp");                                                        // 100
+install("livedata");                                                      // 101
+install("hot-code-push");                                                 // 102
+install("launch-screen");                                                 // 103
+install("ui");                                                            // 104
+install("autoupdate");                                                    // 105
+                                                                          // 106
+////////////////////////////////////////////////////////////////////////////
+
 },"process.js":["process",function(require,exports,module){
 
 ////////////////////////////////////////////////////////////////////////////
@@ -115,11 +233,8 @@ if (typeof process.env !== "object") {                                    // 23
   process.env = {};                                                       // 24
 }                                                                         // 25
                                                                           // 26
-Object.keys(meteorEnv).forEach(function (key) {                           // 27
-  process.env[key] = meteorEnv[key];                                      // 28
-});                                                                       // 29
-                                                                          // 30
-                                                                          // 31
+_.extend(process.env, meteorEnv);                                         // 27
+                                                                          // 28
 ////////////////////////////////////////////////////////////////////////////
 
 }],"stubs.js":["meteor-node-stubs",function(require){

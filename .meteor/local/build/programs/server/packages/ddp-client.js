@@ -1,9 +1,9 @@
 (function () {
 
 /* Imports */
-var meteorEnv = Package.meteor.meteorEnv;
 var Meteor = Package.meteor.Meteor;
 var global = Package.meteor.global;
+var meteorEnv = Package.meteor.meteorEnv;
 var check = Package.check.check;
 var Match = Package.check.Match;
 var Random = Package.random.Random;
@@ -18,16 +18,16 @@ var DiffSequence = Package['diff-sequence'].DiffSequence;
 var MongoID = Package['mongo-id'].MongoID;
 
 /* Package-scope variables */
-var DDP, LivedataTest, MongoIDMap, toSockjsUrl, toWebsocketUrl, allConnections, Ledger, objectsWithUsers, errorThrownWhenCallingSetUserIdDirectlyOnServer, One, Two, SockJS, StubStream;
+var DDP, LivedataTest, MongoIDMap, toSockjsUrl, toWebsocketUrl, allConnections;
 
 (function(){
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//                                                                                                                   //
-// packages/ddp-client/namespace.js                                                                                  //
-//                                                                                                                   //
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                                                                                                                     //
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                                            //
+// packages/ddp-client/namespace.js                                                                           //
+//                                                                                                            //
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                                                                                                              //
 /**
  * @namespace DDP
  * @summary Namespace for DDP-related methods/classes.
@@ -35,7 +35,7 @@ var DDP, LivedataTest, MongoIDMap, toSockjsUrl, toWebsocketUrl, allConnections, 
 DDP          = {};
 LivedataTest = {};
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 }).call(this);
 
@@ -46,12 +46,12 @@ LivedataTest = {};
 
 (function(){
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//                                                                                                                   //
-// packages/ddp-client/id_map.js                                                                                     //
-//                                                                                                                   //
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                                                                                                                     //
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                                            //
+// packages/ddp-client/id_map.js                                                                              //
+//                                                                                                            //
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                                                                                                              //
 MongoIDMap = function () {
   var self = this;
   IdMap.call(self, MongoID.idStringify, MongoID.idParse);
@@ -59,7 +59,7 @@ MongoIDMap = function () {
 
 Meteor._inherits(MongoIDMap, IdMap);
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 }).call(this);
 
@@ -70,12 +70,12 @@ Meteor._inherits(MongoIDMap, IdMap);
 
 (function(){
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//                                                                                                                   //
-// packages/ddp-client/stream_client_nodejs.js                                                                       //
-//                                                                                                                   //
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                                                                                                                     //
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                                            //
+// packages/ddp-client/stream_client_nodejs.js                                                                //
+//                                                                                                            //
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                                                                                                              //
 // @param endpoint {String} URL to Meteor app
 //   "http://subdomain.meteor.com/" or "/" or
 //   "ddp+sockjs://foo-**.meteor.com/sockjs"
@@ -280,7 +280,7 @@ _.extend(LivedataTest.ClientStream.prototype, {
   }
 });
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 }).call(this);
 
@@ -291,12 +291,12 @@ _.extend(LivedataTest.ClientStream.prototype, {
 
 (function(){
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//                                                                                                                   //
-// packages/ddp-client/stream_client_common.js                                                                       //
-//                                                                                                                   //
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                                                                                                                     //
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                                            //
+// packages/ddp-client/stream_client_common.js                                                                //
+//                                                                                                            //
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                                                                                                              //
 // XXX from Underscore.String (http://epeli.github.com/underscore.string/)
 var startsWith = function(str, starts) {
   return str.length >= starts.length &&
@@ -564,7 +564,7 @@ DDP.ConnectionError = Meteor.makeErrorType(
 DDP.ForcedReconnectError = Meteor.makeErrorType(
   "DDP.ForcedReconnectError", function () {});
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 }).call(this);
 
@@ -575,12 +575,12 @@ DDP.ForcedReconnectError = Meteor.makeErrorType(
 
 (function(){
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//                                                                                                                   //
-// packages/ddp-client/livedata_common.js                                                                            //
-//                                                                                                                   //
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                                                                                                                     //
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                                            //
+// packages/ddp-client/livedata_common.js                                                                     //
+//                                                                                                            //
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                                                                                                              //
 LivedataTest.SUPPORTED_DDP_VERSIONS = DDPCommon.SUPPORTED_DDP_VERSIONS;
 
 // This is private but it's used in a few places. accounts-base uses
@@ -588,7 +588,7 @@ LivedataTest.SUPPORTED_DDP_VERSIONS = DDPCommon.SUPPORTED_DDP_VERSIONS;
 // it. We can probably find a better way to factor this.
 DDP._CurrentInvocation = new Meteor.EnvironmentVariable;
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 }).call(this);
 
@@ -599,12 +599,12 @@ DDP._CurrentInvocation = new Meteor.EnvironmentVariable;
 
 (function(){
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//                                                                                                                   //
-// packages/ddp-client/random_stream.js                                                                              //
-//                                                                                                                   //
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                                                                                                                     //
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                                            //
+// packages/ddp-client/random_stream.js                                                                       //
+//                                                                                                            //
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                                                                                                              //
 // Returns the named sequence of pseudo-random values.
 // The scope will be DDP._CurrentInvocation.get(), so the stream will produce
 // consistent values for method calls on the client and server.
@@ -615,7 +615,7 @@ DDP.randomStream = function (name) {
 
 
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 }).call(this);
 
@@ -626,12 +626,12 @@ DDP.randomStream = function (name) {
 
 (function(){
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//                                                                                                                   //
-// packages/ddp-client/livedata_connection.js                                                                        //
-//                                                                                                                   //
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                                                                                                                     //
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                                            //
+// packages/ddp-client/livedata_connection.js                                                                 //
+//                                                                                                            //
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                                                                                                              //
 if (Meteor.isServer) {
   var path = Npm.require('path');
   var Fiber = Npm.require('fibers');
@@ -1139,6 +1139,7 @@ _.extend(Connection.prototype, {
 
   /**
    * @memberOf Meteor
+   * @importFromPackage meteor
    * @summary Subscribe to a record set.  Returns a handle that provides
    * `stop()` and `ready()` methods.
    * @locus Client
@@ -1330,6 +1331,7 @@ _.extend(Connection.prototype, {
 
   /**
    * @memberOf Meteor
+   * @importFromPackage meteor
    * @summary Invokes a method passing any number of arguments.
    * @locus Anywhere
    * @param {String} name Name of method to invoke
@@ -1368,6 +1370,7 @@ _.extend(Connection.prototype, {
 
   /**
    * @memberOf Meteor
+   * @importFromPackage meteor
    * @summary Invoke a method passing an array of arguments.
    * @locus Anywhere
    * @param {String} name Name of method to invoke
@@ -1668,6 +1671,7 @@ _.extend(Connection.prototype, {
    * @summary Get the current connection status. A reactive data source.
    * @locus Client
    * @memberOf Meteor
+   * @importFromPackage meteor
    */
   status: function (/*passthrough args*/) {
     var self = this;
@@ -1680,6 +1684,7 @@ _.extend(Connection.prototype, {
   This method does nothing if the client is already connected.
    * @locus Client
    * @memberOf Meteor
+   * @importFromPackage meteor
    */
   reconnect: function (/*passthrough args*/) {
     var self = this;
@@ -1690,6 +1695,7 @@ _.extend(Connection.prototype, {
    * @summary Disconnect the client from the server.
    * @locus Client
    * @memberOf Meteor
+   * @importFromPackage meteor
    */
   disconnect: function (/*passthrough args*/) {
     var self = this;
@@ -2332,7 +2338,7 @@ DDP._allSubscriptionsReady = function () {
   });
 };
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 }).call(this);
 

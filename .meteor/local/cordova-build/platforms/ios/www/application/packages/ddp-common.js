@@ -11,9 +11,9 @@
 (function () {
 
 /* Imports */
-var meteorEnv = Package.meteor.meteorEnv;
 var Meteor = Package.meteor.Meteor;
 var global = Package.meteor.global;
+var meteorEnv = Package.meteor.meteorEnv;
 var check = Package.check.check;
 var Match = Package.check.Match;
 var Random = Package.random.Random;

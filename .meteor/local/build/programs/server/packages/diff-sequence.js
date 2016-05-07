@@ -1,9 +1,9 @@
 (function () {
 
 /* Imports */
-var meteorEnv = Package.meteor.meteorEnv;
 var Meteor = Package.meteor.Meteor;
 var global = Package.meteor.global;
+var meteorEnv = Package.meteor.meteorEnv;
 var _ = Package.underscore._;
 var EJSON = Package.ejson.EJSON;
 
@@ -12,12 +12,12 @@ var DiffSequence;
 
 (function(){
 
-///////////////////////////////////////////////////////////////////////////////////////////////
-//                                                                                           //
-// packages/diff-sequence/diff.js                                                            //
-//                                                                                           //
-///////////////////////////////////////////////////////////////////////////////////////////////
-                                                                                             //
+/////////////////////////////////////////////////////////////////////////////////////
+//                                                                                 //
+// packages/diff-sequence/diff.js                                                  //
+//                                                                                 //
+/////////////////////////////////////////////////////////////////////////////////////
+                                                                                   //
 DiffSequence = {};
 
 // ordered: bool.
@@ -270,7 +270,7 @@ DiffSequence.applyChanges = function (doc, changeFields) {
 };
 
 
-///////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////
 
 }).call(this);
 

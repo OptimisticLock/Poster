@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
-<widget id="com.idbl75yn1mnks64ujs26r" version="0.0.1" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
+<widget id="com.optimisticlock.poster" version="0.0.4" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
   <name>Poster</name>
-  <description>New Meteor Mobile App</description>
-  <author href="n/a" email="n/a">A Meteor Developer</author>
+  <description>A different blog poster</description>
+  <author href="http://apexsft.com" email="izapexposter@optimisticlock.com">Apex Software, LLC</author>
   <preference name="webviewbounce" value="false"/>
   <preference name="DisallowOverscroll" value="true"/>
   <preference name="AutoHideSplashScreen" value="false"/>
@@ -18,6 +18,8 @@
   <allow-intent href="mailto:*"/>
   <allow-intent href="sms:*"/>
   <allow-intent href="market:*"/>
+  <allow-intent href="itms:*"/>
+  <allow-intent href="itms-apps:*"/>
   <allow-navigation href="http://localhost"/>
   <access origin="*://ec2-52-38-181-108.us-west-2.compute.amazonaws.com"/>
   <platform name="ios">

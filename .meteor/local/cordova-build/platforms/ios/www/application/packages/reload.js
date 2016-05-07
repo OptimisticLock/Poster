@@ -11,9 +11,9 @@
 (function () {
 
 /* Imports */
-var meteorEnv = Package.meteor.meteorEnv;
 var Meteor = Package.meteor.Meteor;
 var global = Package.meteor.global;
+var meteorEnv = Package.meteor.meteorEnv;
 var _ = Package.underscore._;
 
 /* Package-scope variables */
@@ -247,16 +247,22 @@ Reload._reload = function (options) {                                           
                                                                                            // 218
   var tryReload = function () { _.defer(function () {                                      // 219
     if (Reload._migrate(tryReload, options)) {                                             // 220
-      // Make the browser reload the page                                                  // 221
-      // Using location.replace() instead of location.reload() avoids                      // 222
-      // validating assets with the server if we still have a fresh cached copy.           // 223
-      window.location.replace(window.location.href);                                       // 224
-    }                                                                                      // 225
-  }); };                                                                                   // 226
-                                                                                           // 227
-  tryReload();                                                                             // 228
-};                                                                                         // 229
-                                                                                           // 230
+      // We'd like to make the browser reload the page using location.replace()            // 221
+      // instead of location.reload(), because this avoids validating assets               // 222
+      // with the server if we still have a valid cached copy. This doesn't work           // 223
+      // when the location contains a hash however, because that wouldn't reload           // 224
+      // the page and just scroll to the hash location instead.                            // 225
+      if (window.location.hash) {                                                          // 226
+        window.location.reload();                                                          // 227
+      } else {                                                                             // 228
+        window.location.replace(window.location.href);                                     // 229
+      }                                                                                    // 230
+    }                                                                                      // 231
+  }); };                                                                                   // 232
+                                                                                           // 233
+  tryReload();                                                                             // 234
+};                                                                                         // 235
+                                                                                           // 236
 /////////////////////////////////////////////////////////////////////////////////////////////
 
 }).call(this);

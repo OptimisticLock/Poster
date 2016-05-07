@@ -11,9 +11,9 @@
 (function () {
 
 /* Imports */
-var meteorEnv = Package.meteor.meteorEnv;
 var Meteor = Package.meteor.Meteor;
 var global = Package.meteor.global;
+var meteorEnv = Package.meteor.meteorEnv;
 var OAuth = Package.oauth.OAuth;
 var Oauth = Package.oauth.Oauth;
 var Template = Package.templating.Template;

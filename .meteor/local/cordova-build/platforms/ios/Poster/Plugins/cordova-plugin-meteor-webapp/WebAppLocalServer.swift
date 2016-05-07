@@ -7,24 +7,18 @@ let GCDWebServerRequestAttribute_FilePath = "GCDWebServerRequestAttribute_FilePa
 
 let localFileSystemPath = "/local-filesystem"
 
-/// The number of seconds to wait for startup to complete, after which
-/// we revert to the last known good version
-let startupTimeoutInterval = 10.0
-
-// For some reason, initializers in a CDVPlugin subclass do not seem to be
-// executed, so we'll make this a file local property for now
-let authTokenKeyValuePair: String = {
-  let authToken = NSProcessInfo.processInfo().globallyUniqueString
-  return "cdvToken=\(authToken)"
-}()
-
 @objc(METWebAppLocalServer)
-final public class WebAppLocalServer: CDVPlugin, AssetBundleManagerDelegate {
+public class WebAppLocalServer: METPlugin, AssetBundleManagerDelegate {
   /// The local web server responsible for serving assets to the web app
   private(set) var localServer: GCDWebServer!
 
   /// The listening port of the local web server
   private var localServerPort: UInt = 0
+
+  let authTokenKeyValuePair: String = {
+    let authToken = NSProcessInfo.processInfo().globallyUniqueString
+    return "cdvToken=\(authToken)"
+  }()
 
   /// The www directory in the app bundle
   private(set) var wwwDirectoryURL: NSURL!
@@ -42,7 +36,8 @@ final public class WebAppLocalServer: CDVPlugin, AssetBundleManagerDelegate {
       if currentAssetBundle != nil {
         configuration.appId = currentAssetBundle.appId
         configuration.rootURL = currentAssetBundle.rootURL
-
+        configuration.cordovaCompatibilityVersion = currentAssetBundle.cordovaCompatibilityVersion
+        
         NSLog("Serving asset bundle version: \(currentAssetBundle.version)")
       }
     }
@@ -62,6 +57,10 @@ final public class WebAppLocalServer: CDVPlugin, AssetBundleManagerDelegate {
   /// Timer used to wait for startup to complete after a reload
   private var startupTimer: METTimer?
 
+  /// The number of seconds to wait for startup to complete, after which
+  /// we revert to the last known good version
+  private var startupTimeoutInterval: NSTimeInterval = 20.0
+
   private var isTesting: Bool = false
 
   // MARK: - Lifecycle
@@ -77,11 +76,6 @@ final public class WebAppLocalServer: CDVPlugin, AssetBundleManagerDelegate {
         isTesting = true
     }
 
-    // FIXME: Due to what seems like a Swift bug, these properties are not
-    // initialized to nil but to an empty string
-    newVersionReadyCallbackId = nil
-    errorCallbackId = nil
-
     configuration = WebAppConfiguration()
 
     wwwDirectoryURL = NSBundle.mainBundle().resourceURL!.URLByAppendingPathComponent("www")
@@ -89,8 +83,9 @@ final public class WebAppLocalServer: CDVPlugin, AssetBundleManagerDelegate {
     initializeAssetBundles()
 
     // The WebAppLocalServerPort setting is currently only used for testing
-    if let portString = (commandDelegate?.settings["WebAppLocalServerPort".lowercaseString] as? String) {
-      localServerPort = UInt(portString) ?? 0
+    if let portString = (commandDelegate?.settings["WebAppLocalServerPort".lowercaseString] as? String),
+       let localServerPort = UInt(portString) {
+      self.localServerPort = localServerPort
     // In all other cases, we use a listening port that has been set during build
     // and that is determined based on the appId. Hopefully this will avoid
     // collisions between Meteor apps installed on the same device
@@ -104,6 +99,11 @@ final public class WebAppLocalServer: CDVPlugin, AssetBundleManagerDelegate {
     } catch {
       NSLog("Could not start local server: \(error)")
       return
+    }
+
+    if let startupTimeoutString = (commandDelegate?.settings["WebAppStartupTimeout".lowercaseString] as? String),
+       let startupTimeoutMilliseconds = UInt(startupTimeoutString) {
+      startupTimeoutInterval =  NSTimeInterval(startupTimeoutMilliseconds / 1000)
     }
 
     if !isTesting {
@@ -320,6 +320,13 @@ final public class WebAppLocalServer: CDVPlugin, AssetBundleManagerDelegate {
 
     // Don't download blacklisted versions
     if configuration.blacklistedVersions.contains(manifest.version) {
+      notifyError(WebAppError.UnsuitableAssetBundle(reason: "Skipping downloading blacklisted version", underlyingError: nil))
+      return false
+    }
+    
+    // Don't download versions potentially incompatible with the bundled native code
+    if manifest.cordovaCompatibilityVersion != configuration.cordovaCompatibilityVersion {
+      notifyError(WebAppError.UnsuitableAssetBundle(reason: "Skipping downloading new version because the Cordova platform version or plugin versions have changed and are potentially incompatible", underlyingError: nil))
       return false
     }
 
@@ -364,16 +371,6 @@ final public class WebAppLocalServer: CDVPlugin, AssetBundleManagerDelegate {
       // Do not modify startPage if we are testing the app using
       // cordova-plugin-test-framework
       viewController.startPage = "http://localhost:\(localServerPort)?\(authTokenKeyValuePair)"
-    }
-
-    commandDelegate?.urlTransformer = { (URL: NSURL!) -> NSURL! in
-      guard let path = URL.path else { return URL }
-
-      if URL.scheme == "file" {
-        return NSURL(string: "\(localFileSystemPath)\(path)", relativeToURL: self.localServer.serverURL)
-      } else {
-        return URL
-      }
     }
   }
 

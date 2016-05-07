@@ -11,9 +11,9 @@
 (function () {
 
 /* Imports */
-var meteorEnv = Package.meteor.meteorEnv;
 var Meteor = Package.meteor.Meteor;
 var global = Package.meteor.global;
+var meteorEnv = Package.meteor.meteorEnv;
 var Tracker = Package.tracker.Tracker;
 var Deps = Package.tracker.Deps;
 var Retry = Package.retry.Retry;
@@ -84,34 +84,33 @@ Autoupdate._retrySubscription = function() {                                    
         var checkNewVersionDocument = function(doc) {                                           // 48
           var self = this;                                                                      // 49
           if (doc.version !== autoupdateVersionCordova) {                                       // 50
-            handle && handle.stop();                                                            // 51
-            newVersionAvailable();                                                              // 52
-          }                                                                                     // 53
-        };                                                                                      // 54
-                                                                                                // 55
-        var handle = ClientVersions.find({_id: 'version-cordova'}).observe({                    // 56
-          added: checkNewVersionDocument,                                                       // 57
-          changed: checkNewVersionDocument                                                      // 58
-        });                                                                                     // 59
-      }                                                                                         // 60
-    }                                                                                           // 61
-  });                                                                                           // 62
-};                                                                                              // 63
-                                                                                                // 64
-Meteor.startup(function() {                                                                     // 65
-  WebAppLocalServer.onNewVersionReady(function() {                                              // 66
-    if (Package.reload) {                                                                       // 67
-      Package.reload.Reload._reload();                                                          // 68
-    }                                                                                           // 69
-  });                                                                                           // 70
-                                                                                                // 71
-  Autoupdate._retrySubscription();                                                              // 72
-});                                                                                             // 73
-                                                                                                // 74
-var newVersionAvailable = function() {                                                          // 75
-  WebAppLocalServer.checkForUpdates();                                                          // 76
-}                                                                                               // 77
-                                                                                                // 78
+            newVersionAvailable();                                                              // 51
+          }                                                                                     // 52
+        };                                                                                      // 53
+                                                                                                // 54
+        var handle = ClientVersions.find({_id: 'version-cordova'}).observe({                    // 55
+          added: checkNewVersionDocument,                                                       // 56
+          changed: checkNewVersionDocument                                                      // 57
+        });                                                                                     // 58
+      }                                                                                         // 59
+    }                                                                                           // 60
+  });                                                                                           // 61
+};                                                                                              // 62
+                                                                                                // 63
+Meteor.startup(function() {                                                                     // 64
+  WebAppLocalServer.onNewVersionReady(function() {                                              // 65
+    if (Package.reload) {                                                                       // 66
+      Package.reload.Reload._reload();                                                          // 67
+    }                                                                                           // 68
+  });                                                                                           // 69
+                                                                                                // 70
+  Autoupdate._retrySubscription();                                                              // 71
+});                                                                                             // 72
+                                                                                                // 73
+var newVersionAvailable = function() {                                                          // 74
+  WebAppLocalServer.checkForUpdates();                                                          // 75
+}                                                                                               // 76
+                                                                                                // 77
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 }).call(this);

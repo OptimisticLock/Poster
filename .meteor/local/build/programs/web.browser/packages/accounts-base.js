@@ -11,9 +11,9 @@
 (function () {
 
 /* Imports */
-var meteorEnv = Package.meteor.meteorEnv;
 var Meteor = Package.meteor.Meteor;
 var global = Package.meteor.global;
+var meteorEnv = Package.meteor.meteorEnv;
 var _ = Package.underscore._;
 var Tracker = Package.tracker.Tracker;
 var Deps = Package.tracker.Deps;
@@ -44,11 +44,11 @@ var require = meteorInstall({"node_modules":{"meteor":{"accounts-base":{"client_
 exports.__esModule = true;                                                                                           //
 exports.AccountsTest = exports.AccountsClient = undefined;                                                           //
                                                                                                                      //
-var _accounts_client = require("./accounts_client.js");                                                              //
+var _accounts_client = require("./accounts_client.js");                                                              // 1
                                                                                                                      //
-var _url_client = require("./url_client.js");                                                                        //
+var _url_client = require("./url_client.js");                                                                        // 2
                                                                                                                      //
-require("./localstorage_token.js");                                                                                  //
+require("./localstorage_token.js");                                                                                  // 3
                                                                                                                      //
 /**                                                                                                                  //
  * @namespace Accounts                                                                                               //
@@ -60,15 +60,16 @@ Accounts = new _accounts_client.AccountsClient();                               
  * @summary A [Mongo.Collection](#collections) containing user documents.                                            //
  * @locus Anywhere                                                                                                   //
  * @type {Mongo.Collection}                                                                                          //
+ * @importFromPackage meteor                                                                                         //
  */                                                                                                                  //
-Meteor.users = Accounts.users;                                                                                       // 16
+Meteor.users = Accounts.users;                                                                                       // 17
                                                                                                                      //
 exports.                                                                                                             //
 // Since this file is the main module for the client version of the                                                  //
 // accounts-base package, properties of non-entry-point modules need to                                              //
 // be re-exported in order to be accessible to modules that import the                                               //
 // accounts-base package.                                                                                            //
-AccountsClient = _accounts_client.AccountsClient;                                                                    // 23
+AccountsClient = _accounts_client.AccountsClient;                                                                    // 24
 exports.AccountsTest = _url_client.AccountsTest;                                                                     //
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -79,6 +80,9 @@ exports.AccountsTest = _url_client.AccountsTest;                                
 // packages/accounts-base/accounts_client.js                                                                         //
 //                                                                                                                   //
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                                                                                                                     //
+exports.__esModule = true;                                                                                           //
+exports.AccountsClient = undefined;                                                                                  //
                                                                                                                      //
 var _classCallCheck2 = require("babel-runtime/helpers/classCallCheck");                                              //
                                                                                                                      //
@@ -92,10 +96,7 @@ var _inherits2 = require("babel-runtime/helpers/inherits");                     
                                                                                                                      //
 var _inherits3 = _interopRequireDefault(_inherits2);                                                                 //
                                                                                                                      //
-exports.__esModule = true;                                                                                           //
-exports.AccountsClient = undefined;                                                                                  //
-                                                                                                                     //
-var _accounts_common = require("./accounts_common.js");                                                              //
+var _accounts_common = require("./accounts_common.js");                                                              // 1
                                                                                                                      //
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }                    //
                                                                                                                      //
@@ -111,12 +112,12 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "d
  */                                                                                                                  //
                                                                                                                      //
 var AccountsClient = exports.AccountsClient = function (_AccountsCommon) {                                           //
-  (0, _inherits3.default)(AccountsClient, _AccountsCommon);                                                          //
+  (0, _inherits3["default"])(AccountsClient, _AccountsCommon);                                                       //
                                                                                                                      //
   function AccountsClient(options) {                                                                                 // 14
-    (0, _classCallCheck3.default)(this, AccountsClient);                                                             //
+    (0, _classCallCheck3["default"])(this, AccountsClient);                                                          //
                                                                                                                      //
-    var _this = (0, _possibleConstructorReturn3.default)(this, _AccountsCommon.call(this, options));                 //
+    var _this = (0, _possibleConstructorReturn3["default"])(this, _AccountsCommon.call(this, options));              //
                                                                                                                      //
     _this._loggingIn = false;                                                                                        // 17
     _this._loggingInDeps = new Tracker.Dependency();                                                                 // 18
@@ -256,9 +257,10 @@ var Ap = AccountsClient.prototype;                                              
 /**                                                                                                                  //
  * @summary True if a login method (such as `Meteor.loginWithPassword`, `Meteor.loginWithFacebook`, or `Accounts.createUser`) is currently in progress. A reactive data source.
  * @locus Client                                                                                                     //
+ * @importFromPackage meteor                                                                                         //
  */                                                                                                                  //
-Meteor.loggingIn = function () {                                                                                     // 136
-  return Accounts.loggingIn();                                                                                       // 137
+Meteor.loggingIn = function () {                                                                                     // 137
+  return Accounts.loggingIn();                                                                                       // 138
 };                                                                                                                   //
                                                                                                                      //
 ///                                                                                                                  //
@@ -289,38 +291,38 @@ Meteor.loggingIn = function () {                                                
 // - userCallback: Will be called with no arguments once the user is fully                                           //
 //                 logged in, or with the error on error.                                                            //
 //                                                                                                                   //
-Ap.callLoginMethod = function (options) {                                                                            // 168
-  var self = this;                                                                                                   // 169
+Ap.callLoginMethod = function (options) {                                                                            // 169
+  var self = this;                                                                                                   // 170
                                                                                                                      //
-  options = _.extend({                                                                                               // 171
-    methodName: 'login',                                                                                             // 172
-    methodArguments: [{}],                                                                                           // 173
-    _suppressLoggingIn: false                                                                                        // 174
+  options = _.extend({                                                                                               // 172
+    methodName: 'login',                                                                                             // 173
+    methodArguments: [{}],                                                                                           // 174
+    _suppressLoggingIn: false                                                                                        // 175
   }, options);                                                                                                       //
                                                                                                                      //
   // Set defaults for callback arguments to no-op functions; make sure we                                            //
   // override falsey values too.                                                                                     //
-  _.each(['validateResult', 'userCallback'], function (f) {                                                          // 168
-    if (!options[f]) options[f] = function () {};                                                                    // 180
+  _.each(['validateResult', 'userCallback'], function (f) {                                                          // 169
+    if (!options[f]) options[f] = function () {};                                                                    // 181
   });                                                                                                                //
                                                                                                                      //
   // Prepare callbacks: user provided and onLogin/onLoginFailure hooks.                                              //
-  var loginCallbacks = _.once(function (error) {                                                                     // 168
-    if (!error) {                                                                                                    // 186
-      self._onLoginHook.each(function (callback) {                                                                   // 187
-        callback();                                                                                                  // 188
-        return true;                                                                                                 // 189
+  var loginCallbacks = _.once(function (error) {                                                                     // 169
+    if (!error) {                                                                                                    // 187
+      self._onLoginHook.each(function (callback) {                                                                   // 188
+        callback();                                                                                                  // 189
+        return true;                                                                                                 // 190
       });                                                                                                            //
     } else {                                                                                                         //
-      self._onLoginFailureHook.each(function (callback) {                                                            // 192
-        callback();                                                                                                  // 193
-        return true;                                                                                                 // 194
+      self._onLoginFailureHook.each(function (callback) {                                                            // 193
+        callback();                                                                                                  // 194
+        return true;                                                                                                 // 195
       });                                                                                                            //
     }                                                                                                                //
-    options.userCallback.apply(this, arguments);                                                                     // 197
+    options.userCallback.apply(this, arguments);                                                                     // 198
   });                                                                                                                //
                                                                                                                      //
-  var reconnected = false;                                                                                           // 200
+  var reconnected = false;                                                                                           // 201
                                                                                                                      //
   // We want to set up onReconnect as soon as we get a result token back from                                        //
   // the server, without having to wait for subscriptions to rerun. This is                                          //
@@ -336,36 +338,36 @@ Ap.callLoginMethod = function (options) {                                       
   // client-side userId. (It's important that livedata_connection guarantees                                         //
   // that the "reconnect quiesce"-time call to loggedInAndDataReadyCallback                                          //
   // will occur before the callback from the resume login call.)                                                     //
-  var onResultReceived = function onResultReceived(err, result) {                                                    // 168
-    if (err || !result || !result.token) {                                                                           // 217
+  var onResultReceived = function onResultReceived(err, result) {                                                    // 169
+    if (err || !result || !result.token) {                                                                           // 218
       // Leave onReconnect alone if there was an error, so that if the user was                                      //
       // already logged in they will still get logged in on reconnect.                                               //
       // See issue #4970.                                                                                            //
     } else {                                                                                                         //
-        self.connection.onReconnect = function () {                                                                  // 222
-          reconnected = true;                                                                                        // 223
+        self.connection.onReconnect = function () {                                                                  // 223
+          reconnected = true;                                                                                        // 224
           // If our token was updated in storage, use the latest one.                                                //
-          var storedToken = self._storedLoginToken();                                                                // 222
-          if (storedToken) {                                                                                         // 226
-            result = {                                                                                               // 227
-              token: storedToken,                                                                                    // 228
-              tokenExpires: self._storedLoginTokenExpires()                                                          // 229
+          var storedToken = self._storedLoginToken();                                                                // 223
+          if (storedToken) {                                                                                         // 227
+            result = {                                                                                               // 228
+              token: storedToken,                                                                                    // 229
+              tokenExpires: self._storedLoginTokenExpires()                                                          // 230
             };                                                                                                       //
           }                                                                                                          //
-          if (!result.tokenExpires) result.tokenExpires = self._tokenExpiration(new Date());                         // 232
-          if (self._tokenExpiresSoon(result.tokenExpires)) {                                                         // 234
-            self.makeClientLoggedOut();                                                                              // 235
+          if (!result.tokenExpires) result.tokenExpires = self._tokenExpiration(new Date());                         // 233
+          if (self._tokenExpiresSoon(result.tokenExpires)) {                                                         // 235
+            self.makeClientLoggedOut();                                                                              // 236
           } else {                                                                                                   //
-            self.callLoginMethod({                                                                                   // 237
-              methodArguments: [{ resume: result.token }],                                                           // 238
+            self.callLoginMethod({                                                                                   // 238
+              methodArguments: [{ resume: result.token }],                                                           // 239
               // Reconnect quiescence ensures that the user doesn't see an                                           //
               // intermediate state before the login method finishes. So we don't                                    //
               // need to show a logging-in animation.                                                                //
-              _suppressLoggingIn: true,                                                                              // 242
-              userCallback: function () {                                                                            // 243
-                function userCallback(error) {                                                                       // 243
-                  var storedTokenNow = self._storedLoginToken();                                                     // 244
-                  if (error) {                                                                                       // 245
+              _suppressLoggingIn: true,                                                                              // 243
+              userCallback: function () {                                                                            // 244
+                function userCallback(error) {                                                                       // 244
+                  var storedTokenNow = self._storedLoginToken();                                                     // 245
+                  if (error) {                                                                                       // 246
                     // If we had a login error AND the current stored token is the                                   //
                     // one that we tried to log in with, then declare ourselves                                      //
                     // logged out. If there's a token in storage but it's not the                                    //
@@ -383,14 +385,14 @@ Ap.callLoginMethod = function (options) {                                       
                     // responsible for calling `makeClientLoggedOut()`, or the                                       //
                     // periodic localStorage poll will call `makeClientLoggedOut`                                    //
                     // eventually if another tab wiped the token from storage.                                       //
-                    if (storedTokenNow && storedTokenNow === result.token) {                                         // 263
-                      self.makeClientLoggedOut();                                                                    // 264
+                    if (storedTokenNow && storedTokenNow === result.token) {                                         // 264
+                      self.makeClientLoggedOut();                                                                    // 265
                     }                                                                                                //
                   }                                                                                                  //
                   // Possibly a weird callback to call, but better than nothing if                                   //
                   // there is a reconnect between "login result received" and "data                                  //
                   // ready".                                                                                         //
-                  loginCallbacks(error);                                                                             // 243
+                  loginCallbacks(error);                                                                             // 244
                 }                                                                                                    //
                                                                                                                      //
                 return userCallback;                                                                                 //
@@ -403,66 +405,68 @@ Ap.callLoginMethod = function (options) {                                       
   // This callback is called once the local cache of the current-user                                                //
   // subscription (and all subscriptions, in fact) are guaranteed to be up to                                        //
   // date.                                                                                                           //
-  var loggedInAndDataReadyCallback = function loggedInAndDataReadyCallback(error, result) {                          // 168
+  var loggedInAndDataReadyCallback = function loggedInAndDataReadyCallback(error, result) {                          // 169
     // If the login method returns its result but the connection is lost                                             //
     // before the data is in the local cache, it'll set an onReconnect (see                                          //
     // above). The onReconnect will try to log in using the token, and *it*                                          //
     // will call userCallback via its own version of this                                                            //
     // loggedInAndDataReadyCallback. So we don't have to do anything here.                                           //
-    if (reconnected) return;                                                                                         // 286
+    if (reconnected) return;                                                                                         // 287
                                                                                                                      //
     // Note that we need to call this even if _suppressLoggingIn is true,                                            //
     // because it could be matching a _setLoggingIn(true) from a                                                     //
     // half-completed pre-reconnect login method.                                                                    //
-    self._setLoggingIn(false);                                                                                       // 280
-    if (error || !result) {                                                                                          // 293
-      error = error || new Error("No result from call to " + options.methodName);                                    // 294
-      loginCallbacks(error);                                                                                         // 296
-      return;                                                                                                        // 297
+    self._setLoggingIn(false);                                                                                       // 281
+    if (error || !result) {                                                                                          // 294
+      error = error || new Error("No result from call to " + options.methodName);                                    // 295
+      loginCallbacks(error);                                                                                         // 297
+      return;                                                                                                        // 298
     }                                                                                                                //
-    try {                                                                                                            // 299
-      options.validateResult(result);                                                                                // 300
+    try {                                                                                                            // 300
+      options.validateResult(result);                                                                                // 301
     } catch (e) {                                                                                                    //
-      loginCallbacks(e);                                                                                             // 302
-      return;                                                                                                        // 303
+      loginCallbacks(e);                                                                                             // 303
+      return;                                                                                                        // 304
     }                                                                                                                //
                                                                                                                      //
     // Make the client logged in. (The user data should already be loaded!)                                          //
-    self.makeClientLoggedIn(result.id, result.token, result.tokenExpires);                                           // 280
-    loginCallbacks();                                                                                                // 308
+    self.makeClientLoggedIn(result.id, result.token, result.tokenExpires);                                           // 281
+    loginCallbacks();                                                                                                // 309
   };                                                                                                                 //
                                                                                                                      //
-  if (!options._suppressLoggingIn) self._setLoggingIn(true);                                                         // 311
+  if (!options._suppressLoggingIn) self._setLoggingIn(true);                                                         // 312
   self.connection.apply(options.methodName, options.methodArguments, { wait: true, onResultReceived: onResultReceived }, loggedInAndDataReadyCallback);
 };                                                                                                                   //
                                                                                                                      //
-Ap.makeClientLoggedOut = function () {                                                                               // 320
-  this._unstoreLoginToken();                                                                                         // 321
-  this.connection.setUserId(null);                                                                                   // 322
-  this.connection.onReconnect = null;                                                                                // 323
+Ap.makeClientLoggedOut = function () {                                                                               // 321
+  this._unstoreLoginToken();                                                                                         // 322
+  this.connection.setUserId(null);                                                                                   // 323
+  this.connection.onReconnect = null;                                                                                // 324
 };                                                                                                                   //
                                                                                                                      //
-Ap.makeClientLoggedIn = function (userId, token, tokenExpires) {                                                     // 326
-  this._storeLoginToken(userId, token, tokenExpires);                                                                // 327
-  this.connection.setUserId(userId);                                                                                 // 328
+Ap.makeClientLoggedIn = function (userId, token, tokenExpires) {                                                     // 327
+  this._storeLoginToken(userId, token, tokenExpires);                                                                // 328
+  this.connection.setUserId(userId);                                                                                 // 329
 };                                                                                                                   //
                                                                                                                      //
 /**                                                                                                                  //
  * @summary Log the user out.                                                                                        //
  * @locus Client                                                                                                     //
  * @param {Function} [callback] Optional callback. Called with no arguments on success, or with a single `Error` argument on failure.
+ * @importFromPackage meteor                                                                                         //
  */                                                                                                                  //
-Meteor.logout = function (callback) {                                                                                // 336
-  return Accounts.logout(callback);                                                                                  // 337
+Meteor.logout = function (callback) {                                                                                // 338
+  return Accounts.logout(callback);                                                                                  // 339
 };                                                                                                                   //
                                                                                                                      //
 /**                                                                                                                  //
  * @summary Log out other clients logged in as the current user, but does not log out the client that calls this function.
  * @locus Client                                                                                                     //
  * @param {Function} [callback] Optional callback. Called with no arguments on success, or with a single `Error` argument on failure.
+ * @importFromPackage meteor                                                                                         //
  */                                                                                                                  //
-Meteor.logoutOtherClients = function (callback) {                                                                    // 345
-  return Accounts.logoutOtherClients(callback);                                                                      // 346
+Meteor.logoutOtherClients = function (callback) {                                                                    // 348
+  return Accounts.logoutOtherClients(callback);                                                                      // 349
 };                                                                                                                   //
                                                                                                                      //
 ///                                                                                                                  //
@@ -473,8 +477,8 @@ Meteor.logoutOtherClients = function (callback) {                               
 // subscription is ready. Used by accounts-ui to hide the login button                                               //
 // until we have all the configuration loaded                                                                        //
 //                                                                                                                   //
-Ap.loginServicesConfigured = function () {                                                                           // 358
-  return this._loginServicesHandle.ready();                                                                          // 359
+Ap.loginServicesConfigured = function () {                                                                           // 361
+  return this._loginServicesHandle.ready();                                                                          // 362
 };                                                                                                                   //
                                                                                                                      //
 // Some login services such as the redirect login flow or the resume                                                 //
@@ -491,11 +495,11 @@ Ap.loginServicesConfigured = function () {                                      
 // we already have the page load login attempt info, otherwise stash                                                 //
 // the callback to be called if and when we do get the attempt info.                                                 //
 //                                                                                                                   //
-Ap.onPageLoadLogin = function (f) {                                                                                  // 377
-  if (this._pageLoadLoginAttemptInfo) {                                                                              // 378
-    f(this._pageLoadLoginAttemptInfo);                                                                               // 379
+Ap.onPageLoadLogin = function (f) {                                                                                  // 380
+  if (this._pageLoadLoginAttemptInfo) {                                                                              // 381
+    f(this._pageLoadLoginAttemptInfo);                                                                               // 382
   } else {                                                                                                           //
-    this._pageLoadLoginCallbacks.push(f);                                                                            // 381
+    this._pageLoadLoginCallbacks.push(f);                                                                            // 384
   }                                                                                                                  //
 };                                                                                                                   //
                                                                                                                      //
@@ -503,18 +507,18 @@ Ap.onPageLoadLogin = function (f) {                                             
 // Call registered callbacks, and also record the info in case                                                       //
 // someone's callback hasn't been registered yet.                                                                    //
 //                                                                                                                   //
-Ap._pageLoadLogin = function (attemptInfo) {                                                                         // 390
-  if (this._pageLoadLoginAttemptInfo) {                                                                              // 391
-    Meteor._debug("Ignoring unexpected duplicate page load login attempt info");                                     // 392
-    return;                                                                                                          // 393
+Ap._pageLoadLogin = function (attemptInfo) {                                                                         // 393
+  if (this._pageLoadLoginAttemptInfo) {                                                                              // 394
+    Meteor._debug("Ignoring unexpected duplicate page load login attempt info");                                     // 395
+    return;                                                                                                          // 396
   }                                                                                                                  //
                                                                                                                      //
-  _.each(this._pageLoadLoginCallbacks, function (callback) {                                                         // 396
-    callback(attemptInfo);                                                                                           // 397
+  _.each(this._pageLoadLoginCallbacks, function (callback) {                                                         // 399
+    callback(attemptInfo);                                                                                           // 400
   });                                                                                                                //
                                                                                                                      //
-  this._pageLoadLoginCallbacks = [];                                                                                 // 400
-  this._pageLoadLoginAttemptInfo = attemptInfo;                                                                      // 401
+  this._pageLoadLoginCallbacks = [];                                                                                 // 403
+  this._pageLoadLoginAttemptInfo = attemptInfo;                                                                      // 404
 };                                                                                                                   //
                                                                                                                      //
 ///                                                                                                                  //
@@ -523,15 +527,15 @@ Ap._pageLoadLogin = function (attemptInfo) {                                    
                                                                                                                      //
 // If our app has a Blaze, register the {{currentUser}} and {{loggingIn}}                                            //
 // global helpers.                                                                                                   //
-if (Package.blaze) {                                                                                                 // 411
+if (Package.blaze) {                                                                                                 // 414
   /**                                                                                                                //
    * @global                                                                                                         //
    * @name  currentUser                                                                                              //
    * @isHelper true                                                                                                  //
    * @summary Calls [Meteor.user()](#meteor_user). Use `{{#if currentUser}}` to check whether the user is logged in.
    */                                                                                                                //
-  Package.blaze.Blaze.Template.registerHelper('currentUser', function () {                                           // 418
-    return Meteor.user();                                                                                            // 419
+  Package.blaze.Blaze.Template.registerHelper('currentUser', function () {                                           // 421
+    return Meteor.user();                                                                                            // 422
   });                                                                                                                //
                                                                                                                      //
   /**                                                                                                                //
@@ -540,8 +544,8 @@ if (Package.blaze) {                                                            
    * @isHelper true                                                                                                  //
    * @summary Calls [Meteor.loggingIn()](#meteor_loggingin).                                                         //
    */                                                                                                                //
-  Package.blaze.Blaze.Template.registerHelper('loggingIn', function () {                                             // 411
-    return Meteor.loggingIn();                                                                                       // 429
+  Package.blaze.Blaze.Template.registerHelper('loggingIn', function () {                                             // 414
+    return Meteor.loggingIn();                                                                                       // 432
   });                                                                                                                //
 }                                                                                                                    //
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -554,12 +558,12 @@ if (Package.blaze) {                                                            
 //                                                                                                                   //
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
                                                                                                                      //
+exports.__esModule = true;                                                                                           //
+exports.AccountsCommon = undefined;                                                                                  //
+                                                                                                                     //
 var _classCallCheck2 = require("babel-runtime/helpers/classCallCheck");                                              //
                                                                                                                      //
 var _classCallCheck3 = _interopRequireDefault(_classCallCheck2);                                                     //
-                                                                                                                     //
-exports.__esModule = true;                                                                                           //
-exports.AccountsCommon = undefined;                                                                                  //
                                                                                                                      //
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }                    //
                                                                                                                      //
@@ -575,7 +579,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "d
                                                                                                                      //
 var AccountsCommon = exports.AccountsCommon = function () {                                                          //
   function AccountsCommon(options) {                                                                                 // 11
-    (0, _classCallCheck3.default)(this, AccountsCommon);                                                             //
+    (0, _classCallCheck3["default"])(this, AccountsCommon);                                                          //
                                                                                                                      //
     // Currently this is read directly by packages like accounts-password                                            //
     // and accounts-ui-unstyled.                                                                                     //
@@ -825,50 +829,52 @@ var Ap = AccountsCommon.prototype;                                              
 /**                                                                                                                  //
  * @summary Get the current user id, or `null` if no user is logged in. A reactive data source.                      //
  * @locus Anywhere but publish functions                                                                             //
+ * @importFromPackage meteor                                                                                         //
  */                                                                                                                  //
-Meteor.userId = function () {                                                                                        // 221
-  return Accounts.userId();                                                                                          // 222
+Meteor.userId = function () {                                                                                        // 222
+  return Accounts.userId();                                                                                          // 223
 };                                                                                                                   //
                                                                                                                      //
 /**                                                                                                                  //
  * @summary Get the current user record, or `null` if no user is logged in. A reactive data source.                  //
  * @locus Anywhere but publish functions                                                                             //
+ * @importFromPackage meteor                                                                                         //
  */                                                                                                                  //
-Meteor.user = function () {                                                                                          // 229
-  return Accounts.user();                                                                                            // 230
+Meteor.user = function () {                                                                                          // 231
+  return Accounts.user();                                                                                            // 232
 };                                                                                                                   //
                                                                                                                      //
 // how long (in days) until a login token expires                                                                    //
-var DEFAULT_LOGIN_EXPIRATION_DAYS = 90;                                                                              // 234
+var DEFAULT_LOGIN_EXPIRATION_DAYS = 90;                                                                              // 236
 // Clients don't try to auto-login with a token that is going to expire within                                       //
 // .1 * DEFAULT_LOGIN_EXPIRATION_DAYS, capped at MIN_TOKEN_LIFETIME_CAP_SECS.                                        //
 // Tries to avoid abrupt disconnects from expiring tokens.                                                           //
-var MIN_TOKEN_LIFETIME_CAP_SECS = 3600; // one hour                                                                  // 238
+var MIN_TOKEN_LIFETIME_CAP_SECS = 3600; // one hour                                                                  // 240
 // how often (in milliseconds) we check for expired tokens                                                           //
-EXPIRE_TOKENS_INTERVAL_MS = 600 * 1000; // 10 minutes                                                                // 240
+EXPIRE_TOKENS_INTERVAL_MS = 600 * 1000; // 10 minutes                                                                // 242
 // how long we wait before logging out clients when Meteor.logoutOtherClients is                                     //
 // called                                                                                                            //
-CONNECTION_CLOSE_DELAY_MS = 10 * 1000;                                                                               // 243
+CONNECTION_CLOSE_DELAY_MS = 10 * 1000;                                                                               // 245
                                                                                                                      //
 // loginServiceConfiguration and ConfigError are maintained for backwards compatibility                              //
-Meteor.startup(function () {                                                                                         // 246
-  var ServiceConfiguration = Package['service-configuration'].ServiceConfiguration;                                  // 247
-  Ap.loginServiceConfiguration = ServiceConfiguration.configurations;                                                // 249
-  Ap.ConfigError = ServiceConfiguration.ConfigError;                                                                 // 250
+Meteor.startup(function () {                                                                                         // 248
+  var ServiceConfiguration = Package['service-configuration'].ServiceConfiguration;                                  // 249
+  Ap.loginServiceConfiguration = ServiceConfiguration.configurations;                                                // 251
+  Ap.ConfigError = ServiceConfiguration.ConfigError;                                                                 // 252
 });                                                                                                                  //
                                                                                                                      //
 // Thrown when the user cancels the login process (eg, closes an oauth                                               //
 // popup, declines retina scan, etc)                                                                                 //
-var lceName = 'Accounts.LoginCancelledError';                                                                        // 255
-Ap.LoginCancelledError = Meteor.makeErrorType(lceName, function (description) {                                      // 256
-  this.message = description;                                                                                        // 259
+var lceName = 'Accounts.LoginCancelledError';                                                                        // 257
+Ap.LoginCancelledError = Meteor.makeErrorType(lceName, function (description) {                                      // 258
+  this.message = description;                                                                                        // 261
 });                                                                                                                  //
-Ap.LoginCancelledError.prototype.name = lceName;                                                                     // 262
+Ap.LoginCancelledError.prototype.name = lceName;                                                                     // 264
                                                                                                                      //
 // This is used to transmit specific subclass errors over the wire. We should                                        //
 // come up with a more generic way to do this (eg, with some sort of symbolic                                        //
 // error code rather than a number).                                                                                 //
-Ap.LoginCancelledError.numericError = 0x8acdc2f;                                                                     // 267
+Ap.LoginCancelledError.numericError = 0x8acdc2f;                                                                     // 269
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 }],"localstorage_token.js":["./accounts_client.js",function(require){
@@ -879,7 +885,7 @@ Ap.LoginCancelledError.numericError = 0x8acdc2f;                                
 //                                                                                                                   //
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
                                                                                                                      //
-var _accounts_client = require("./accounts_client.js");                                                              //
+var _accounts_client = require("./accounts_client.js");                                                              // 1
                                                                                                                      //
 var Ap = _accounts_client.AccountsClient.prototype;                                                                  // 2
                                                                                                                      //
@@ -1076,7 +1082,7 @@ Ap._pollStoredLoginToken = function () {                                        
 exports.__esModule = true;                                                                                           //
 exports.AccountsTest = undefined;                                                                                    //
                                                                                                                      //
-var _accounts_client = require("./accounts_client.js");                                                              //
+var _accounts_client = require("./accounts_client.js");                                                              // 1
                                                                                                                      //
 var Ap = _accounts_client.AccountsClient.prototype;                                                                  // 3
                                                                                                                      //

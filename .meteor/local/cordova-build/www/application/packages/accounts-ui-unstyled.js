@@ -11,9 +11,9 @@
 (function () {
 
 /* Imports */
-var meteorEnv = Package.meteor.meteorEnv;
 var Meteor = Package.meteor.Meteor;
 var global = Package.meteor.global;
+var meteorEnv = Package.meteor.meteorEnv;
 var Tracker = Package.tracker.Tracker;
 var Deps = Package.tracker.Deps;
 var ServiceConfiguration = Package['service-configuration'].ServiceConfiguration;
@@ -44,98 +44,100 @@ var passwordSignupFields, displayName, getLoginServices, hasPasswordService, dro
  * @summary Accounts UI                                                                                                // 2
  * @namespace                                                                                                          // 3
  * @memberOf Accounts                                                                                                  // 4
- */                                                                                                                    // 5
-Accounts.ui = {};                                                                                                      // 6
-                                                                                                                       // 7
-Accounts.ui._options = {                                                                                               // 8
-  requestPermissions: {},                                                                                              // 9
-  requestOfflineToken: {},                                                                                             // 10
-  forceApprovalPrompt: {}                                                                                              // 11
-};                                                                                                                     // 12
-                                                                                                                       // 13
-// XXX refactor duplicated code in this function                                                                       // 14
-                                                                                                                       // 15
-/**                                                                                                                    // 16
- * @summary Configure the behavior of [`{{> loginButtons}}`](#accountsui).                                             // 17
- * @locus Client                                                                                                       // 18
- * @param {Object} options                                                                                             // 19
+ * @importFromPackage accounts-base                                                                                    // 5
+ */                                                                                                                    // 6
+Accounts.ui = {};                                                                                                      // 7
+                                                                                                                       // 8
+Accounts.ui._options = {                                                                                               // 9
+  requestPermissions: {},                                                                                              // 10
+  requestOfflineToken: {},                                                                                             // 11
+  forceApprovalPrompt: {}                                                                                              // 12
+};                                                                                                                     // 13
+                                                                                                                       // 14
+// XXX refactor duplicated code in this function                                                                       // 15
+                                                                                                                       // 16
+/**                                                                                                                    // 17
+ * @summary Configure the behavior of [`{{> loginButtons}}`](#accountsui).                                             // 18
+ * @locus Client                                                                                                       // 19
+ * @param {Object} options                                                                                             // 20
  * @param {Object} options.requestPermissions Which [permissions](#requestpermissions) to request from the user for each external service.
  * @param {Object} options.requestOfflineToken To ask the user for permission to act on their behalf when offline, map the relevant external service to `true`. Currently only supported with Google. See [Meteor.loginWithExternalService](#meteor_loginwithexternalservice) for more details.
  * @param {Object} options.forceApprovalPrompt If true, forces the user to approve the app's permissions, even if previously approved. Currently only supported with Google.
  * @param {String} options.passwordSignupFields Which fields to display in the user creation form. One of '`USERNAME_AND_EMAIL`', '`USERNAME_AND_OPTIONAL_EMAIL`', '`USERNAME_ONLY`', or '`EMAIL_ONLY`' (default).
- */                                                                                                                    // 24
-Accounts.ui.config = function(options) {                                                                               // 25
-  // validate options keys                                                                                             // 26
-  var VALID_KEYS = ['passwordSignupFields', 'requestPermissions', 'requestOfflineToken', 'forceApprovalPrompt'];       // 27
-  _.each(_.keys(options), function (key) {                                                                             // 28
-    if (!_.contains(VALID_KEYS, key))                                                                                  // 29
-      throw new Error("Accounts.ui.config: Invalid key: " + key);                                                      // 30
-  });                                                                                                                  // 31
-                                                                                                                       // 32
-  // deal with `passwordSignupFields`                                                                                  // 33
-  if (options.passwordSignupFields) {                                                                                  // 34
-    if (_.contains([                                                                                                   // 35
-      "USERNAME_AND_EMAIL",                                                                                            // 36
-      "USERNAME_AND_OPTIONAL_EMAIL",                                                                                   // 37
-      "USERNAME_ONLY",                                                                                                 // 38
-      "EMAIL_ONLY"                                                                                                     // 39
-    ], options.passwordSignupFields)) {                                                                                // 40
-      if (Accounts.ui._options.passwordSignupFields)                                                                   // 41
-        throw new Error("Accounts.ui.config: Can't set `passwordSignupFields` more than once");                        // 42
-      else                                                                                                             // 43
-        Accounts.ui._options.passwordSignupFields = options.passwordSignupFields;                                      // 44
-    } else {                                                                                                           // 45
+ * @importFromPackage accounts-base                                                                                    // 25
+ */                                                                                                                    // 26
+Accounts.ui.config = function(options) {                                                                               // 27
+  // validate options keys                                                                                             // 28
+  var VALID_KEYS = ['passwordSignupFields', 'requestPermissions', 'requestOfflineToken', 'forceApprovalPrompt'];       // 29
+  _.each(_.keys(options), function (key) {                                                                             // 30
+    if (!_.contains(VALID_KEYS, key))                                                                                  // 31
+      throw new Error("Accounts.ui.config: Invalid key: " + key);                                                      // 32
+  });                                                                                                                  // 33
+                                                                                                                       // 34
+  // deal with `passwordSignupFields`                                                                                  // 35
+  if (options.passwordSignupFields) {                                                                                  // 36
+    if (_.contains([                                                                                                   // 37
+      "USERNAME_AND_EMAIL",                                                                                            // 38
+      "USERNAME_AND_OPTIONAL_EMAIL",                                                                                   // 39
+      "USERNAME_ONLY",                                                                                                 // 40
+      "EMAIL_ONLY"                                                                                                     // 41
+    ], options.passwordSignupFields)) {                                                                                // 42
+      if (Accounts.ui._options.passwordSignupFields)                                                                   // 43
+        throw new Error("Accounts.ui.config: Can't set `passwordSignupFields` more than once");                        // 44
+      else                                                                                                             // 45
+        Accounts.ui._options.passwordSignupFields = options.passwordSignupFields;                                      // 46
+    } else {                                                                                                           // 47
       throw new Error("Accounts.ui.config: Invalid option for `passwordSignupFields`: " + options.passwordSignupFields);
-    }                                                                                                                  // 47
-  }                                                                                                                    // 48
-                                                                                                                       // 49
-  // deal with `requestPermissions`                                                                                    // 50
-  if (options.requestPermissions) {                                                                                    // 51
-    _.each(options.requestPermissions, function (scope, service) {                                                     // 52
-      if (Accounts.ui._options.requestPermissions[service]) {                                                          // 53
-        throw new Error("Accounts.ui.config: Can't set `requestPermissions` more than once for " + service);           // 54
-      } else if (!(scope instanceof Array)) {                                                                          // 55
-        throw new Error("Accounts.ui.config: Value for `requestPermissions` must be an array");                        // 56
-      } else {                                                                                                         // 57
-        Accounts.ui._options.requestPermissions[service] = scope;                                                      // 58
-      }                                                                                                                // 59
-    });                                                                                                                // 60
-  }                                                                                                                    // 61
-                                                                                                                       // 62
-  // deal with `requestOfflineToken`                                                                                   // 63
-  if (options.requestOfflineToken) {                                                                                   // 64
-    _.each(options.requestOfflineToken, function (value, service) {                                                    // 65
-      if (service !== 'google')                                                                                        // 66
-        throw new Error("Accounts.ui.config: `requestOfflineToken` only supported for Google login at the moment.");   // 67
-                                                                                                                       // 68
-      if (Accounts.ui._options.requestOfflineToken[service]) {                                                         // 69
-        throw new Error("Accounts.ui.config: Can't set `requestOfflineToken` more than once for " + service);          // 70
-      } else {                                                                                                         // 71
-        Accounts.ui._options.requestOfflineToken[service] = value;                                                     // 72
-      }                                                                                                                // 73
-    });                                                                                                                // 74
-  }                                                                                                                    // 75
-                                                                                                                       // 76
-  // deal with `forceApprovalPrompt`                                                                                   // 77
-  if (options.forceApprovalPrompt) {                                                                                   // 78
-    _.each(options.forceApprovalPrompt, function (value, service) {                                                    // 79
-      if (service !== 'google')                                                                                        // 80
-        throw new Error("Accounts.ui.config: `forceApprovalPrompt` only supported for Google login at the moment.");   // 81
-                                                                                                                       // 82
-      if (Accounts.ui._options.forceApprovalPrompt[service]) {                                                         // 83
-        throw new Error("Accounts.ui.config: Can't set `forceApprovalPrompt` more than once for " + service);          // 84
-      } else {                                                                                                         // 85
-        Accounts.ui._options.forceApprovalPrompt[service] = value;                                                     // 86
-      }                                                                                                                // 87
-    });                                                                                                                // 88
-  }                                                                                                                    // 89
-};                                                                                                                     // 90
-                                                                                                                       // 91
-passwordSignupFields = function () {                                                                                   // 92
-  return Accounts.ui._options.passwordSignupFields || "EMAIL_ONLY";                                                    // 93
-};                                                                                                                     // 94
-                                                                                                                       // 95
-                                                                                                                       // 96
+    }                                                                                                                  // 49
+  }                                                                                                                    // 50
+                                                                                                                       // 51
+  // deal with `requestPermissions`                                                                                    // 52
+  if (options.requestPermissions) {                                                                                    // 53
+    _.each(options.requestPermissions, function (scope, service) {                                                     // 54
+      if (Accounts.ui._options.requestPermissions[service]) {                                                          // 55
+        throw new Error("Accounts.ui.config: Can't set `requestPermissions` more than once for " + service);           // 56
+      } else if (!(scope instanceof Array)) {                                                                          // 57
+        throw new Error("Accounts.ui.config: Value for `requestPermissions` must be an array");                        // 58
+      } else {                                                                                                         // 59
+        Accounts.ui._options.requestPermissions[service] = scope;                                                      // 60
+      }                                                                                                                // 61
+    });                                                                                                                // 62
+  }                                                                                                                    // 63
+                                                                                                                       // 64
+  // deal with `requestOfflineToken`                                                                                   // 65
+  if (options.requestOfflineToken) {                                                                                   // 66
+    _.each(options.requestOfflineToken, function (value, service) {                                                    // 67
+      if (service !== 'google')                                                                                        // 68
+        throw new Error("Accounts.ui.config: `requestOfflineToken` only supported for Google login at the moment.");   // 69
+                                                                                                                       // 70
+      if (Accounts.ui._options.requestOfflineToken[service]) {                                                         // 71
+        throw new Error("Accounts.ui.config: Can't set `requestOfflineToken` more than once for " + service);          // 72
+      } else {                                                                                                         // 73
+        Accounts.ui._options.requestOfflineToken[service] = value;                                                     // 74
+      }                                                                                                                // 75
+    });                                                                                                                // 76
+  }                                                                                                                    // 77
+                                                                                                                       // 78
+  // deal with `forceApprovalPrompt`                                                                                   // 79
+  if (options.forceApprovalPrompt) {                                                                                   // 80
+    _.each(options.forceApprovalPrompt, function (value, service) {                                                    // 81
+      if (service !== 'google')                                                                                        // 82
+        throw new Error("Accounts.ui.config: `forceApprovalPrompt` only supported for Google login at the moment.");   // 83
+                                                                                                                       // 84
+      if (Accounts.ui._options.forceApprovalPrompt[service]) {                                                         // 85
+        throw new Error("Accounts.ui.config: Can't set `forceApprovalPrompt` more than once for " + service);          // 86
+      } else {                                                                                                         // 87
+        Accounts.ui._options.forceApprovalPrompt[service] = value;                                                     // 88
+      }                                                                                                                // 89
+    });                                                                                                                // 90
+  }                                                                                                                    // 91
+};                                                                                                                     // 92
+                                                                                                                       // 93
+passwordSignupFields = function () {                                                                                   // 94
+  return Accounts.ui._options.passwordSignupFields || "EMAIL_ONLY";                                                    // 95
+};                                                                                                                     // 96
+                                                                                                                       // 97
+                                                                                                                       // 98
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 }).call(this);

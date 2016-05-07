@@ -11,9 +11,9 @@
 (function () {
 
 /* Imports */
-var meteorEnv = Package.meteor.meteorEnv;
 var Meteor = Package.meteor.Meteor;
 var global = Package.meteor.global;
+var meteorEnv = Package.meteor.meteorEnv;
 var meteorInstall = Package.modules.meteorInstall;
 var Buffer = Package.modules.Buffer;
 var process = Package.modules.process;
@@ -21,7 +21,7 @@ var process = Package.modules.process;
 /* Package-scope variables */
 var $, jQuery;
 
-var require = meteorInstall({"node_modules":{"meteor":{"jquery":{"main.js":["./jquery.js",function(require,exports){
+var require = meteorInstall({"node_modules":{"meteor":{"jquery":{"main.js":["jquery","./jquery.js",function(require,exports){
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                                                   //
@@ -29,17 +29,23 @@ var require = meteorInstall({"node_modules":{"meteor":{"jquery":{"main.js":["./j
 //                                                                                                                   //
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
                                                                                                                      //
-var jQuery = require("./jquery.js");                                                                                 // 1
-var global = this;                                                                                                   // 2
-                                                                                                                     // 3
-// Provide values for the exported variables of the jquery package.                                                  // 4
-exports.$ = exports.jQuery = jQuery;                                                                                 // 5
-                                                                                                                     // 6
-// There's no stopping legacy code from referring to window.$ or                                                     // 7
-// window.jQuery, so we have to keep defining those properties globally,                                             // 8
-// but at least the exports of this package will be reliable.                                                        // 9
-global.$ = global.jQuery = jQuery;                                                                                   // 10
+var global = this;                                                                                                   // 1
+                                                                                                                     // 2
+try {                                                                                                                // 3
+  var jQuery = require("jquery");                                                                                    // 4
+} catch (e) {                                                                                                        // 5
+  jQuery = require("./jquery.js");                                                                                   // 6
+}                                                                                                                    // 7
+                                                                                                                     // 8
+// Provide values for the exported variables of the jquery package.                                                  // 9
+exports.$ = exports.jQuery = jQuery;                                                                                 // 10
                                                                                                                      // 11
+// There's no stopping legacy code from referring to window.$ or                                                     // 12
+// window.jQuery, so we have to keep defining those properties globally,                                             // 13
+// but at least the exports of this package will be reliable.                                                        // 14
+global.$ = global.$ || jQuery;                                                                                       // 15
+global.jQuery = global.jQuery || jQuery;                                                                             // 16
+                                                                                                                     // 17
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 }],"jquery.js":function(require,exports,module){

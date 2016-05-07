@@ -1,9 +1,9 @@
 (function () {
 
 /* Imports */
-var meteorEnv = Package.meteor.meteorEnv;
 var Meteor = Package.meteor.Meteor;
 var global = Package.meteor.global;
+var meteorEnv = Package.meteor.meteorEnv;
 var _ = Package.underscore._;
 var ECMAScript = Package.ecmascript.ECMAScript;
 var DDPRateLimiter = Package['ddp-rate-limiter'].DDPRateLimiter;
@@ -39,11 +39,11 @@ var require = meteorInstall({"node_modules":{"meteor":{"accounts-base":{"server_
 exports.__esModule = true;                                                                                         //
 exports.AccountsServer = undefined;                                                                                //
                                                                                                                    //
-var _accounts_server = require("./accounts_server.js");                                                            //
+var _accounts_server = require("./accounts_server.js");                                                            // 1
                                                                                                                    //
-require("./accounts_rate_limit.js");                                                                               //
+require("./accounts_rate_limit.js");                                                                               // 2
                                                                                                                    //
-require("./url_server.js");                                                                                        //
+require("./url_server.js");                                                                                        // 3
                                                                                                                    //
 /**                                                                                                                //
  * @namespace Accounts                                                                                             //
@@ -59,15 +59,16 @@ Accounts = new _accounts_server.AccountsServer(Meteor.server);                  
  * @summary A [Mongo.Collection](#collections) containing user documents.                                          //
  * @locus Anywhere                                                                                                 //
  * @type {Mongo.Collection}                                                                                        //
- */                                                                                                                //
-Meteor.users = Accounts.users;                                                                                     // 20
+ * @importFromPackage meteor                                                                                       //
+*/                                                                                                                 //
+Meteor.users = Accounts.users;                                                                                     // 21
                                                                                                                    //
 exports.                                                                                                           //
 // Since this file is the main module for the server version of the                                                //
 // accounts-base package, properties of non-entry-point modules need to                                            //
 // be re-exported in order to be accessible to modules that import the                                             //
 // accounts-base package.                                                                                          //
-AccountsServer = _accounts_server.AccountsServer;                                                                  // 27
+AccountsServer = _accounts_server.AccountsServer;                                                                  // 28
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 }],"accounts_common.js":["babel-runtime/helpers/classCallCheck",function(require,exports){
@@ -78,12 +79,12 @@ AccountsServer = _accounts_server.AccountsServer;                               
 //                                                                                                                 //
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
                                                                                                                    //
+exports.__esModule = true;                                                                                         //
+exports.AccountsCommon = undefined;                                                                                //
+                                                                                                                   //
 var _classCallCheck2 = require("babel-runtime/helpers/classCallCheck");                                            //
                                                                                                                    //
 var _classCallCheck3 = _interopRequireDefault(_classCallCheck2);                                                   //
-                                                                                                                   //
-exports.__esModule = true;                                                                                         //
-exports.AccountsCommon = undefined;                                                                                //
                                                                                                                    //
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }                  //
                                                                                                                    //
@@ -99,7 +100,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "d
                                                                                                                    //
 var AccountsCommon = exports.AccountsCommon = function () {                                                        //
   function AccountsCommon(options) {                                                                               // 11
-    (0, _classCallCheck3.default)(this, AccountsCommon);                                                           //
+    (0, _classCallCheck3["default"])(this, AccountsCommon);                                                        //
                                                                                                                    //
     // Currently this is read directly by packages like accounts-password                                          //
     // and accounts-ui-unstyled.                                                                                   //
@@ -349,50 +350,52 @@ var Ap = AccountsCommon.prototype;                                              
 /**                                                                                                                //
  * @summary Get the current user id, or `null` if no user is logged in. A reactive data source.                    //
  * @locus Anywhere but publish functions                                                                           //
+ * @importFromPackage meteor                                                                                       //
  */                                                                                                                //
-Meteor.userId = function () {                                                                                      // 221
-  return Accounts.userId();                                                                                        // 222
+Meteor.userId = function () {                                                                                      // 222
+  return Accounts.userId();                                                                                        // 223
 };                                                                                                                 //
                                                                                                                    //
 /**                                                                                                                //
  * @summary Get the current user record, or `null` if no user is logged in. A reactive data source.                //
  * @locus Anywhere but publish functions                                                                           //
+ * @importFromPackage meteor                                                                                       //
  */                                                                                                                //
-Meteor.user = function () {                                                                                        // 229
-  return Accounts.user();                                                                                          // 230
+Meteor.user = function () {                                                                                        // 231
+  return Accounts.user();                                                                                          // 232
 };                                                                                                                 //
                                                                                                                    //
 // how long (in days) until a login token expires                                                                  //
-var DEFAULT_LOGIN_EXPIRATION_DAYS = 90;                                                                            // 234
+var DEFAULT_LOGIN_EXPIRATION_DAYS = 90;                                                                            // 236
 // Clients don't try to auto-login with a token that is going to expire within                                     //
 // .1 * DEFAULT_LOGIN_EXPIRATION_DAYS, capped at MIN_TOKEN_LIFETIME_CAP_SECS.                                      //
 // Tries to avoid abrupt disconnects from expiring tokens.                                                         //
-var MIN_TOKEN_LIFETIME_CAP_SECS = 3600; // one hour                                                                // 238
+var MIN_TOKEN_LIFETIME_CAP_SECS = 3600; // one hour                                                                // 240
 // how often (in milliseconds) we check for expired tokens                                                         //
-EXPIRE_TOKENS_INTERVAL_MS = 600 * 1000; // 10 minutes                                                              // 240
+EXPIRE_TOKENS_INTERVAL_MS = 600 * 1000; // 10 minutes                                                              // 242
 // how long we wait before logging out clients when Meteor.logoutOtherClients is                                   //
 // called                                                                                                          //
-CONNECTION_CLOSE_DELAY_MS = 10 * 1000;                                                                             // 243
+CONNECTION_CLOSE_DELAY_MS = 10 * 1000;                                                                             // 245
                                                                                                                    //
 // loginServiceConfiguration and ConfigError are maintained for backwards compatibility                            //
-Meteor.startup(function () {                                                                                       // 246
-  var ServiceConfiguration = Package['service-configuration'].ServiceConfiguration;                                // 247
-  Ap.loginServiceConfiguration = ServiceConfiguration.configurations;                                              // 249
-  Ap.ConfigError = ServiceConfiguration.ConfigError;                                                               // 250
+Meteor.startup(function () {                                                                                       // 248
+  var ServiceConfiguration = Package['service-configuration'].ServiceConfiguration;                                // 249
+  Ap.loginServiceConfiguration = ServiceConfiguration.configurations;                                              // 251
+  Ap.ConfigError = ServiceConfiguration.ConfigError;                                                               // 252
 });                                                                                                                //
                                                                                                                    //
 // Thrown when the user cancels the login process (eg, closes an oauth                                             //
 // popup, declines retina scan, etc)                                                                               //
-var lceName = 'Accounts.LoginCancelledError';                                                                      // 255
-Ap.LoginCancelledError = Meteor.makeErrorType(lceName, function (description) {                                    // 256
-  this.message = description;                                                                                      // 259
+var lceName = 'Accounts.LoginCancelledError';                                                                      // 257
+Ap.LoginCancelledError = Meteor.makeErrorType(lceName, function (description) {                                    // 258
+  this.message = description;                                                                                      // 261
 });                                                                                                                //
-Ap.LoginCancelledError.prototype.name = lceName;                                                                   // 262
+Ap.LoginCancelledError.prototype.name = lceName;                                                                   // 264
                                                                                                                    //
 // This is used to transmit specific subclass errors over the wire. We should                                      //
 // come up with a more generic way to do this (eg, with some sort of symbolic                                      //
 // error code rather than a number).                                                                               //
-Ap.LoginCancelledError.numericError = 0x8acdc2f;                                                                   // 267
+Ap.LoginCancelledError.numericError = 0x8acdc2f;                                                                   // 269
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 }],"accounts_rate_limit.js":["./accounts_common.js",function(require){
@@ -403,7 +406,7 @@ Ap.LoginCancelledError.numericError = 0x8acdc2f;                                
 //                                                                                                                 //
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
                                                                                                                    //
-var _accounts_common = require('./accounts_common.js');                                                            //
+var _accounts_common = require('./accounts_common.js');                                                            // 1
                                                                                                                    //
 var Ap = _accounts_common.AccountsCommon.prototype;                                                                // 3
 var defaultRateLimiterRuleId;                                                                                      // 4
@@ -451,6 +454,9 @@ Ap.addDefaultRateLimit();                                                       
 //                                                                                                                 //
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
                                                                                                                    //
+exports.__esModule = true;                                                                                         //
+exports.AccountsServer = undefined;                                                                                //
+                                                                                                                   //
 var _classCallCheck2 = require('babel-runtime/helpers/classCallCheck');                                            //
                                                                                                                    //
 var _classCallCheck3 = _interopRequireDefault(_classCallCheck2);                                                   //
@@ -463,10 +469,7 @@ var _inherits2 = require('babel-runtime/helpers/inherits');                     
                                                                                                                    //
 var _inherits3 = _interopRequireDefault(_inherits2);                                                               //
                                                                                                                    //
-exports.__esModule = true;                                                                                         //
-exports.AccountsServer = undefined;                                                                                //
-                                                                                                                   //
-var _accounts_common = require('./accounts_common.js');                                                            //
+var _accounts_common = require('./accounts_common.js');                                                            // 3
                                                                                                                    //
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }                  //
                                                                                                                    //
@@ -482,16 +485,16 @@ var crypto = Npm.require('crypto');                                             
  */                                                                                                                //
                                                                                                                    //
 var AccountsServer = exports.AccountsServer = function (_AccountsCommon) {                                         //
-  (0, _inherits3.default)(AccountsServer, _AccountsCommon);                                                        //
+  (0, _inherits3['default'])(AccountsServer, _AccountsCommon);                                                     //
                                                                                                                    //
   // Note that this constructor is less likely to be instantiated multiple                                         //
   // times than the `AccountsClient` constructor, because a single server                                          //
   // can provide only one set of methods.                                                                          //
                                                                                                                    //
   function AccountsServer(server) {                                                                                // 17
-    (0, _classCallCheck3.default)(this, AccountsServer);                                                           //
+    (0, _classCallCheck3['default'])(this, AccountsServer);                                                        //
                                                                                                                    //
-    var _this = (0, _possibleConstructorReturn3.default)(this, _AccountsCommon.call(this));                        //
+    var _this = (0, _possibleConstructorReturn3['default'])(this, _AccountsCommon.call(this));                     //
                                                                                                                    //
     _this._server = server || Meteor.server;                                                                       // 20
     // Set up the server's methods, as if by calling Meteor.methods.                                               //
@@ -1851,7 +1854,7 @@ Ap._deleteSavedTokensForAllUsersOnStartup = function () {                       
 //                                                                                                                 //
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
                                                                                                                    //
-var _accounts_server = require('./accounts_server.js');                                                            //
+var _accounts_server = require('./accounts_server.js');                                                            // 1
                                                                                                                    //
 // XXX These should probably not actually be public?                                                               //
                                                                                                                    //

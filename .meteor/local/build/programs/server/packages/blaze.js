@@ -1,9 +1,9 @@
 (function () {
 
 /* Imports */
-var meteorEnv = Package.meteor.meteorEnv;
 var Meteor = Package.meteor.Meteor;
 var global = Package.meteor.global;
+var meteorEnv = Package.meteor.meteorEnv;
 var Tracker = Package.tracker.Tracker;
 var Deps = Package.tracker.Deps;
 var check = Package.check.check;
@@ -14,7 +14,7 @@ var ObserveSequence = Package['observe-sequence'].ObserveSequence;
 var ReactiveVar = Package['reactive-var'].ReactiveVar;
 
 /* Package-scope variables */
-var Blaze, UI, Handlebars, AttributeHandler, makeAttributeHandler, ElementAttributesUpdater;
+var Blaze, UI, Handlebars;
 
 (function(){
 
@@ -820,9 +820,9 @@ Blaze.renderWithData = function (content, data, parentElement, nextNode, parentV
 };
 
 /**
- * @summary Removes a rendered View from the DOM, stopping all reactive updates and event listeners on it.
+ * @summary Removes a rendered View from the DOM, stopping all reactive updates and event listeners on it. Also destroys the Blaze.Template instance associated with the view.
  * @locus Client
- * @param {Blaze.View} renderedView The return value from `Blaze.render` or `Blaze.renderWithData`.
+ * @param {Blaze.View} renderedView The return value from `Blaze.render` or `Blaze.renderWithData`, or the `view` property of a Blaze.Template instance. Calling `Blaze.remove(Template.instance().view)` from within a template event handler will destroy the view as well as that template and trigger the template's `onDestroyed` handlers.
  */
 Blaze.remove = function (view) {
   if (! (view && (view._domrange instanceof Blaze._DOMRange)))
@@ -1765,6 +1765,7 @@ Blaze.isTemplate = function (t) {
  * @summary Register a function to be called when an instance of this template is created.
  * @param {Function} callback A function to be added as a callback.
  * @locus Client
+ * @importFromPackage templating
  */
 Template.prototype.onCreated = function (cb) {
   this._callbacks.created.push(cb);
@@ -1777,6 +1778,7 @@ Template.prototype.onCreated = function (cb) {
  * @summary Register a function to be called when an instance of this template is inserted into the DOM.
  * @param {Function} callback A function to be added as a callback.
  * @locus Client
+ * @importFromPackage templating
  */
 Template.prototype.onRendered = function (cb) {
   this._callbacks.rendered.push(cb);
@@ -1789,6 +1791,7 @@ Template.prototype.onRendered = function (cb) {
  * @summary Register a function to be called when an instance of this template is removed from the DOM and destroyed.
  * @param {Function} callback A function to be added as a callback.
  * @locus Client
+ * @importFromPackage templating
  */
 Template.prototype.onDestroyed = function (cb) {
   this._callbacks.destroyed.push(cb);
@@ -2131,6 +2134,7 @@ Blaze.TemplateInstance.prototype.subscriptionsReady = function () {
  * @summary Specify template helpers available to this template.
  * @locus Client
  * @param {Object} helpers Dictionary of helper functions by name.
+ * @importFromPackage templating
  */
 Template.prototype.helpers = function (dict) {
   if (! _.isObject(dict)) {
@@ -2164,6 +2168,7 @@ Template._withTemplateInstanceFunc = function (templateInstanceFunc, func) {
  * @summary Specify event handlers for this template.
  * @locus Client
  * @param {EventMap} eventMap Event handlers to associate with this template.
+ * @importFromPackage templating
  */
 Template.prototype.events = function (eventMap) {
   if (! _.isObject(eventMap)) {
@@ -2200,6 +2205,7 @@ Template.prototype.events = function (eventMap) {
  * @summary The [template instance](#template_inst) corresponding to the current template helper, event handler, callback, or autorun.  If there isn't one, `null`.
  * @locus Client
  * @returns {Blaze.TemplateInstance}
+ * @importFromPackage templating
  */
 Template.instance = function () {
   return Template._currentTemplateInstanceFunc
@@ -2222,6 +2228,7 @@ Template.instance = function () {
  * Establishes a reactive dependency on the result.
  * @locus Client
  * @function
+ * @importFromPackage templating
  */
 Template.currentData = Blaze.getData;
 
@@ -2230,6 +2237,7 @@ Template.currentData = Blaze.getData;
  * @locus Client
  * @function
  * @param {Integer} [numLevels] The number of levels beyond the current data context to look. Defaults to 1.
+ * @importFromPackage templating
  */
 Template.parentData = Blaze._parentData;
 
@@ -2239,6 +2247,7 @@ Template.parentData = Blaze._parentData;
  * @function
  * @param {String} name The name of the helper function you are defining.
  * @param {Function} function The helper function itself.
+ * @importFromPackage templating
  */
 Template.registerHelper = Blaze.registerHelper;
 
@@ -2247,6 +2256,7 @@ Template.registerHelper = Blaze.registerHelper;
  * @locus Client
  * @function
  * @param {String} name The name of the helper function you are defining.
+ * @importFromPackage templating
  */
 Template.deregisterHelper = Blaze.deregisterHelper;
 

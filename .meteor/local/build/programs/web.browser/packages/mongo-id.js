@@ -11,9 +11,9 @@
 (function () {
 
 /* Imports */
-var meteorEnv = Package.meteor.meteorEnv;
 var Meteor = Package.meteor.Meteor;
 var global = Package.meteor.global;
+var meteorEnv = Package.meteor.meteorEnv;
 var EJSON = Package.ejson.EJSON;
 var IdMap = Package['id-map'].IdMap;
 var Random = Package.random.Random;

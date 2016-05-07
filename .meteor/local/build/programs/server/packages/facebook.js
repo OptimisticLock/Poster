@@ -1,9 +1,9 @@
 (function () {
 
 /* Imports */
-var meteorEnv = Package.meteor.meteorEnv;
 var Meteor = Package.meteor.Meteor;
 var global = Package.meteor.global;
+var meteorEnv = Package.meteor.meteorEnv;
 var OAuth = Package.oauth.OAuth;
 var Oauth = Package.oauth.Oauth;
 var HTTP = Package.http.HTTP;
@@ -16,12 +16,12 @@ var Facebook;
 
 (function(){
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////
-//                                                                                                   //
-// packages/facebook/facebook_server.js                                                              //
-//                                                                                                   //
-///////////////////////////////////////////////////////////////////////////////////////////////////////
-                                                                                                     //
+////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                                //
+// packages/facebook/facebook_server.js                                                           //
+//                                                                                                //
+////////////////////////////////////////////////////////////////////////////////////////////////////
+                                                                                                  //
 Facebook = {};
 
 var querystring = Npm.require('querystring');
@@ -129,7 +129,7 @@ Facebook.retrieveCredential = function(credentialToken, credentialSecret) {
   return OAuth.retrieveCredential(credentialToken, credentialSecret);
 };
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
 }).call(this);
 

@@ -1,9 +1,9 @@
 (function () {
 
 /* Imports */
-var meteorEnv = Package.meteor.meteorEnv;
 var Meteor = Package.meteor.Meteor;
 var global = Package.meteor.global;
+var meteorEnv = Package.meteor.meteorEnv;
 var HTTP = Package.http.HTTP;
 var HTTPInternals = Package.http.HTTPInternals;
 var OAuth1Binding = Package.oauth1.OAuth1Binding;
@@ -17,12 +17,12 @@ var Twitter;
 
 (function(){
 
-/////////////////////////////////////////////////////////////////////////////////////////////////////////
-//                                                                                                     //
-// packages/twitter/twitter_server.js                                                                  //
-//                                                                                                     //
-/////////////////////////////////////////////////////////////////////////////////////////////////////////
-                                                                                                       //
+/////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                             //
+// packages/twitter/twitter_server.js                                                          //
+//                                                                                             //
+/////////////////////////////////////////////////////////////////////////////////////////////////
+                                                                                               //
 Twitter = {};
 
 var urls = {
@@ -34,10 +34,10 @@ var urls = {
 
 
 // https://dev.twitter.com/docs/api/1.1/get/account/verify_credentials
-Twitter.whitelistedFields = ['profile_image_url', 'profile_image_url_https', 'lang'];
+Twitter.whitelistedFields = ['profile_image_url', 'profile_image_url_https', 'lang', 'email'];
 
 OAuth.registerService('twitter', 1, urls, function(oauthBinding) {
-  var identity = oauthBinding.get('https://api.twitter.com/1.1/account/verify_credentials.json').data;
+  var identity = oauthBinding.get('https://api.twitter.com/1.1/account/verify_credentials.json?include_email=true').data;
 
   var serviceData = {
     id: identity.id_str,
@@ -65,7 +65,7 @@ Twitter.retrieveCredential = function(credentialToken, credentialSecret) {
   return OAuth.retrieveCredential(credentialToken, credentialSecret);
 };
 
-/////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////
 
 }).call(this);
 

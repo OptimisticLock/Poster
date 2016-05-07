@@ -1,9 +1,9 @@
 (function () {
 
 /* Imports */
-var meteorEnv = Package.meteor.meteorEnv;
 var Meteor = Package.meteor.Meteor;
 var global = Package.meteor.global;
+var meteorEnv = Package.meteor.meteorEnv;
 var Tracker = Package.tracker.Tracker;
 var Deps = Package.tracker.Deps;
 var MongoID = Package['mongo-id'].MongoID;
@@ -12,16 +12,16 @@ var _ = Package.underscore._;
 var Random = Package.random.Random;
 
 /* Package-scope variables */
-var ObserveSequence, seqChangedToEmpty, seqChangedToArray, seqChangedToCursor, runOneObserveSequenceTestCase;
+var ObserveSequence, seqChangedToEmpty, seqChangedToArray, seqChangedToCursor;
 
 (function(){
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//                                                                                                                    //
-// packages/observe-sequence/observe_sequence.js                                                                      //
-//                                                                                                                    //
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                                                                                                                      //
+///////////////////////////////////////////////////////////////////////////////////
+//                                                                               //
+// packages/observe-sequence/observe_sequence.js                                 //
+//                                                                               //
+///////////////////////////////////////////////////////////////////////////////////
+                                                                                 //
 var warn = function () {
   if (ObserveSequence._suppressWarnings) {
     ObserveSequence._suppressWarnings--;
@@ -370,7 +370,7 @@ seqChangedToCursor = function (lastSeqArray, cursor, callbacks) {
   return [seqArray, observeHandle];
 };
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////
 
 }).call(this);
 

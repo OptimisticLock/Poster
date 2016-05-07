@@ -11,19 +11,19 @@
             "PACKAGE_NAME": "com.idbl75yn1mnks64ujs26r"
         },
         "cordova-plugin-whitelist": {
-            "PACKAGE_NAME": "com.idbl75yn1mnks64ujs26r"
+            "PACKAGE_NAME": "com.optimisticlock.poster"
         },
         "cordova-plugin-wkwebview-engine": {
-            "PACKAGE_NAME": "com.idbl75yn1mnks64ujs26r"
+            "PACKAGE_NAME": "com.optimisticlock.poster"
         },
         "cordova-plugin-meteor-webapp": {
-            "PACKAGE_NAME": "com.idbl75yn1mnks64ujs26r"
+            "PACKAGE_NAME": "com.optimisticlock.poster"
         },
         "cordova-plugin-statusbar": {
-            "PACKAGE_NAME": "com.idbl75yn1mnks64ujs26r"
+            "PACKAGE_NAME": "com.optimisticlock.poster"
         },
         "cordova-plugin-splashscreen": {
-            "PACKAGE_NAME": "com.idbl75yn1mnks64ujs26r"
+            "PACKAGE_NAME": "com.optimisticlock.poster"
         }
     },
     "dependent_plugins": {}

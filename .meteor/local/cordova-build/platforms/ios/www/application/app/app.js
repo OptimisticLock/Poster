@@ -1,4 +1,4 @@
-var require = meteorInstall({"client":{"poster.html":function(){
+var require = meteorInstall({"client":{"template.poster.js":function(){
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                                                //
@@ -252,7 +252,7 @@ Posts = new Mongo.Collection("posts");                                          
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 }}},{"extensions":[".js",".json",".html",".css"]});
-require("./client/poster.html");
+require("./client/template.poster.js");
 require("./BothClientAndServer/poster.js");
 require("./client/photoButton.js");
 require("./client/poster.js");

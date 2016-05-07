@@ -11,9 +11,9 @@
 (function () {
 
 /* Imports */
-var meteorEnv = Package.meteor.meteorEnv;
 var Meteor = Package.meteor.Meteor;
 var global = Package.meteor.global;
+var meteorEnv = Package.meteor.meteorEnv;
 var meteorInstall = Package.modules.meteorInstall;
 var Buffer = Package.modules.Buffer;
 var process = Package.modules.process;
@@ -743,11 +743,11 @@ module.exports = function(object, el){                                          
 //                                                                                                   //
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
                                                                                                      //
-// to indexed object, toObject with fallback for non-array-like ES3 strings                         // 1
-var IObject = require('./$.iobject')                                                                // 2
-  , defined = require('./$.defined');                                                               // 3
-module.exports = function(it){                                                                      // 4
-  return IObject(defined(it));                                                                      // 5
+// to indexed object, toObject with fallback for non-array-like ES3 strings                          // 1
+var IObject = require('./$.iobject')                                                                 // 2
+  , defined = require('./$.defined');                                                                // 3
+module.exports = function(it){                                                                       // 4
+  return IObject(defined(it));                                                                       // 5
 };                                                                                                   // 6
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -858,10 +858,10 @@ module.exports = function(it){                                                  
 //                                                                                                   //
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
                                                                                                      //
-// 7.2.2 IsArray(argument)                                                                          // 1
-var cof = require('./$.cof');                                                                       // 2
-module.exports = Array.isArray || function(arg){                                                    // 3
-  return cof(arg) == 'Array';                                                                       // 4
+// 7.2.2 IsArray(argument)                                                                           // 1
+var cof = require('./$.cof');                                                                        // 2
+module.exports = Array.isArray || function(arg){                                                     // 3
+  return cof(arg) == 'Array';                                                                        // 4
 };                                                                                                   // 5
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -1797,31 +1797,31 @@ require('./$.unscope')('copyWithin');                                           
 //                                                                                                   //
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
                                                                                                      //
-// 22.1.3.3 Array.prototype.copyWithin(target, start, end = this.length)                            // 1
-'use strict';                                                                                       // 2
-var toObject = require('./$.to-object')                                                             // 3
-  , toIndex  = require('./$.to-index')                                                              // 4
-  , toLength = require('./$.to-length');                                                            // 5
-                                                                                                    // 6
-module.exports = [].copyWithin || function copyWithin(target/*= 0*/, start/*= 0, end = @length*/){  // 7
-  var O     = toObject(this)                                                                        // 8
-    , len   = toLength(O.length)                                                                    // 9
-    , to    = toIndex(target, len)                                                                  // 10
-    , from  = toIndex(start, len)                                                                   // 11
-    , end   = arguments[2]                                                                          // 12
-    , count = Math.min((end === undefined ? len : toIndex(end, len)) - from, len - to)              // 13
-    , inc   = 1;                                                                                    // 14
-  if(from < to && to < from + count){                                                               // 15
-    inc  = -1;                                                                                      // 16
-    from += count - 1;                                                                              // 17
-    to   += count - 1;                                                                              // 18
-  }                                                                                                 // 19
-  while(count-- > 0){                                                                               // 20
-    if(from in O)O[to] = O[from];                                                                   // 21
-    else delete O[to];                                                                              // 22
-    to   += inc;                                                                                    // 23
-    from += inc;                                                                                    // 24
-  } return O;                                                                                       // 25
+// 22.1.3.3 Array.prototype.copyWithin(target, start, end = this.length)                             // 1
+'use strict';                                                                                        // 2
+var toObject = require('./$.to-object')                                                              // 3
+  , toIndex  = require('./$.to-index')                                                               // 4
+  , toLength = require('./$.to-length');                                                             // 5
+                                                                                                     // 6
+module.exports = [].copyWithin || function copyWithin(target/*= 0*/, start/*= 0, end = @length*/){   // 7
+  var O     = toObject(this)                                                                         // 8
+    , len   = toLength(O.length)                                                                     // 9
+    , to    = toIndex(target, len)                                                                   // 10
+    , from  = toIndex(start, len)                                                                    // 11
+    , end   = arguments[2]                                                                           // 12
+    , count = Math.min((end === undefined ? len : toIndex(end, len)) - from, len - to)               // 13
+    , inc   = 1;                                                                                     // 14
+  if(from < to && to < from + count){                                                                // 15
+    inc  = -1;                                                                                       // 16
+    from += count - 1;                                                                               // 17
+    to   += count - 1;                                                                               // 18
+  }                                                                                                  // 19
+  while(count-- > 0){                                                                                // 20
+    if(from in O)O[to] = O[from];                                                                    // 21
+    else delete O[to];                                                                               // 22
+    to   += inc;                                                                                     // 23
+    from += inc;                                                                                     // 24
+  } return O;                                                                                        // 25
 };                                                                                                   // 26
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -1866,19 +1866,19 @@ require('./$.unscope')('fill');                                                 
 //                                                                                                   //
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
                                                                                                      //
-// 22.1.3.6 Array.prototype.fill(value, start = 0, end = this.length)                               // 1
-'use strict';                                                                                       // 2
-var toObject = require('./$.to-object')                                                             // 3
-  , toIndex  = require('./$.to-index')                                                              // 4
-  , toLength = require('./$.to-length');                                                            // 5
-module.exports = [].fill || function fill(value /*, start = 0, end = @length */){                   // 6
-  var O      = toObject(this, true)                                                                 // 7
-    , length = toLength(O.length)                                                                   // 8
-    , index  = toIndex(arguments[1], length)                                                        // 9
-    , end    = arguments[2]                                                                         // 10
-    , endPos = end === undefined ? length : toIndex(end, length);                                   // 11
-  while(endPos > index)O[index++] = value;                                                          // 12
-  return O;                                                                                         // 13
+// 22.1.3.6 Array.prototype.fill(value, start = 0, end = this.length)                                // 1
+'use strict';                                                                                        // 2
+var toObject = require('./$.to-object')                                                              // 3
+  , toIndex  = require('./$.to-index')                                                               // 4
+  , toLength = require('./$.to-length');                                                             // 5
+module.exports = [].fill || function fill(value /*, start = 0, end = @length */){                    // 6
+  var O      = toObject(this, true)                                                                  // 7
+    , length = toLength(O.length)                                                                    // 8
+    , index  = toIndex(arguments[1], length)                                                         // 9
+    , end    = arguments[2]                                                                          // 10
+    , endPos = end === undefined ? length : toIndex(end, length);                                    // 11
+  while(endPos > index)O[index++] = value;                                                           // 12
+  return O;                                                                                          // 13
 };                                                                                                   // 14
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -2182,13 +2182,13 @@ module.exports = function(that, searchString, NAME){                            
 //                                                                                                   //
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
                                                                                                      //
-// 7.2.8 IsRegExp(argument)                                                                         // 1
-var isObject = require('./$.is-object')                                                             // 2
-  , cof      = require('./$.cof')                                                                   // 3
-  , MATCH    = require('./$.wks')('match');                                                         // 4
-module.exports = function(it){                                                                      // 5
-  var isRegExp;                                                                                     // 6
-  return isObject(it) && ((isRegExp = it[MATCH]) !== undefined ? !!isRegExp : cof(it) == 'RegExp');
+// 7.2.8 IsRegExp(argument)                                                                          // 1
+var isObject = require('./$.is-object')                                                              // 2
+  , cof      = require('./$.cof')                                                                    // 3
+  , MATCH    = require('./$.wks')('match');                                                          // 4
+module.exports = function(it){                                                                       // 5
+  var isRegExp;                                                                                      // 6
+  return isObject(it) && ((isRegExp = it[MATCH]) !== undefined ? !!isRegExp : cof(it) == 'RegExp');  // 7
 };                                                                                                   // 8
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -2200,16 +2200,16 @@ module.exports = function(it){                                                 
 //                                                                                                   //
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
                                                                                                      //
-module.exports = function(KEY){                                                                     // 1
-  var re = /./;                                                                                     // 2
-  try {                                                                                             // 3
-    '/./'[KEY](re);                                                                                 // 4
-  } catch(e){                                                                                       // 5
-    try {                                                                                           // 6
-      re[require('./$.wks')('match')] = false;                                                      // 7
-      return !'/./'[KEY](re);                                                                       // 8
-    } catch(e){ /* empty */ }                                                                       // 9
-  } return true;                                                                                    // 10
+module.exports = function(KEY){                                                                      // 1
+  var re = /./;                                                                                      // 2
+  try {                                                                                              // 3
+    '/./'[KEY](re);                                                                                  // 4
+  } catch(e){                                                                                        // 5
+    try {                                                                                            // 6
+      re[require('./$.wks')('match')] = false;                                                       // 7
+      return !'/./'[KEY](re);                                                                        // 8
+    } catch(e){ /* empty */ }                                                                        // 9
+  } return true;                                                                                     // 10
 };                                                                                                   // 11
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 

@@ -1,9 +1,9 @@
 (function () {
 
 /* Imports */
-var meteorEnv = Package.meteor.meteorEnv;
 var Meteor = Package.meteor.Meteor;
 var global = Package.meteor.global;
+var meteorEnv = Package.meteor.meteorEnv;
 var check = Package.check.check;
 var Match = Package.check.Match;
 var Random = Package.random.Random;
@@ -910,7 +910,7 @@ _.extend(Session.prototype, {                                                   
         if (!self.server.publish_handlers[msg.name]) {                                                               // 573
           self.send({                                                                                                // 574
             msg: 'nosub', id: msg.id,                                                                                // 575
-            error: new Meteor.Error(404, "Subscription not found") });                                               // 576
+            error: new Meteor.Error(404, "Subscription '" + msg.name + "' not found") });                            // 576
           return;                                                                                                    // 577
         }                                                                                                            //
                                                                                                                      //
@@ -998,7 +998,7 @@ _.extend(Session.prototype, {                                                   
         if (!handler) {                                                                                              // 660
           self.send({                                                                                                // 661
             msg: 'result', id: msg.id,                                                                               // 662
-            error: new Meteor.Error(404, "Method not found") });                                                     // 663
+            error: new Meteor.Error(404, "Method '" + msg.method + "' not found") });                                // 663
           fence.arm();                                                                                               // 664
           return;                                                                                                    // 665
         }                                                                                                            //
@@ -1127,7 +1127,7 @@ _.extend(Session.prototype, {                                                   
     function _setUserId(userId) {                                                                                    // 773
       var self = this;                                                                                               // 774
                                                                                                                      //
-      if (userId !== null && typeof userId !== "string") throw new Error("setUserId must be called on string or null, not " + (typeof userId === "undefined" ? "undefined" : (0, _typeof3.default)(userId)));
+      if (userId !== null && typeof userId !== "string") throw new Error("setUserId must be called on string or null, not " + (typeof userId === "undefined" ? "undefined" : (0, _typeof3["default"])(userId)));
                                                                                                                      //
       // Prevent newly-created universal subscriptions from being added to our                                       //
       // session; they will be found below when we call startUniversalSubs.                                          //
@@ -1794,50 +1794,51 @@ _.extend(Server.prototype, {                                                    
    * @locus Server                                                                                                   //
    * @param {function} callback The function to call when a new DDP connection is established.                       //
    * @memberOf Meteor                                                                                                //
+   * @importFromPackage meteor                                                                                       //
    */                                                                                                                //
-  onConnection: function () {                                                                                        // 1400
-    function onConnection(fn) {                                                                                      // 1400
-      var self = this;                                                                                               // 1401
-      return self.onConnectionHook.register(fn);                                                                     // 1402
+  onConnection: function () {                                                                                        // 1401
+    function onConnection(fn) {                                                                                      // 1401
+      var self = this;                                                                                               // 1402
+      return self.onConnectionHook.register(fn);                                                                     // 1403
     }                                                                                                                //
                                                                                                                      //
     return onConnection;                                                                                             //
   }(),                                                                                                               //
                                                                                                                      //
-  _handleConnect: function () {                                                                                      // 1405
-    function _handleConnect(socket, msg) {                                                                           // 1405
-      var self = this;                                                                                               // 1406
+  _handleConnect: function () {                                                                                      // 1406
+    function _handleConnect(socket, msg) {                                                                           // 1406
+      var self = this;                                                                                               // 1407
                                                                                                                      //
       // The connect message must specify a version and an array of supported                                        //
       // versions, and it must claim to support what it is proposing.                                                //
       if (!(typeof msg.version === 'string' && _.isArray(msg.support) && _.all(msg.support, _.isString) && _.contains(msg.support, msg.version))) {
-        socket.send(DDPCommon.stringifyDDP({ msg: 'failed',                                                          // 1414
-          version: DDPCommon.SUPPORTED_DDP_VERSIONS[0] }));                                                          // 1415
-        socket.close();                                                                                              // 1416
-        return;                                                                                                      // 1417
+        socket.send(DDPCommon.stringifyDDP({ msg: 'failed',                                                          // 1415
+          version: DDPCommon.SUPPORTED_DDP_VERSIONS[0] }));                                                          // 1416
+        socket.close();                                                                                              // 1417
+        return;                                                                                                      // 1418
       }                                                                                                              //
                                                                                                                      //
       // In the future, handle session resumption: something like:                                                   //
       //  socket._meteorSession = self.sessions[msg.session]                                                         //
-      var version = calculateVersion(msg.support, DDPCommon.SUPPORTED_DDP_VERSIONS);                                 // 1405
+      var version = calculateVersion(msg.support, DDPCommon.SUPPORTED_DDP_VERSIONS);                                 // 1406
                                                                                                                      //
-      if (msg.version !== version) {                                                                                 // 1424
+      if (msg.version !== version) {                                                                                 // 1425
         // The best version to use (according to the client's stated preferences)                                    //
         // is not the one the client is trying to use. Inform them about the best                                    //
         // version to use.                                                                                           //
-        socket.send(DDPCommon.stringifyDDP({ msg: 'failed', version: version }));                                    // 1428
-        socket.close();                                                                                              // 1429
-        return;                                                                                                      // 1430
+        socket.send(DDPCommon.stringifyDDP({ msg: 'failed', version: version }));                                    // 1429
+        socket.close();                                                                                              // 1430
+        return;                                                                                                      // 1431
       }                                                                                                              //
                                                                                                                      //
       // Yay, version matches! Create a new session.                                                                 //
       // Note: Troposphere depends on the ability to mutate                                                          //
       // Meteor.server.options.heartbeatTimeout! This is a hack, but it's life.                                      //
-      socket._meteorSession = new Session(self, version, socket, self.options);                                      // 1405
-      self.sessions[socket._meteorSession.id] = socket._meteorSession;                                               // 1437
-      self.onConnectionHook.each(function (callback) {                                                               // 1438
-        if (socket._meteorSession) callback(socket._meteorSession.connectionHandle);                                 // 1439
-        return true;                                                                                                 // 1441
+      socket._meteorSession = new Session(self, version, socket, self.options);                                      // 1406
+      self.sessions[socket._meteorSession.id] = socket._meteorSession;                                               // 1438
+      self.onConnectionHook.each(function (callback) {                                                               // 1439
+        if (socket._meteorSession) callback(socket._meteorSession.connectionHandle);                                 // 1440
+        return true;                                                                                                 // 1442
       });                                                                                                            //
     }                                                                                                                //
                                                                                                                      //
@@ -1869,22 +1870,23 @@ _.extend(Server.prototype, {                                                    
   /**                                                                                                                //
    * @summary Publish a record set.                                                                                  //
    * @memberOf Meteor                                                                                                //
+   * @importFromPackage meteor                                                                                       //
    * @locus Server                                                                                                   //
    * @param {String} name Name of the record set.  If `null`, the set has no name, and the record set is automatically sent to all connected clients.
    * @param {Function} func Function called on the server each time a client subscribes.  Inside the function, `this` is the publish handler object, described below.  If the client passed arguments to `subscribe`, the function is called with the same arguments.
    */                                                                                                                //
-  publish: function () {                                                                                             // 1474
-    function publish(name, handler, options) {                                                                       // 1474
-      var self = this;                                                                                               // 1475
+  publish: function () {                                                                                             // 1476
+    function publish(name, handler, options) {                                                                       // 1476
+      var self = this;                                                                                               // 1477
                                                                                                                      //
-      options = options || {};                                                                                       // 1477
+      options = options || {};                                                                                       // 1479
                                                                                                                      //
-      if (name && name in self.publish_handlers) {                                                                   // 1479
-        Meteor._debug("Ignoring duplicate publish named '" + name + "'");                                            // 1480
-        return;                                                                                                      // 1481
+      if (name && name in self.publish_handlers) {                                                                   // 1481
+        Meteor._debug("Ignoring duplicate publish named '" + name + "'");                                            // 1482
+        return;                                                                                                      // 1483
       }                                                                                                              //
                                                                                                                      //
-      if (Package.autopublish && !options.is_auto) {                                                                 // 1484
+      if (Package.autopublish && !options.is_auto) {                                                                 // 1486
         // They have autopublish on, yet they're trying to manually                                                  //
         // picking stuff to publish. They probably should turn off                                                   //
         // autopublish. (This check isn't perfect -- if you create a                                                 //
@@ -1892,21 +1894,21 @@ _.extend(Server.prototype, {                                                    
         // it. But this will definitely handle the simple case where                                                 //
         // you've added the autopublish package to your app, and are                                                 //
         // calling publish from your app code.)                                                                      //
-        if (!self.warned_about_autopublish) {                                                                        // 1492
-          self.warned_about_autopublish = true;                                                                      // 1493
+        if (!self.warned_about_autopublish) {                                                                        // 1494
+          self.warned_about_autopublish = true;                                                                      // 1495
           Meteor._debug("** You've set up some data subscriptions with Meteor.publish(), but\n" + "** you still have autopublish turned on. Because autopublish is still\n" + "** on, your Meteor.publish() calls won't have much effect. All data\n" + "** will still be sent to all clients.\n" + "**\n" + "** Turn off autopublish by removing the autopublish package:\n" + "**\n" + "**   $ meteor remove autopublish\n" + "**\n" + "** .. and make sure you have Meteor.publish() and Meteor.subscribe() calls\n" + "** for each collection that you want clients to see.\n");
         }                                                                                                            //
       }                                                                                                              //
                                                                                                                      //
-      if (name) self.publish_handlers[name] = handler;else {                                                         // 1509
-        self.universal_publish_handlers.push(handler);                                                               // 1512
+      if (name) self.publish_handlers[name] = handler;else {                                                         // 1511
+        self.universal_publish_handlers.push(handler);                                                               // 1514
         // Spin up the new publisher on any existing session too. Run each                                           //
         // session's subscription in a new Fiber, so that there's no change for                                      //
         // self.sessions to change while we're running this loop.                                                    //
-        _.each(self.sessions, function (session) {                                                                   // 1511
-          if (!session._dontStartNewUniversalSubs) {                                                                 // 1517
-            Fiber(function () {                                                                                      // 1518
-              session._startSubscription(handler);                                                                   // 1519
+        _.each(self.sessions, function (session) {                                                                   // 1513
+          if (!session._dontStartNewUniversalSubs) {                                                                 // 1519
+            Fiber(function () {                                                                                      // 1520
+              session._startSubscription(handler);                                                                   // 1521
             }).run();                                                                                                //
           }                                                                                                          //
         });                                                                                                          //
@@ -1916,11 +1918,11 @@ _.extend(Server.prototype, {                                                    
     return publish;                                                                                                  //
   }(),                                                                                                               //
                                                                                                                      //
-  _removeSession: function () {                                                                                      // 1526
-    function _removeSession(session) {                                                                               // 1526
-      var self = this;                                                                                               // 1527
-      if (self.sessions[session.id]) {                                                                               // 1528
-        delete self.sessions[session.id];                                                                            // 1529
+  _removeSession: function () {                                                                                      // 1528
+    function _removeSession(session) {                                                                               // 1528
+      var self = this;                                                                                               // 1529
+      if (self.sessions[session.id]) {                                                                               // 1530
+        delete self.sessions[session.id];                                                                            // 1531
       }                                                                                                              //
     }                                                                                                                //
                                                                                                                      //
@@ -1932,27 +1934,28 @@ _.extend(Server.prototype, {                                                    
    * @locus Anywhere                                                                                                 //
    * @param {Object} methods Dictionary whose keys are method names and values are functions.                        //
    * @memberOf Meteor                                                                                                //
+   * @importFromPackage meteor                                                                                       //
    */                                                                                                                //
-  methods: function () {                                                                                             // 1539
-    function methods(_methods) {                                                                                     // 1539
-      var self = this;                                                                                               // 1540
-      _.each(_methods, function (func, name) {                                                                       // 1541
-        if (typeof func !== 'function') throw new Error("Method '" + name + "' must be a function");                 // 1542
-        if (self.method_handlers[name]) throw new Error("A method named '" + name + "' is already defined");         // 1544
-        self.method_handlers[name] = func;                                                                           // 1546
+  methods: function () {                                                                                             // 1542
+    function methods(_methods) {                                                                                     // 1542
+      var self = this;                                                                                               // 1543
+      _.each(_methods, function (func, name) {                                                                       // 1544
+        if (typeof func !== 'function') throw new Error("Method '" + name + "' must be a function");                 // 1545
+        if (self.method_handlers[name]) throw new Error("A method named '" + name + "' is already defined");         // 1547
+        self.method_handlers[name] = func;                                                                           // 1549
       });                                                                                                            //
     }                                                                                                                //
                                                                                                                      //
     return methods;                                                                                                  //
   }(),                                                                                                               //
                                                                                                                      //
-  call: function () {                                                                                                // 1550
-    function call(name /*, arguments */) {                                                                           // 1550
+  call: function () {                                                                                                // 1553
+    function call(name /*, arguments */) {                                                                           // 1553
       // if it's a function, the last argument is the result callback,                                               //
       // not a parameter to the remote method.                                                                       //
-      var args = Array.prototype.slice.call(arguments, 1);                                                           // 1553
-      if (args.length && typeof args[args.length - 1] === "function") var callback = args.pop();                     // 1554
-      return this.apply(name, args, callback);                                                                       // 1556
+      var args = Array.prototype.slice.call(arguments, 1);                                                           // 1556
+      if (args.length && typeof args[args.length - 1] === "function") var callback = args.pop();                     // 1557
+      return this.apply(name, args, callback);                                                                       // 1559
     }                                                                                                                //
                                                                                                                      //
     return call;                                                                                                     //
@@ -1960,70 +1963,70 @@ _.extend(Server.prototype, {                                                    
                                                                                                                      //
   // @param options {Optional Object}                                                                                //
   // @param callback {Optional Function}                                                                             //
-  apply: function () {                                                                                               // 1561
-    function apply(name, args, options, callback) {                                                                  // 1561
-      var self = this;                                                                                               // 1562
+  apply: function () {                                                                                               // 1564
+    function apply(name, args, options, callback) {                                                                  // 1564
+      var self = this;                                                                                               // 1565
                                                                                                                      //
       // We were passed 3 arguments. They may be either (name, args, options)                                        //
       // or (name, args, callback)                                                                                   //
-      if (!callback && typeof options === 'function') {                                                              // 1561
-        callback = options;                                                                                          // 1567
-        options = {};                                                                                                // 1568
+      if (!callback && typeof options === 'function') {                                                              // 1564
+        callback = options;                                                                                          // 1570
+        options = {};                                                                                                // 1571
       }                                                                                                              //
-      options = options || {};                                                                                       // 1570
+      options = options || {};                                                                                       // 1573
                                                                                                                      //
-      if (callback)                                                                                                  // 1572
+      if (callback)                                                                                                  // 1575
         // It's not really necessary to do this, since we immediately                                                //
         // run the callback in this fiber before returning, but we do it                                             //
         // anyway for regularity.                                                                                    //
         // XXX improve error message (and how we report it)                                                          //
-        callback = Meteor.bindEnvironment(callback, "delivering result of invoking '" + name + "'");                 // 1577
+        callback = Meteor.bindEnvironment(callback, "delivering result of invoking '" + name + "'");                 // 1580
                                                                                                                      //
       // Run the handler                                                                                             //
-      var handler = self.method_handlers[name];                                                                      // 1561
-      var exception;                                                                                                 // 1584
-      if (!handler) {                                                                                                // 1585
-        exception = new Meteor.Error(404, "Method not found");                                                       // 1586
+      var handler = self.method_handlers[name];                                                                      // 1564
+      var exception;                                                                                                 // 1587
+      if (!handler) {                                                                                                // 1588
+        exception = new Meteor.Error(404, "Method '" + name + "' not found");                                        // 1589
       } else {                                                                                                       //
         // If this is a method call from within another method, get the                                              //
         // user state from the outer method, otherwise don't allow                                                   //
         // setUserId to be called                                                                                    //
-        var userId = null;                                                                                           // 1591
-        var setUserId = function () {                                                                                // 1592
-          function setUserId() {                                                                                     // 1592
-            throw new Error("Can't call setUserId on a server initiated method call");                               // 1593
+        var userId = null;                                                                                           // 1594
+        var setUserId = function () {                                                                                // 1595
+          function setUserId() {                                                                                     // 1595
+            throw new Error("Can't call setUserId on a server initiated method call");                               // 1596
           }                                                                                                          //
                                                                                                                      //
           return setUserId;                                                                                          //
         }();                                                                                                         //
-        var connection = null;                                                                                       // 1595
-        var currentInvocation = DDP._CurrentInvocation.get();                                                        // 1596
-        if (currentInvocation) {                                                                                     // 1597
-          userId = currentInvocation.userId;                                                                         // 1598
-          setUserId = function () {                                                                                  // 1599
-            function setUserId(userId) {                                                                             // 1599
-              currentInvocation.setUserId(userId);                                                                   // 1600
+        var connection = null;                                                                                       // 1598
+        var currentInvocation = DDP._CurrentInvocation.get();                                                        // 1599
+        if (currentInvocation) {                                                                                     // 1600
+          userId = currentInvocation.userId;                                                                         // 1601
+          setUserId = function () {                                                                                  // 1602
+            function setUserId(userId) {                                                                             // 1602
+              currentInvocation.setUserId(userId);                                                                   // 1603
             }                                                                                                        //
                                                                                                                      //
             return setUserId;                                                                                        //
           }();                                                                                                       //
-          connection = currentInvocation.connection;                                                                 // 1602
+          connection = currentInvocation.connection;                                                                 // 1605
         }                                                                                                            //
                                                                                                                      //
-        var invocation = new DDPCommon.MethodInvocation({                                                            // 1605
-          isSimulation: false,                                                                                       // 1606
-          userId: userId,                                                                                            // 1607
-          setUserId: setUserId,                                                                                      // 1608
-          connection: connection,                                                                                    // 1609
-          randomSeed: DDPCommon.makeRpcSeed(currentInvocation, name)                                                 // 1610
+        var invocation = new DDPCommon.MethodInvocation({                                                            // 1608
+          isSimulation: false,                                                                                       // 1609
+          userId: userId,                                                                                            // 1610
+          setUserId: setUserId,                                                                                      // 1611
+          connection: connection,                                                                                    // 1612
+          randomSeed: DDPCommon.makeRpcSeed(currentInvocation, name)                                                 // 1613
         });                                                                                                          //
-        try {                                                                                                        // 1612
-          var result = DDP._CurrentInvocation.withValue(invocation, function () {                                    // 1613
+        try {                                                                                                        // 1615
+          var result = DDP._CurrentInvocation.withValue(invocation, function () {                                    // 1616
             return maybeAuditArgumentChecks(handler, invocation, EJSON.clone(args), "internal call to '" + name + "'");
           });                                                                                                        //
-          result = EJSON.clone(result);                                                                              // 1618
+          result = EJSON.clone(result);                                                                              // 1621
         } catch (e) {                                                                                                //
-          exception = e;                                                                                             // 1620
+          exception = e;                                                                                             // 1623
         }                                                                                                            //
       }                                                                                                              //
                                                                                                                      //
@@ -2032,52 +2035,52 @@ _.extend(Server.prototype, {                                                    
       // blocks on the relevant data being visible, so you are NOT guaranteed that                                   //
       // cursor observe callbacks have fired when your callback is invoked. (We                                      //
       // can change this if there's a real use case.)                                                                //
-      if (callback) {                                                                                                // 1561
-        callback(exception, result);                                                                                 // 1630
-        return undefined;                                                                                            // 1631
+      if (callback) {                                                                                                // 1564
+        callback(exception, result);                                                                                 // 1633
+        return undefined;                                                                                            // 1634
       }                                                                                                              //
-      if (exception) throw exception;                                                                                // 1633
-      return result;                                                                                                 // 1635
+      if (exception) throw exception;                                                                                // 1636
+      return result;                                                                                                 // 1638
     }                                                                                                                //
                                                                                                                      //
     return apply;                                                                                                    //
   }(),                                                                                                               //
                                                                                                                      //
-  _urlForSession: function () {                                                                                      // 1638
-    function _urlForSession(sessionId) {                                                                             // 1638
-      var self = this;                                                                                               // 1639
-      var session = self.sessions[sessionId];                                                                        // 1640
-      if (session) return session._socketUrl;else return null;                                                       // 1641
+  _urlForSession: function () {                                                                                      // 1641
+    function _urlForSession(sessionId) {                                                                             // 1641
+      var self = this;                                                                                               // 1642
+      var session = self.sessions[sessionId];                                                                        // 1643
+      if (session) return session._socketUrl;else return null;                                                       // 1644
     }                                                                                                                //
                                                                                                                      //
     return _urlForSession;                                                                                           //
   }()                                                                                                                //
 });                                                                                                                  //
                                                                                                                      //
-var calculateVersion = function calculateVersion(clientSupportedVersions, serverSupportedVersions) {                 // 1648
-  var correctVersion = _.find(clientSupportedVersions, function (version) {                                          // 1650
-    return _.contains(serverSupportedVersions, version);                                                             // 1651
+var calculateVersion = function calculateVersion(clientSupportedVersions, serverSupportedVersions) {                 // 1651
+  var correctVersion = _.find(clientSupportedVersions, function (version) {                                          // 1653
+    return _.contains(serverSupportedVersions, version);                                                             // 1654
   });                                                                                                                //
-  if (!correctVersion) {                                                                                             // 1653
-    correctVersion = serverSupportedVersions[0];                                                                     // 1654
+  if (!correctVersion) {                                                                                             // 1656
+    correctVersion = serverSupportedVersions[0];                                                                     // 1657
   }                                                                                                                  //
-  return correctVersion;                                                                                             // 1656
+  return correctVersion;                                                                                             // 1659
 };                                                                                                                   //
                                                                                                                      //
-DDPServer._calculateVersion = calculateVersion;                                                                      // 1659
+DDPServer._calculateVersion = calculateVersion;                                                                      // 1662
                                                                                                                      //
 // "blind" exceptions other than those that were deliberately thrown to signal                                       //
 // errors to the client                                                                                              //
-var wrapInternalException = function wrapInternalException(exception, context) {                                     // 1664
-  if (!exception || exception instanceof Meteor.Error) return exception;                                             // 1665
+var wrapInternalException = function wrapInternalException(exception, context) {                                     // 1667
+  if (!exception || exception instanceof Meteor.Error) return exception;                                             // 1668
                                                                                                                      //
   // tests can set the 'expected' flag on an exception so it won't go to the                                         //
   // server log                                                                                                      //
-  if (!exception.expected) {                                                                                         // 1664
-    Meteor._debug("Exception " + context, exception.stack);                                                          // 1671
-    if (exception.sanitizedError) {                                                                                  // 1672
-      Meteor._debug("Sanitized and reported to the client as:", exception.sanitizedError.message);                   // 1673
-      Meteor._debug();                                                                                               // 1674
+  if (!exception.expected) {                                                                                         // 1667
+    Meteor._debug("Exception " + context, exception.stack);                                                          // 1674
+    if (exception.sanitizedError) {                                                                                  // 1675
+      Meteor._debug("Sanitized and reported to the client as:", exception.sanitizedError.message);                   // 1676
+      Meteor._debug();                                                                                               // 1677
     }                                                                                                                //
   }                                                                                                                  //
                                                                                                                      //
@@ -2085,22 +2088,22 @@ var wrapInternalException = function wrapInternalException(exception, context) {
   // server code (or if thrown from non-client-originated code), but also                                            //
   // provided a "sanitized" version with more context than 500 Internal server                                       //
   // error? Use that.                                                                                                //
-  if (exception.sanitizedError) {                                                                                    // 1664
-    if (exception.sanitizedError instanceof Meteor.Error) return exception.sanitizedError;                           // 1683
-    Meteor._debug("Exception " + context + " provides a sanitizedError that " + "is not a Meteor.Error; ignoring");  // 1685
+  if (exception.sanitizedError) {                                                                                    // 1667
+    if (exception.sanitizedError instanceof Meteor.Error) return exception.sanitizedError;                           // 1686
+    Meteor._debug("Exception " + context + " provides a sanitizedError that " + "is not a Meteor.Error; ignoring");  // 1688
   }                                                                                                                  //
                                                                                                                      //
-  return new Meteor.Error(500, "Internal server error");                                                             // 1689
+  return new Meteor.Error(500, "Internal server error");                                                             // 1692
 };                                                                                                                   //
                                                                                                                      //
 // Audit argument checks, if the audit-argument-checks package exists (it is a                                       //
 // weak dependency of this package).                                                                                 //
-var maybeAuditArgumentChecks = function maybeAuditArgumentChecks(f, context, args, description) {                    // 1695
-  args = args || [];                                                                                                 // 1696
-  if (Package['audit-argument-checks']) {                                                                            // 1697
-    return Match._failIfArgumentsAreNotAllChecked(f, context, args, description);                                    // 1698
+var maybeAuditArgumentChecks = function maybeAuditArgumentChecks(f, context, args, description) {                    // 1698
+  args = args || [];                                                                                                 // 1699
+  if (Package['audit-argument-checks']) {                                                                            // 1700
+    return Match._failIfArgumentsAreNotAllChecked(f, context, args, description);                                    // 1701
   }                                                                                                                  //
-  return f.apply(context, args);                                                                                     // 1701
+  return f.apply(context, args);                                                                                     // 1704
 };                                                                                                                   //
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 

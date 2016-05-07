@@ -1,10 +1,13 @@
 (function () {
 
 /* Imports */
-var meteorEnv = Package.meteor.meteorEnv;
 var Meteor = Package.meteor.Meteor;
 var global = Package.meteor.global;
+var meteorEnv = Package.meteor.meteorEnv;
 var RoutePolicy = Package.routepolicy.RoutePolicy;
+var WebApp = Package.webapp.WebApp;
+var main = Package.webapp.main;
+var WebAppInternals = Package.webapp.WebAppInternals;
 var EJSON = Package.ejson.EJSON;
 var _ = Package.underscore._;
 
@@ -209,28 +212,35 @@ Inject.rawModHtml('injectObjects', Inject._injectObjects.bind(Inject));
 // We are simply using this hack because, there is no way to alter
 // Meteor's html content on the server side
 
-var http = Npm.require('http');
+Inject._hijackWrite = function(res) {
+  var originalWrite = res.write;
+  res.write = function(chunk, encoding) {
+    //prevent hijacking other http requests
+    if(!res.iInjected &&
+      encoding === undefined && /^<!DOCTYPE html>/.test(chunk)) {
+      chunk = chunk.toString();
 
-var originalWrite = http.OutgoingMessage.prototype.write;
-http.OutgoingMessage.prototype.write = function(chunk, encoding) {
-  //prevent hijacking other http requests
-  if(!this.iInjected &&
-    encoding === undefined && /^<!DOCTYPE html>/.test(chunk)) {
-    chunk = chunk.toString();
-
-    for (id in Inject.rawModHtmlFuncs) {
-      chunk = Inject.rawModHtmlFuncs[id](chunk, this);
-      if (!_.isString(chunk)) {
-        throw new Error('Inject func id "' + id + '" must return HTML, not '
-          + typeof(chunk) + '\n' + JSON.stringify(chunk, null, 2));
+      for (id in Inject.rawModHtmlFuncs) {
+        chunk = Inject.rawModHtmlFuncs[id](chunk, res);
+        if (!_.isString(chunk)) {
+          throw new Error('Inject func id "' + id + '" must return HTML, not '
+            + typeof(chunk) + '\n' + JSON.stringify(chunk, null, 2));
+        }
       }
+
+      res.iInjected = true;
     }
 
-    this.iInjected = true;
-  }
+    originalWrite.call(res, chunk, encoding);
+  };
+}
 
-  originalWrite.call(this, chunk, encoding);
-};
+WebApp.connectHandlers.use(function(req, res, next) {
+  // We only separate this to make testing easier
+  Inject._hijackWrite(res);
+
+  next();
+});
 
 //meteor algorithm to check if this is a meteor serving http request or not
 Inject.appUrl = function(url) {

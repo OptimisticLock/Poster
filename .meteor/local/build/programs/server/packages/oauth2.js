@@ -1,9 +1,9 @@
 (function () {
 
 /* Imports */
-var meteorEnv = Package.meteor.meteorEnv;
 var Meteor = Package.meteor.Meteor;
 var global = Package.meteor.global;
+var meteorEnv = Package.meteor.meteorEnv;
 var Random = Package.random.Random;
 var OAuth = Package.oauth.OAuth;
 var Oauth = Package.oauth.Oauth;
@@ -11,12 +11,12 @@ var ServiceConfiguration = Package['service-configuration'].ServiceConfiguration
 
 (function(){
 
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//                                                                                                                     //
-// packages/oauth2/oauth2_server.js                                                                                    //
-//                                                                                                                     //
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                                                                                                                       //
+///////////////////////////////////////////////////////////////////////
+//                                                                   //
+// packages/oauth2/oauth2_server.js                                  //
+//                                                                   //
+///////////////////////////////////////////////////////////////////////
+                                                                     //
 // connect middleware
 OAuth._requestHandlers['2'] = function (service, query, res) {
   // check if user authorized access
@@ -43,7 +43,7 @@ OAuth._requestHandlers['2'] = function (service, query, res) {
   OAuth._renderOauthResults(res, query, credentialSecret);
 };
 
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////
 
 }).call(this);
 

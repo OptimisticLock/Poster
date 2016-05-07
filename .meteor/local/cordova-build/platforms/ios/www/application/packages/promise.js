@@ -11,878 +11,976 @@
 (function () {
 
 /* Imports */
-var meteorEnv = Package.meteor.meteorEnv;
 var Meteor = Package.meteor.Meteor;
 var global = Package.meteor.global;
+var meteorEnv = Package.meteor.meteorEnv;
+var meteorInstall = Package.modules.meteorInstall;
+var Buffer = Package.modules.Buffer;
+var process = Package.modules.process;
 
 /* Package-scope variables */
-var Promise;
+var exports, Promise;
 
-(function(){
+var require = meteorInstall({"node_modules":{"meteor":{"promise":{"client.js":["meteor-promise",function(require,exports){
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//                                                                                                                   //
-// packages/promise/.npm/package/node_modules/meteor-promise/promise.bundle.js                                       //
-//                                                                                                                   //
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                                                                                                                     //
-/******/ (function(modules) { // webpackBootstrap                                                                    // 1
-/******/ 	// The module cache                                                                                        // 2
-/******/ 	var installedModules = {};                                                                                 // 3
-                                                                                                                     // 4
-/******/ 	// The require function                                                                                    // 5
-/******/ 	function __webpack_require__(moduleId) {                                                                   // 6
-                                                                                                                     // 7
-/******/ 		// Check if module is in cache                                                                            // 8
-/******/ 		if(installedModules[moduleId])                                                                            // 9
-/******/ 			return installedModules[moduleId].exports;                                                               // 10
-                                                                                                                     // 11
-/******/ 		// Create a new module (and put it into the cache)                                                        // 12
-/******/ 		var module = installedModules[moduleId] = {                                                               // 13
-/******/ 			exports: {},                                                                                             // 14
-/******/ 			id: moduleId,                                                                                            // 15
-/******/ 			loaded: false                                                                                            // 16
-/******/ 		};                                                                                                        // 17
-                                                                                                                     // 18
-/******/ 		// Execute the module function                                                                            // 19
-/******/ 		modules[moduleId].call(module.exports, module, module.exports, __webpack_require__);                      // 20
-                                                                                                                     // 21
-/******/ 		// Flag the module as loaded                                                                              // 22
-/******/ 		module.loaded = true;                                                                                     // 23
-                                                                                                                     // 24
-/******/ 		// Return the exports of the module                                                                       // 25
-/******/ 		return module.exports;                                                                                    // 26
-/******/ 	}                                                                                                          // 27
-                                                                                                                     // 28
-                                                                                                                     // 29
-/******/ 	// expose the modules object (__webpack_modules__)                                                         // 30
-/******/ 	__webpack_require__.m = modules;                                                                           // 31
-                                                                                                                     // 32
-/******/ 	// expose the module cache                                                                                 // 33
-/******/ 	__webpack_require__.c = installedModules;                                                                  // 34
-                                                                                                                     // 35
-/******/ 	// __webpack_public_path__                                                                                 // 36
-/******/ 	__webpack_require__.p = "";                                                                                // 37
-                                                                                                                     // 38
-/******/ 	// Load entry module and return exports                                                                    // 39
-/******/ 	return __webpack_require__(0);                                                                             // 40
-/******/ })                                                                                                          // 41
-/************************************************************************/                                           // 42
-/******/ ([                                                                                                          // 43
-/* 0 */                                                                                                              // 44
-/***/ function(module, exports, __webpack_require__) {                                                               // 45
-                                                                                                                     // 46
-	var MeteorPromise = __webpack_require__(1);                                                                         // 47
-                                                                                                                     // 48
-	var es6PromiseThen = MeteorPromise.prototype.then;                                                                  // 49
-	MeteorPromise.prototype.then = function (onResolved, onRejected) {                                                  // 50
-	  if (typeof Meteor === "object" &&                                                                                 // 51
-	      typeof Meteor.bindEnvironment === "function") {                                                               // 52
-	    return es6PromiseThen.call(                                                                                     // 53
-	      this,                                                                                                         // 54
-	      onResolved && Meteor.bindEnvironment(onResolved, raise),                                                      // 55
-	      onRejected && Meteor.bindEnvironment(onRejected, raise)                                                       // 56
-	    );                                                                                                              // 57
-	  }                                                                                                                 // 58
-	  return es6PromiseThen.call(this, onResolved, onRejected);                                                         // 59
-	};                                                                                                                  // 60
-                                                                                                                     // 61
-	function raise(exception) {                                                                                         // 62
-	  throw exception;                                                                                                  // 63
-	}                                                                                                                   // 64
-                                                                                                                     // 65
-	Promise = MeteorPromise;                                                                                            // 66
-                                                                                                                     // 67
-                                                                                                                     // 68
-/***/ },                                                                                                             // 69
-/* 1 */                                                                                                              // 70
-/***/ function(module, exports, __webpack_require__) {                                                               // 71
-                                                                                                                     // 72
-	/* WEBPACK VAR INJECTION */(function(global) {var hasOwn = Object.prototype.hasOwnProperty;                         // 73
-                                                                                                                     // 74
-	var g =                                                                                                             // 75
-	  typeof global === "object" ? global :                                                                             // 76
-	  typeof window === "object" ? window :                                                                             // 77
-	  typeof self === "object" ? self : this;                                                                           // 78
-                                                                                                                     // 79
-	var GlobalPromise = g.Promise;                                                                                      // 80
-	var NpmPromise = __webpack_require__(2);                                                                            // 81
-                                                                                                                     // 82
-	function copyMethods(target, source) {                                                                              // 83
-	  Object.keys(source).forEach(function (key) {                                                                      // 84
-	    var value = source[key];                                                                                        // 85
-	    if (typeof value === "function" &&                                                                              // 86
-	        ! hasOwn.call(target, key)) {                                                                               // 87
-	      target[key] = value;                                                                                          // 88
-	    }                                                                                                               // 89
-	  });                                                                                                               // 90
-	}                                                                                                                   // 91
-                                                                                                                     // 92
-	if (typeof GlobalPromise === "function") {                                                                          // 93
-	  copyMethods(GlobalPromise, NpmPromise);                                                                           // 94
-	  copyMethods(GlobalPromise.prototype, NpmPromise.prototype);                                                       // 95
-	  module.exports = GlobalPromise;                                                                                   // 96
-	} else {                                                                                                            // 97
-	  module.exports = NpmPromise;                                                                                      // 98
-	}                                                                                                                   // 99
-                                                                                                                     // 100
-	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }())))                                        // 101
-                                                                                                                     // 102
-/***/ },                                                                                                             // 103
-/* 2 */                                                                                                              // 104
-/***/ function(module, exports, __webpack_require__) {                                                               // 105
-                                                                                                                     // 106
-	'use strict';                                                                                                       // 107
-                                                                                                                     // 108
-	module.exports = __webpack_require__(3)                                                                             // 109
-                                                                                                                     // 110
-                                                                                                                     // 111
-/***/ },                                                                                                             // 112
-/* 3 */                                                                                                              // 113
-/***/ function(module, exports, __webpack_require__) {                                                               // 114
-                                                                                                                     // 115
-	'use strict';                                                                                                       // 116
-                                                                                                                     // 117
-	module.exports = __webpack_require__(4);                                                                            // 118
-	__webpack_require__(6);                                                                                             // 119
-	__webpack_require__(7);                                                                                             // 120
-	__webpack_require__(8);                                                                                             // 121
-	__webpack_require__(9);                                                                                             // 122
-                                                                                                                     // 123
-                                                                                                                     // 124
-/***/ },                                                                                                             // 125
-/* 4 */                                                                                                              // 126
-/***/ function(module, exports, __webpack_require__) {                                                               // 127
-                                                                                                                     // 128
-	'use strict';                                                                                                       // 129
-                                                                                                                     // 130
-	var asap = __webpack_require__(5);                                                                                  // 131
-                                                                                                                     // 132
-	function noop() {}                                                                                                  // 133
-                                                                                                                     // 134
-	// States:                                                                                                          // 135
-	//                                                                                                                  // 136
-	// 0 - pending                                                                                                      // 137
-	// 1 - fulfilled with _value                                                                                        // 138
-	// 2 - rejected with _value                                                                                         // 139
-	// 3 - adopted the state of another promise, _value                                                                 // 140
-	//                                                                                                                  // 141
-	// once the state is no longer pending (0) it is immutable                                                          // 142
-                                                                                                                     // 143
-	// All `_` prefixed properties will be reduced to `_{random number}`                                                // 144
-	// at build time to obfuscate them and discourage their use.                                                        // 145
-	// We don't use symbols or Object.defineProperty to fully hide them                                                 // 146
-	// because the performance isn't good enough.                                                                       // 147
-                                                                                                                     // 148
-                                                                                                                     // 149
-	// to avoid using try/catch inside critical functions, we                                                           // 150
-	// extract them to here.                                                                                            // 151
-	var LAST_ERROR = null;                                                                                              // 152
-	var IS_ERROR = {};                                                                                                  // 153
-	function getThen(obj) {                                                                                             // 154
-	  try {                                                                                                             // 155
-	    return obj.then;                                                                                                // 156
-	  } catch (ex) {                                                                                                    // 157
-	    LAST_ERROR = ex;                                                                                                // 158
-	    return IS_ERROR;                                                                                                // 159
-	  }                                                                                                                 // 160
-	}                                                                                                                   // 161
-                                                                                                                     // 162
-	function tryCallOne(fn, a) {                                                                                        // 163
-	  try {                                                                                                             // 164
-	    return fn(a);                                                                                                   // 165
-	  } catch (ex) {                                                                                                    // 166
-	    LAST_ERROR = ex;                                                                                                // 167
-	    return IS_ERROR;                                                                                                // 168
-	  }                                                                                                                 // 169
-	}                                                                                                                   // 170
-	function tryCallTwo(fn, a, b) {                                                                                     // 171
-	  try {                                                                                                             // 172
-	    fn(a, b);                                                                                                       // 173
-	  } catch (ex) {                                                                                                    // 174
-	    LAST_ERROR = ex;                                                                                                // 175
-	    return IS_ERROR;                                                                                                // 176
-	  }                                                                                                                 // 177
-	}                                                                                                                   // 178
-                                                                                                                     // 179
-	module.exports = Promise;                                                                                           // 180
-                                                                                                                     // 181
-	function Promise(fn) {                                                                                              // 182
-	  if (typeof this !== 'object') {                                                                                   // 183
-	    throw new TypeError('Promises must be constructed via new');                                                    // 184
-	  }                                                                                                                 // 185
-	  if (typeof fn !== 'function') {                                                                                   // 186
-	    throw new TypeError('not a function');                                                                          // 187
-	  }                                                                                                                 // 188
-	  this._37 = 0;                                                                                                     // 189
-	  this._12 = null;                                                                                                  // 190
-	  this._59 = [];                                                                                                    // 191
-	  if (fn === noop) return;                                                                                          // 192
-	  doResolve(fn, this);                                                                                              // 193
-	}                                                                                                                   // 194
-	Promise._99 = noop;                                                                                                 // 195
-                                                                                                                     // 196
-	Promise.prototype.then = function(onFulfilled, onRejected) {                                                        // 197
-	  if (this.constructor !== Promise) {                                                                               // 198
-	    return safeThen(this, onFulfilled, onRejected);                                                                 // 199
-	  }                                                                                                                 // 200
-	  var res = new Promise(noop);                                                                                      // 201
-	  handle(this, new Handler(onFulfilled, onRejected, res));                                                          // 202
-	  return res;                                                                                                       // 203
-	};                                                                                                                  // 204
-                                                                                                                     // 205
-	function safeThen(self, onFulfilled, onRejected) {                                                                  // 206
-	  return new self.constructor(function (resolve, reject) {                                                          // 207
-	    var res = new Promise(noop);                                                                                    // 208
-	    res.then(resolve, reject);                                                                                      // 209
-	    handle(self, new Handler(onFulfilled, onRejected, res));                                                        // 210
-	  });                                                                                                               // 211
-	};                                                                                                                  // 212
-	function handle(self, deferred) {                                                                                   // 213
-	  while (self._37 === 3) {                                                                                          // 214
-	    self = self._12;                                                                                                // 215
-	  }                                                                                                                 // 216
-	  if (self._37 === 0) {                                                                                             // 217
-	    self._59.push(deferred);                                                                                        // 218
-	    return;                                                                                                         // 219
-	  }                                                                                                                 // 220
-	  asap(function() {                                                                                                 // 221
-	    var cb = self._37 === 1 ? deferred.onFulfilled : deferred.onRejected;                                           // 222
-	    if (cb === null) {                                                                                              // 223
-	      if (self._37 === 1) {                                                                                         // 224
-	        resolve(deferred.promise, self._12);                                                                        // 225
-	      } else {                                                                                                      // 226
-	        reject(deferred.promise, self._12);                                                                         // 227
-	      }                                                                                                             // 228
-	      return;                                                                                                       // 229
-	    }                                                                                                               // 230
-	    var ret = tryCallOne(cb, self._12);                                                                             // 231
-	    if (ret === IS_ERROR) {                                                                                         // 232
-	      reject(deferred.promise, LAST_ERROR);                                                                         // 233
-	    } else {                                                                                                        // 234
-	      resolve(deferred.promise, ret);                                                                               // 235
-	    }                                                                                                               // 236
-	  });                                                                                                               // 237
-	}                                                                                                                   // 238
-	function resolve(self, newValue) {                                                                                  // 239
-	  // Promise Resolution Procedure: https://github.com/promises-aplus/promises-spec#the-promise-resolution-procedure
-	  if (newValue === self) {                                                                                          // 241
-	    return reject(                                                                                                  // 242
-	      self,                                                                                                         // 243
-	      new TypeError('A promise cannot be resolved with itself.')                                                    // 244
-	    );                                                                                                              // 245
-	  }                                                                                                                 // 246
-	  if (                                                                                                              // 247
-	    newValue &&                                                                                                     // 248
-	    (typeof newValue === 'object' || typeof newValue === 'function')                                                // 249
-	  ) {                                                                                                               // 250
-	    var then = getThen(newValue);                                                                                   // 251
-	    if (then === IS_ERROR) {                                                                                        // 252
-	      return reject(self, LAST_ERROR);                                                                              // 253
-	    }                                                                                                               // 254
-	    if (                                                                                                            // 255
-	      then === self.then &&                                                                                         // 256
-	      newValue instanceof Promise                                                                                   // 257
-	    ) {                                                                                                             // 258
-	      self._37 = 3;                                                                                                 // 259
-	      self._12 = newValue;                                                                                          // 260
-	      finale(self);                                                                                                 // 261
-	      return;                                                                                                       // 262
-	    } else if (typeof then === 'function') {                                                                        // 263
-	      doResolve(then.bind(newValue), self);                                                                         // 264
-	      return;                                                                                                       // 265
-	    }                                                                                                               // 266
-	  }                                                                                                                 // 267
-	  self._37 = 1;                                                                                                     // 268
-	  self._12 = newValue;                                                                                              // 269
-	  finale(self);                                                                                                     // 270
-	}                                                                                                                   // 271
-                                                                                                                     // 272
-	function reject(self, newValue) {                                                                                   // 273
-	  self._37 = 2;                                                                                                     // 274
-	  self._12 = newValue;                                                                                              // 275
-	  finale(self);                                                                                                     // 276
-	}                                                                                                                   // 277
-	function finale(self) {                                                                                             // 278
-	  for (var i = 0; i < self._59.length; i++) {                                                                       // 279
-	    handle(self, self._59[i]);                                                                                      // 280
-	  }                                                                                                                 // 281
-	  self._59 = null;                                                                                                  // 282
-	}                                                                                                                   // 283
-                                                                                                                     // 284
-	function Handler(onFulfilled, onRejected, promise){                                                                 // 285
-	  this.onFulfilled = typeof onFulfilled === 'function' ? onFulfilled : null;                                        // 286
-	  this.onRejected = typeof onRejected === 'function' ? onRejected : null;                                           // 287
-	  this.promise = promise;                                                                                           // 288
-	}                                                                                                                   // 289
-                                                                                                                     // 290
-	/**                                                                                                                 // 291
-	 * Take a potentially misbehaving resolver function and make sure                                                   // 292
-	 * onFulfilled and onRejected are only called once.                                                                 // 293
-	 *                                                                                                                  // 294
-	 * Makes no guarantees about asynchrony.                                                                            // 295
-	 */                                                                                                                 // 296
-	function doResolve(fn, promise) {                                                                                   // 297
-	  var done = false;                                                                                                 // 298
-	  var res = tryCallTwo(fn, function (value) {                                                                       // 299
-	    if (done) return;                                                                                               // 300
-	    done = true;                                                                                                    // 301
-	    resolve(promise, value);                                                                                        // 302
-	  }, function (reason) {                                                                                            // 303
-	    if (done) return;                                                                                               // 304
-	    done = true;                                                                                                    // 305
-	    reject(promise, reason);                                                                                        // 306
-	  })                                                                                                                // 307
-	  if (!done && res === IS_ERROR) {                                                                                  // 308
-	    done = true;                                                                                                    // 309
-	    reject(promise, LAST_ERROR);                                                                                    // 310
-	  }                                                                                                                 // 311
-	}                                                                                                                   // 312
-                                                                                                                     // 313
-                                                                                                                     // 314
-/***/ },                                                                                                             // 315
-/* 5 */                                                                                                              // 316
-/***/ function(module, exports) {                                                                                    // 317
-                                                                                                                     // 318
-	/* WEBPACK VAR INJECTION */(function(global) {"use strict";                                                         // 319
-                                                                                                                     // 320
-	// Use the fastest means possible to execute a task in its own turn, with                                           // 321
-	// priority over other events including IO, animation, reflow, and redraw                                           // 322
-	// events in browsers.                                                                                              // 323
-	//                                                                                                                  // 324
-	// An exception thrown by a task will permanently interrupt the processing of                                       // 325
-	// subsequent tasks. The higher level `asap` function ensures that if an                                            // 326
-	// exception is thrown by a task, that the task queue will continue flushing as                                     // 327
-	// soon as possible, but if you use `rawAsap` directly, you are responsible to                                      // 328
-	// either ensure that no exceptions are thrown from your task, or to manually                                       // 329
-	// call `rawAsap.requestFlush` if an exception is thrown.                                                           // 330
-	module.exports = rawAsap;                                                                                           // 331
-	function rawAsap(task) {                                                                                            // 332
-	    if (!queue.length) {                                                                                            // 333
-	        requestFlush();                                                                                             // 334
-	        flushing = true;                                                                                            // 335
-	    }                                                                                                               // 336
-	    // Equivalent to push, but avoids a function call.                                                              // 337
-	    queue[queue.length] = task;                                                                                     // 338
-	}                                                                                                                   // 339
-                                                                                                                     // 340
-	var queue = [];                                                                                                     // 341
-	// Once a flush has been requested, no further calls to `requestFlush` are                                          // 342
-	// necessary until the next `flush` completes.                                                                      // 343
-	var flushing = false;                                                                                               // 344
-	// `requestFlush` is an implementation-specific method that attempts to kick                                        // 345
-	// off a `flush` event as quickly as possible. `flush` will attempt to exhaust                                      // 346
-	// the event queue before yielding to the browser's own event loop.                                                 // 347
-	var requestFlush;                                                                                                   // 348
-	// The position of the next task to execute in the task queue. This is                                              // 349
-	// preserved between calls to `flush` so that it can be resumed if                                                  // 350
-	// a task throws an exception.                                                                                      // 351
-	var index = 0;                                                                                                      // 352
-	// If a task schedules additional tasks recursively, the task queue can grow                                        // 353
-	// unbounded. To prevent memory exhaustion, the task queue will periodically                                        // 354
-	// truncate already-completed tasks.                                                                                // 355
-	var capacity = 1024;                                                                                                // 356
-                                                                                                                     // 357
-	// The flush function processes all tasks that have been scheduled with                                             // 358
-	// `rawAsap` unless and until one of those tasks throws an exception.                                               // 359
-	// If a task throws an exception, `flush` ensures that its state will remain                                        // 360
-	// consistent and will resume where it left off when called again.                                                  // 361
-	// However, `flush` does not make any arrangements to be called again if an                                         // 362
-	// exception is thrown.                                                                                             // 363
-	function flush() {                                                                                                  // 364
-	    while (index < queue.length) {                                                                                  // 365
-	        var currentIndex = index;                                                                                   // 366
-	        // Advance the index before calling the task. This ensures that we will                                     // 367
-	        // begin flushing on the next task the task throws an error.                                                // 368
-	        index = index + 1;                                                                                          // 369
-	        queue[currentIndex].call();                                                                                 // 370
-	        // Prevent leaking memory for long chains of recursive calls to `asap`.                                     // 371
-	        // If we call `asap` within tasks scheduled by `asap`, the queue will                                       // 372
-	        // grow, but to avoid an O(n) walk for every task we execute, we don't                                      // 373
-	        // shift tasks off the queue after they have been executed.                                                 // 374
-	        // Instead, we periodically shift 1024 tasks off the queue.                                                 // 375
-	        if (index > capacity) {                                                                                     // 376
-	            // Manually shift all values starting at the index back to the                                          // 377
-	            // beginning of the queue.                                                                              // 378
-	            for (var scan = 0, newLength = queue.length - index; scan < newLength; scan++) {                        // 379
-	                queue[scan] = queue[scan + index];                                                                  // 380
-	            }                                                                                                       // 381
-	            queue.length -= index;                                                                                  // 382
-	            index = 0;                                                                                              // 383
-	        }                                                                                                           // 384
-	    }                                                                                                               // 385
-	    queue.length = 0;                                                                                               // 386
-	    index = 0;                                                                                                      // 387
-	    flushing = false;                                                                                               // 388
-	}                                                                                                                   // 389
-                                                                                                                     // 390
-	// `requestFlush` is implemented using a strategy based on data collected from                                      // 391
-	// every available SauceLabs Selenium web driver worker at time of writing.                                         // 392
-	// https://docs.google.com/spreadsheets/d/1mG-5UYGup5qxGdEMWkhP6BWCz053NUb2E1QoUTU16uA/edit#gid=783724593           // 393
-                                                                                                                     // 394
-	// Safari 6 and 6.1 for desktop, iPad, and iPhone are the only browsers that                                        // 395
-	// have WebKitMutationObserver but not un-prefixed MutationObserver.                                                // 396
-	// Must use `global` instead of `window` to work in both frames and web                                             // 397
-	// workers. `global` is a provision of Browserify, Mr, Mrs, or Mop.                                                 // 398
-	var BrowserMutationObserver = global.MutationObserver || global.WebKitMutationObserver;                             // 399
-                                                                                                                     // 400
-	// MutationObservers are desirable because they have high priority and work                                         // 401
-	// reliably everywhere they are implemented.                                                                        // 402
-	// They are implemented in all modern browsers.                                                                     // 403
-	//                                                                                                                  // 404
-	// - Android 4-4.3                                                                                                  // 405
-	// - Chrome 26-34                                                                                                   // 406
-	// - Firefox 14-29                                                                                                  // 407
-	// - Internet Explorer 11                                                                                           // 408
-	// - iPad Safari 6-7.1                                                                                              // 409
-	// - iPhone Safari 7-7.1                                                                                            // 410
-	// - Safari 6-7                                                                                                     // 411
-	if (typeof BrowserMutationObserver === "function") {                                                                // 412
-	    requestFlush = makeRequestCallFromMutationObserver(flush);                                                      // 413
-                                                                                                                     // 414
-	// MessageChannels are desirable because they give direct access to the HTML                                        // 415
-	// task queue, are implemented in Internet Explorer 10, Safari 5.0-1, and Opera                                     // 416
-	// 11-12, and in web workers in many engines.                                                                       // 417
-	// Although message channels yield to any queued rendering and IO tasks, they                                       // 418
-	// would be better than imposing the 4ms delay of timers.                                                           // 419
-	// However, they do not work reliably in Internet Explorer or Safari.                                               // 420
-                                                                                                                     // 421
-	// Internet Explorer 10 is the only browser that has setImmediate but does                                          // 422
-	// not have MutationObservers.                                                                                      // 423
-	// Although setImmediate yields to the browser's renderer, it would be                                              // 424
-	// preferrable to falling back to setTimeout since it does not have                                                 // 425
-	// the minimum 4ms penalty.                                                                                         // 426
-	// Unfortunately there appears to be a bug in Internet Explorer 10 Mobile (and                                      // 427
-	// Desktop to a lesser extent) that renders both setImmediate and                                                   // 428
-	// MessageChannel useless for the purposes of ASAP.                                                                 // 429
-	// https://github.com/kriskowal/q/issues/396                                                                        // 430
-                                                                                                                     // 431
-	// Timers are implemented universally.                                                                              // 432
-	// We fall back to timers in workers in most engines, and in foreground                                             // 433
-	// contexts in the following browsers.                                                                              // 434
-	// However, note that even this simple case requires nuances to operate in a                                        // 435
-	// broad spectrum of browsers.                                                                                      // 436
-	//                                                                                                                  // 437
-	// - Firefox 3-13                                                                                                   // 438
-	// - Internet Explorer 6-9                                                                                          // 439
-	// - iPad Safari 4.3                                                                                                // 440
-	// - Lynx 2.8.7                                                                                                     // 441
-	} else {                                                                                                            // 442
-	    requestFlush = makeRequestCallFromTimer(flush);                                                                 // 443
-	}                                                                                                                   // 444
-                                                                                                                     // 445
-	// `requestFlush` requests that the high priority event queue be flushed as                                         // 446
-	// soon as possible.                                                                                                // 447
-	// This is useful to prevent an error thrown in a task from stalling the event                                      // 448
-	// queue if the exception handled by Node.js’s                                                                      // 449
-	// `process.on("uncaughtException")` or by a domain.                                                                // 450
-	rawAsap.requestFlush = requestFlush;                                                                                // 451
-                                                                                                                     // 452
-	// To request a high priority event, we induce a mutation observer by toggling                                      // 453
-	// the text of a text node between "1" and "-1".                                                                    // 454
-	function makeRequestCallFromMutationObserver(callback) {                                                            // 455
-	    var toggle = 1;                                                                                                 // 456
-	    var observer = new BrowserMutationObserver(callback);                                                           // 457
-	    var node = document.createTextNode("");                                                                         // 458
-	    observer.observe(node, {characterData: true});                                                                  // 459
-	    return function requestCall() {                                                                                 // 460
-	        toggle = -toggle;                                                                                           // 461
-	        node.data = toggle;                                                                                         // 462
-	    };                                                                                                              // 463
-	}                                                                                                                   // 464
-                                                                                                                     // 465
-	// The message channel technique was discovered by Malte Ubl and was the                                            // 466
-	// original foundation for this library.                                                                            // 467
-	// http://www.nonblocking.io/2011/06/windownexttick.html                                                            // 468
-                                                                                                                     // 469
-	// Safari 6.0.5 (at least) intermittently fails to create message ports on a                                        // 470
-	// page's first load. Thankfully, this version of Safari supports                                                   // 471
-	// MutationObservers, so we don't need to fall back in that case.                                                   // 472
-                                                                                                                     // 473
-	// function makeRequestCallFromMessageChannel(callback) {                                                           // 474
-	//     var channel = new MessageChannel();                                                                          // 475
-	//     channel.port1.onmessage = callback;                                                                          // 476
-	//     return function requestCall() {                                                                              // 477
-	//         channel.port2.postMessage(0);                                                                            // 478
-	//     };                                                                                                           // 479
-	// }                                                                                                                // 480
-                                                                                                                     // 481
-	// For reasons explained above, we are also unable to use `setImmediate`                                            // 482
-	// under any circumstances.                                                                                         // 483
-	// Even if we were, there is another bug in Internet Explorer 10.                                                   // 484
-	// It is not sufficient to assign `setImmediate` to `requestFlush` because                                          // 485
-	// `setImmediate` must be called *by name* and therefore must be wrapped in a                                       // 486
-	// closure.                                                                                                         // 487
-	// Never forget.                                                                                                    // 488
-                                                                                                                     // 489
-	// function makeRequestCallFromSetImmediate(callback) {                                                             // 490
-	//     return function requestCall() {                                                                              // 491
-	//         setImmediate(callback);                                                                                  // 492
-	//     };                                                                                                           // 493
-	// }                                                                                                                // 494
-                                                                                                                     // 495
-	// Safari 6.0 has a problem where timers will get lost while the user is                                            // 496
-	// scrolling. This problem does not impact ASAP because Safari 6.0 supports                                         // 497
-	// mutation observers, so that implementation is used instead.                                                      // 498
-	// However, if we ever elect to use timers in Safari, the prevalent work-around                                     // 499
-	// is to add a scroll event listener that calls for a flush.                                                        // 500
-                                                                                                                     // 501
-	// `setTimeout` does not call the passed callback if the delay is less than                                         // 502
-	// approximately 7 in web workers in Firefox 8 through 18, and sometimes not                                        // 503
-	// even then.                                                                                                       // 504
-                                                                                                                     // 505
-	function makeRequestCallFromTimer(callback) {                                                                       // 506
-	    return function requestCall() {                                                                                 // 507
-	        // We dispatch a timeout with a specified delay of 0 for engines that                                       // 508
-	        // can reliably accommodate that request. This will usually be snapped                                      // 509
-	        // to a 4 milisecond delay, but once we're flushing, there's no delay                                       // 510
-	        // between events.                                                                                          // 511
-	        var timeoutHandle = setTimeout(handleTimer, 0);                                                             // 512
-	        // However, since this timer gets frequently dropped in Firefox                                             // 513
-	        // workers, we enlist an interval handle that will try to fire                                              // 514
-	        // an event 20 times per second until it succeeds.                                                          // 515
-	        var intervalHandle = setInterval(handleTimer, 50);                                                          // 516
-                                                                                                                     // 517
-	        function handleTimer() {                                                                                    // 518
-	            // Whichever timer succeeds will cancel both timers and                                                 // 519
-	            // execute the callback.                                                                                // 520
-	            clearTimeout(timeoutHandle);                                                                            // 521
-	            clearInterval(intervalHandle);                                                                          // 522
-	            callback();                                                                                             // 523
-	        }                                                                                                           // 524
-	    };                                                                                                              // 525
-	}                                                                                                                   // 526
-                                                                                                                     // 527
-	// This is for `asap.js` only.                                                                                      // 528
-	// Its name will be periodically randomized to break any code that depends on                                       // 529
-	// its existence.                                                                                                   // 530
-	rawAsap.makeRequestCallFromTimer = makeRequestCallFromTimer;                                                        // 531
-                                                                                                                     // 532
-	// ASAP was originally a nextTick shim included in Q. This was factored out                                         // 533
-	// into this ASAP package. It was later adapted to RSVP which made further                                          // 534
-	// amendments. These decisions, particularly to marginalize MessageChannel and                                      // 535
-	// to capture the MutationObserver implementation in a closure, were integrated                                     // 536
-	// back into ASAP proper.                                                                                           // 537
-	// https://github.com/tildeio/rsvp.js/blob/cddf7232546a9cf858524b75cde6f9edf72620a7/lib/rsvp/asap.js                // 538
-                                                                                                                     // 539
-	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }())))                                        // 540
-                                                                                                                     // 541
-/***/ },                                                                                                             // 542
-/* 6 */                                                                                                              // 543
-/***/ function(module, exports, __webpack_require__) {                                                               // 544
-                                                                                                                     // 545
-	'use strict';                                                                                                       // 546
-                                                                                                                     // 547
-	var Promise = __webpack_require__(4);                                                                               // 548
-                                                                                                                     // 549
-	module.exports = Promise;                                                                                           // 550
-	Promise.prototype.done = function (onFulfilled, onRejected) {                                                       // 551
-	  var self = arguments.length ? this.then.apply(this, arguments) : this;                                            // 552
-	  self.then(null, function (err) {                                                                                  // 553
-	    setTimeout(function () {                                                                                        // 554
-	      throw err;                                                                                                    // 555
-	    }, 0);                                                                                                          // 556
-	  });                                                                                                               // 557
-	};                                                                                                                  // 558
-                                                                                                                     // 559
-                                                                                                                     // 560
-/***/ },                                                                                                             // 561
-/* 7 */                                                                                                              // 562
-/***/ function(module, exports, __webpack_require__) {                                                               // 563
-                                                                                                                     // 564
-	'use strict';                                                                                                       // 565
-                                                                                                                     // 566
-	var Promise = __webpack_require__(4);                                                                               // 567
-                                                                                                                     // 568
-	module.exports = Promise;                                                                                           // 569
-	Promise.prototype['finally'] = function (f) {                                                                       // 570
-	  return this.then(function (value) {                                                                               // 571
-	    return Promise.resolve(f()).then(function () {                                                                  // 572
-	      return value;                                                                                                 // 573
-	    });                                                                                                             // 574
-	  }, function (err) {                                                                                               // 575
-	    return Promise.resolve(f()).then(function () {                                                                  // 576
-	      throw err;                                                                                                    // 577
-	    });                                                                                                             // 578
-	  });                                                                                                               // 579
-	};                                                                                                                  // 580
-                                                                                                                     // 581
-                                                                                                                     // 582
-/***/ },                                                                                                             // 583
-/* 8 */                                                                                                              // 584
-/***/ function(module, exports, __webpack_require__) {                                                               // 585
-                                                                                                                     // 586
-	'use strict';                                                                                                       // 587
-                                                                                                                     // 588
-	//This file contains the ES6 extensions to the core Promises/A+ API                                                 // 589
-                                                                                                                     // 590
-	var Promise = __webpack_require__(4);                                                                               // 591
-                                                                                                                     // 592
-	module.exports = Promise;                                                                                           // 593
-                                                                                                                     // 594
-	/* Static Functions */                                                                                              // 595
-                                                                                                                     // 596
-	var TRUE = valuePromise(true);                                                                                      // 597
-	var FALSE = valuePromise(false);                                                                                    // 598
-	var NULL = valuePromise(null);                                                                                      // 599
-	var UNDEFINED = valuePromise(undefined);                                                                            // 600
-	var ZERO = valuePromise(0);                                                                                         // 601
-	var EMPTYSTRING = valuePromise('');                                                                                 // 602
-                                                                                                                     // 603
-	function valuePromise(value) {                                                                                      // 604
-	  var p = new Promise(Promise._99);                                                                                 // 605
-	  p._37 = 1;                                                                                                        // 606
-	  p._12 = value;                                                                                                    // 607
-	  return p;                                                                                                         // 608
-	}                                                                                                                   // 609
-	Promise.resolve = function (value) {                                                                                // 610
-	  if (value instanceof Promise) return value;                                                                       // 611
-                                                                                                                     // 612
-	  if (value === null) return NULL;                                                                                  // 613
-	  if (value === undefined) return UNDEFINED;                                                                        // 614
-	  if (value === true) return TRUE;                                                                                  // 615
-	  if (value === false) return FALSE;                                                                                // 616
-	  if (value === 0) return ZERO;                                                                                     // 617
-	  if (value === '') return EMPTYSTRING;                                                                             // 618
-                                                                                                                     // 619
-	  if (typeof value === 'object' || typeof value === 'function') {                                                   // 620
-	    try {                                                                                                           // 621
-	      var then = value.then;                                                                                        // 622
-	      if (typeof then === 'function') {                                                                             // 623
-	        return new Promise(then.bind(value));                                                                       // 624
-	      }                                                                                                             // 625
-	    } catch (ex) {                                                                                                  // 626
-	      return new Promise(function (resolve, reject) {                                                               // 627
-	        reject(ex);                                                                                                 // 628
-	      });                                                                                                           // 629
-	    }                                                                                                               // 630
-	  }                                                                                                                 // 631
-	  return valuePromise(value);                                                                                       // 632
-	};                                                                                                                  // 633
-                                                                                                                     // 634
-	Promise.all = function (arr) {                                                                                      // 635
-	  var args = Array.prototype.slice.call(arr);                                                                       // 636
-                                                                                                                     // 637
-	  return new Promise(function (resolve, reject) {                                                                   // 638
-	    if (args.length === 0) return resolve([]);                                                                      // 639
-	    var remaining = args.length;                                                                                    // 640
-	    function res(i, val) {                                                                                          // 641
-	      if (val && (typeof val === 'object' || typeof val === 'function')) {                                          // 642
-	        if (val instanceof Promise && val.then === Promise.prototype.then) {                                        // 643
-	          while (val._37 === 3) {                                                                                   // 644
-	            val = val._12;                                                                                          // 645
-	          }                                                                                                         // 646
-	          if (val._37 === 1) return res(i, val._12);                                                                // 647
-	          if (val._37 === 2) reject(val._12);                                                                       // 648
-	          val.then(function (val) {                                                                                 // 649
-	            res(i, val);                                                                                            // 650
-	          }, reject);                                                                                               // 651
-	          return;                                                                                                   // 652
-	        } else {                                                                                                    // 653
-	          var then = val.then;                                                                                      // 654
-	          if (typeof then === 'function') {                                                                         // 655
-	            var p = new Promise(then.bind(val));                                                                    // 656
-	            p.then(function (val) {                                                                                 // 657
-	              res(i, val);                                                                                          // 658
-	            }, reject);                                                                                             // 659
-	            return;                                                                                                 // 660
-	          }                                                                                                         // 661
-	        }                                                                                                           // 662
-	      }                                                                                                             // 663
-	      args[i] = val;                                                                                                // 664
-	      if (--remaining === 0) {                                                                                      // 665
-	        resolve(args);                                                                                              // 666
-	      }                                                                                                             // 667
-	    }                                                                                                               // 668
-	    for (var i = 0; i < args.length; i++) {                                                                         // 669
-	      res(i, args[i]);                                                                                              // 670
-	    }                                                                                                               // 671
-	  });                                                                                                               // 672
-	};                                                                                                                  // 673
-                                                                                                                     // 674
-	Promise.reject = function (value) {                                                                                 // 675
-	  return new Promise(function (resolve, reject) {                                                                   // 676
-	    reject(value);                                                                                                  // 677
-	  });                                                                                                               // 678
-	};                                                                                                                  // 679
-                                                                                                                     // 680
-	Promise.race = function (values) {                                                                                  // 681
-	  return new Promise(function (resolve, reject) {                                                                   // 682
-	    values.forEach(function(value){                                                                                 // 683
-	      Promise.resolve(value).then(resolve, reject);                                                                 // 684
-	    });                                                                                                             // 685
-	  });                                                                                                               // 686
-	};                                                                                                                  // 687
-                                                                                                                     // 688
-	/* Prototype Methods */                                                                                             // 689
-                                                                                                                     // 690
-	Promise.prototype['catch'] = function (onRejected) {                                                                // 691
-	  return this.then(null, onRejected);                                                                               // 692
-	};                                                                                                                  // 693
-                                                                                                                     // 694
-                                                                                                                     // 695
-/***/ },                                                                                                             // 696
-/* 9 */                                                                                                              // 697
-/***/ function(module, exports, __webpack_require__) {                                                               // 698
-                                                                                                                     // 699
-	'use strict';                                                                                                       // 700
-                                                                                                                     // 701
-	// This file contains then/promise specific extensions that are only useful                                         // 702
-	// for node.js interop                                                                                              // 703
-                                                                                                                     // 704
-	var Promise = __webpack_require__(4);                                                                               // 705
-	var asap = __webpack_require__(10);                                                                                 // 706
-                                                                                                                     // 707
-	module.exports = Promise;                                                                                           // 708
-                                                                                                                     // 709
-	/* Static Functions */                                                                                              // 710
-                                                                                                                     // 711
-	Promise.denodeify = function (fn, argumentCount) {                                                                  // 712
-	  argumentCount = argumentCount || Infinity;                                                                        // 713
-	  return function () {                                                                                              // 714
-	    var self = this;                                                                                                // 715
-	    var args = Array.prototype.slice.call(arguments, 0,                                                             // 716
-	        argumentCount > 0 ? argumentCount : 0);                                                                     // 717
-	    return new Promise(function (resolve, reject) {                                                                 // 718
-	      args.push(function (err, res) {                                                                               // 719
-	        if (err) reject(err);                                                                                       // 720
-	        else resolve(res);                                                                                          // 721
-	      })                                                                                                            // 722
-	      var res = fn.apply(self, args);                                                                               // 723
-	      if (res &&                                                                                                    // 724
-	        (                                                                                                           // 725
-	          typeof res === 'object' ||                                                                                // 726
-	          typeof res === 'function'                                                                                 // 727
-	        ) &&                                                                                                        // 728
-	        typeof res.then === 'function'                                                                              // 729
-	      ) {                                                                                                           // 730
-	        resolve(res);                                                                                               // 731
-	      }                                                                                                             // 732
-	    })                                                                                                              // 733
-	  }                                                                                                                 // 734
-	}                                                                                                                   // 735
-	Promise.nodeify = function (fn) {                                                                                   // 736
-	  return function () {                                                                                              // 737
-	    var args = Array.prototype.slice.call(arguments);                                                               // 738
-	    var callback =                                                                                                  // 739
-	      typeof args[args.length - 1] === 'function' ? args.pop() : null;                                              // 740
-	    var ctx = this;                                                                                                 // 741
-	    try {                                                                                                           // 742
-	      return fn.apply(this, arguments).nodeify(callback, ctx);                                                      // 743
-	    } catch (ex) {                                                                                                  // 744
-	      if (callback === null || typeof callback == 'undefined') {                                                    // 745
-	        return new Promise(function (resolve, reject) {                                                             // 746
-	          reject(ex);                                                                                               // 747
-	        });                                                                                                         // 748
-	      } else {                                                                                                      // 749
-	        asap(function () {                                                                                          // 750
-	          callback.call(ctx, ex);                                                                                   // 751
-	        })                                                                                                          // 752
-	      }                                                                                                             // 753
-	    }                                                                                                               // 754
-	  }                                                                                                                 // 755
-	}                                                                                                                   // 756
-                                                                                                                     // 757
-	Promise.prototype.nodeify = function (callback, ctx) {                                                              // 758
-	  if (typeof callback != 'function') return this;                                                                   // 759
-                                                                                                                     // 760
-	  this.then(function (value) {                                                                                      // 761
-	    asap(function () {                                                                                              // 762
-	      callback.call(ctx, null, value);                                                                              // 763
-	    });                                                                                                             // 764
-	  }, function (err) {                                                                                               // 765
-	    asap(function () {                                                                                              // 766
-	      callback.call(ctx, err);                                                                                      // 767
-	    });                                                                                                             // 768
-	  });                                                                                                               // 769
-	}                                                                                                                   // 770
-                                                                                                                     // 771
-                                                                                                                     // 772
-/***/ },                                                                                                             // 773
-/* 10 */                                                                                                             // 774
-/***/ function(module, exports, __webpack_require__) {                                                               // 775
-                                                                                                                     // 776
-	"use strict";                                                                                                       // 777
-                                                                                                                     // 778
-	// rawAsap provides everything we need except exception management.                                                 // 779
-	var rawAsap = __webpack_require__(5);                                                                               // 780
-	// RawTasks are recycled to reduce GC churn.                                                                        // 781
-	var freeTasks = [];                                                                                                 // 782
-	// We queue errors to ensure they are thrown in right order (FIFO).                                                 // 783
-	// Array-as-queue is good enough here, since we are just dealing with exceptions.                                   // 784
-	var pendingErrors = [];                                                                                             // 785
-	var requestErrorThrow = rawAsap.makeRequestCallFromTimer(throwFirstError);                                          // 786
-                                                                                                                     // 787
-	function throwFirstError() {                                                                                        // 788
-	    if (pendingErrors.length) {                                                                                     // 789
-	        throw pendingErrors.shift();                                                                                // 790
-	    }                                                                                                               // 791
-	}                                                                                                                   // 792
-                                                                                                                     // 793
-	/**                                                                                                                 // 794
-	 * Calls a task as soon as possible after returning, in its own event, with priority                                // 795
-	 * over other events like animation, reflow, and repaint. An error thrown from an                                   // 796
-	 * event will not interrupt, nor even substantially slow down the processing of                                     // 797
-	 * other events, but will be rather postponed to a lower priority event.                                            // 798
-	 * @param {{call}} task A callable object, typically a function that takes no                                       // 799
-	 * arguments.                                                                                                       // 800
-	 */                                                                                                                 // 801
-	module.exports = asap;                                                                                              // 802
-	function asap(task) {                                                                                               // 803
-	    var rawTask;                                                                                                    // 804
-	    if (freeTasks.length) {                                                                                         // 805
-	        rawTask = freeTasks.pop();                                                                                  // 806
-	    } else {                                                                                                        // 807
-	        rawTask = new RawTask();                                                                                    // 808
-	    }                                                                                                               // 809
-	    rawTask.task = task;                                                                                            // 810
-	    rawAsap(rawTask);                                                                                               // 811
-	}                                                                                                                   // 812
-                                                                                                                     // 813
-	// We wrap tasks with recyclable task objects.  A task object implements                                            // 814
-	// `call`, just like a function.                                                                                    // 815
-	function RawTask() {                                                                                                // 816
-	    this.task = null;                                                                                               // 817
-	}                                                                                                                   // 818
-                                                                                                                     // 819
-	// The sole purpose of wrapping the task is to catch the exception and recycle                                      // 820
-	// the task object after its single use.                                                                            // 821
-	RawTask.prototype.call = function () {                                                                              // 822
-	    try {                                                                                                           // 823
-	        this.task.call();                                                                                           // 824
-	    } catch (error) {                                                                                               // 825
-	        if (asap.onerror) {                                                                                         // 826
-	            // This hook exists purely for testing purposes.                                                        // 827
-	            // Its name will be periodically randomized to break any code that                                      // 828
-	            // depends on its existence.                                                                            // 829
-	            asap.onerror(error);                                                                                    // 830
-	        } else {                                                                                                    // 831
-	            // In a web browser, exceptions are not fatal. However, to avoid                                        // 832
-	            // slowing down the queue of pending tasks, we rethrow the error in a                                   // 833
-	            // lower priority turn.                                                                                 // 834
-	            pendingErrors.push(error);                                                                              // 835
-	            requestErrorThrow();                                                                                    // 836
-	        }                                                                                                           // 837
-	    } finally {                                                                                                     // 838
-	        this.task = null;                                                                                           // 839
-	        freeTasks[freeTasks.length] = this;                                                                         // 840
-	    }                                                                                                               // 841
-	};                                                                                                                  // 842
-                                                                                                                     // 843
-                                                                                                                     // 844
-/***/ }                                                                                                              // 845
-/******/ ]);                                                                                                         // 846
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                                                  //
+// packages/promise/client.js                                                                                       //
+//                                                                                                                  //
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                                                                                                                    //
+exports.Promise = require("meteor-promise");                                                                        // 1
+                                                                                                                    // 2
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-}).call(this);
+}],"node_modules":{"meteor-promise":{"package.json":function(require,exports){
 
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                                                  //
+// ../npm/node_modules/meteor-promise/package.json                                                                  //
+//                                                                                                                  //
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                                                                                                                    //
+exports.name = "meteor-promise";                                                                                    // 1
+exports.version = "0.6.3";                                                                                          // 2
+exports.main = "promise_client.js";                                                                                 // 3
+                                                                                                                    // 4
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+},"promise_client.js":["./promise.js",function(require,exports,module){
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                                                  //
+// node_modules/meteor/promise/node_modules/meteor-promise/promise_client.js                                        //
+//                                                                                                                  //
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                                                                                                                    //
+var MeteorPromise = require("./promise.js");                                                                        // 1
+                                                                                                                    // 2
+var es6PromiseThen = MeteorPromise.prototype.then;                                                                  // 3
+MeteorPromise.prototype.then = function (onResolved, onRejected) {                                                  // 4
+  if (typeof Meteor === "object" &&                                                                                 // 5
+      typeof Meteor.bindEnvironment === "function") {                                                               // 6
+    return es6PromiseThen.call(                                                                                     // 7
+      this,                                                                                                         // 8
+      onResolved && Meteor.bindEnvironment(onResolved, raise),                                                      // 9
+      onRejected && Meteor.bindEnvironment(onRejected, raise)                                                       // 10
+    );                                                                                                              // 11
+  }                                                                                                                 // 12
+  return es6PromiseThen.call(this, onResolved, onRejected);                                                         // 13
+};                                                                                                                  // 14
+                                                                                                                    // 15
+function raise(exception) {                                                                                         // 16
+  throw exception;                                                                                                  // 17
+}                                                                                                                   // 18
+                                                                                                                    // 19
+module.exports = exports = MeteorPromise;                                                                           // 20
+                                                                                                                    // 21
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+}],"promise.js":["promise",function(require,exports,module){
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                                                  //
+// node_modules/meteor/promise/node_modules/meteor-promise/promise.js                                               //
+//                                                                                                                  //
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                                                                                                                    //
+var hasOwn = Object.prototype.hasOwnProperty;                                                                       // 1
+                                                                                                                    // 2
+var g =                                                                                                             // 3
+  typeof global === "object" ? global :                                                                             // 4
+  typeof window === "object" ? window :                                                                             // 5
+  typeof self === "object" ? self : this;                                                                           // 6
+                                                                                                                    // 7
+var GlobalPromise = g.Promise;                                                                                      // 8
+var NpmPromise = require("promise");                                                                                // 9
+                                                                                                                    // 10
+function copyMethods(target, source) {                                                                              // 11
+  Object.keys(source).forEach(function (key) {                                                                      // 12
+    var value = source[key];                                                                                        // 13
+    if (typeof value === "function" &&                                                                              // 14
+        ! hasOwn.call(target, key)) {                                                                               // 15
+      target[key] = value;                                                                                          // 16
+    }                                                                                                               // 17
+  });                                                                                                               // 18
+}                                                                                                                   // 19
+                                                                                                                    // 20
+if (typeof GlobalPromise === "function") {                                                                          // 21
+  copyMethods(GlobalPromise, NpmPromise);                                                                           // 22
+  copyMethods(GlobalPromise.prototype, NpmPromise.prototype);                                                       // 23
+  module.exports = GlobalPromise;                                                                                   // 24
+} else {                                                                                                            // 25
+  module.exports = NpmPromise;                                                                                      // 26
+}                                                                                                                   // 27
+                                                                                                                    // 28
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+}],"node_modules":{"promise":{"package.json":function(require,exports){
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                                                  //
+// ../npm/node_modules/meteor-promise/node_modules/promise/package.json                                             //
+//                                                                                                                  //
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                                                                                                                    //
+exports.name = "promise";                                                                                           // 1
+exports.version = "7.1.1";                                                                                          // 2
+exports.main = "index.js";                                                                                          // 3
+                                                                                                                    // 4
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+},"index.js":["./lib",function(require,exports,module){
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                                                  //
+// node_modules/meteor/promise/node_modules/meteor-promise/node_modules/promise/index.js                            //
+//                                                                                                                  //
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                                                                                                                    //
+'use strict';                                                                                                       // 1
+                                                                                                                    // 2
+module.exports = require('./lib')                                                                                   // 3
+                                                                                                                    // 4
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+}],"lib":{"index.js":["./core.js","./done.js","./finally.js","./es6-extensions.js","./node-extensions.js","./synchronous.js",function(require,exports,module){
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                                                  //
+// node_modules/meteor/promise/node_modules/meteor-promise/node_modules/promise/lib/index.js                        //
+//                                                                                                                  //
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                                                                                                                    //
+'use strict';                                                                                                       // 1
+                                                                                                                    // 2
+module.exports = require('./core.js');                                                                              // 3
+require('./done.js');                                                                                               // 4
+require('./finally.js');                                                                                            // 5
+require('./es6-extensions.js');                                                                                     // 6
+require('./node-extensions.js');                                                                                    // 7
+require('./synchronous.js');                                                                                        // 8
+                                                                                                                    // 9
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+}],"core.js":["asap/raw",function(require,exports,module){
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                                                  //
+// node_modules/meteor/promise/node_modules/meteor-promise/node_modules/promise/lib/core.js                         //
+//                                                                                                                  //
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                                                                                                                    //
+'use strict';                                                                                                       // 1
+                                                                                                                    // 2
+var asap = require('asap/raw');                                                                                     // 3
+                                                                                                                    // 4
+function noop() {}                                                                                                  // 5
+                                                                                                                    // 6
+// States:                                                                                                          // 7
+//                                                                                                                  // 8
+// 0 - pending                                                                                                      // 9
+// 1 - fulfilled with _value                                                                                        // 10
+// 2 - rejected with _value                                                                                         // 11
+// 3 - adopted the state of another promise, _value                                                                 // 12
+//                                                                                                                  // 13
+// once the state is no longer pending (0) it is immutable                                                          // 14
+                                                                                                                    // 15
+// All `_` prefixed properties will be reduced to `_{random number}`                                                // 16
+// at build time to obfuscate them and discourage their use.                                                        // 17
+// We don't use symbols or Object.defineProperty to fully hide them                                                 // 18
+// because the performance isn't good enough.                                                                       // 19
+                                                                                                                    // 20
+                                                                                                                    // 21
+// to avoid using try/catch inside critical functions, we                                                           // 22
+// extract them to here.                                                                                            // 23
+var LAST_ERROR = null;                                                                                              // 24
+var IS_ERROR = {};                                                                                                  // 25
+function getThen(obj) {                                                                                             // 26
+  try {                                                                                                             // 27
+    return obj.then;                                                                                                // 28
+  } catch (ex) {                                                                                                    // 29
+    LAST_ERROR = ex;                                                                                                // 30
+    return IS_ERROR;                                                                                                // 31
+  }                                                                                                                 // 32
+}                                                                                                                   // 33
+                                                                                                                    // 34
+function tryCallOne(fn, a) {                                                                                        // 35
+  try {                                                                                                             // 36
+    return fn(a);                                                                                                   // 37
+  } catch (ex) {                                                                                                    // 38
+    LAST_ERROR = ex;                                                                                                // 39
+    return IS_ERROR;                                                                                                // 40
+  }                                                                                                                 // 41
+}                                                                                                                   // 42
+function tryCallTwo(fn, a, b) {                                                                                     // 43
+  try {                                                                                                             // 44
+    fn(a, b);                                                                                                       // 45
+  } catch (ex) {                                                                                                    // 46
+    LAST_ERROR = ex;                                                                                                // 47
+    return IS_ERROR;                                                                                                // 48
+  }                                                                                                                 // 49
+}                                                                                                                   // 50
+                                                                                                                    // 51
+module.exports = Promise;                                                                                           // 52
+                                                                                                                    // 53
+function Promise(fn) {                                                                                              // 54
+  if (typeof this !== 'object') {                                                                                   // 55
+    throw new TypeError('Promises must be constructed via new');                                                    // 56
+  }                                                                                                                 // 57
+  if (typeof fn !== 'function') {                                                                                   // 58
+    throw new TypeError('not a function');                                                                          // 59
+  }                                                                                                                 // 60
+  this._45 = 0;                                                                                                     // 61
+  this._81 = 0;                                                                                                     // 62
+  this._65 = null;                                                                                                  // 63
+  this._54 = null;                                                                                                  // 64
+  if (fn === noop) return;                                                                                          // 65
+  doResolve(fn, this);                                                                                              // 66
+}                                                                                                                   // 67
+Promise._10 = null;                                                                                                 // 68
+Promise._97 = null;                                                                                                 // 69
+Promise._61 = noop;                                                                                                 // 70
+                                                                                                                    // 71
+Promise.prototype.then = function(onFulfilled, onRejected) {                                                        // 72
+  if (this.constructor !== Promise) {                                                                               // 73
+    return safeThen(this, onFulfilled, onRejected);                                                                 // 74
+  }                                                                                                                 // 75
+  var res = new Promise(noop);                                                                                      // 76
+  handle(this, new Handler(onFulfilled, onRejected, res));                                                          // 77
+  return res;                                                                                                       // 78
+};                                                                                                                  // 79
+                                                                                                                    // 80
+function safeThen(self, onFulfilled, onRejected) {                                                                  // 81
+  return new self.constructor(function (resolve, reject) {                                                          // 82
+    var res = new Promise(noop);                                                                                    // 83
+    res.then(resolve, reject);                                                                                      // 84
+    handle(self, new Handler(onFulfilled, onRejected, res));                                                        // 85
+  });                                                                                                               // 86
+};                                                                                                                  // 87
+function handle(self, deferred) {                                                                                   // 88
+  while (self._81 === 3) {                                                                                          // 89
+    self = self._65;                                                                                                // 90
+  }                                                                                                                 // 91
+  if (Promise._10) {                                                                                                // 92
+    Promise._10(self);                                                                                              // 93
+  }                                                                                                                 // 94
+  if (self._81 === 0) {                                                                                             // 95
+    if (self._45 === 0) {                                                                                           // 96
+      self._45 = 1;                                                                                                 // 97
+      self._54 = deferred;                                                                                          // 98
+      return;                                                                                                       // 99
+    }                                                                                                               // 100
+    if (self._45 === 1) {                                                                                           // 101
+      self._45 = 2;                                                                                                 // 102
+      self._54 = [self._54, deferred];                                                                              // 103
+      return;                                                                                                       // 104
+    }                                                                                                               // 105
+    self._54.push(deferred);                                                                                        // 106
+    return;                                                                                                         // 107
+  }                                                                                                                 // 108
+  handleResolved(self, deferred);                                                                                   // 109
+}                                                                                                                   // 110
+                                                                                                                    // 111
+function handleResolved(self, deferred) {                                                                           // 112
+  asap(function() {                                                                                                 // 113
+    var cb = self._81 === 1 ? deferred.onFulfilled : deferred.onRejected;                                           // 114
+    if (cb === null) {                                                                                              // 115
+      if (self._81 === 1) {                                                                                         // 116
+        resolve(deferred.promise, self._65);                                                                        // 117
+      } else {                                                                                                      // 118
+        reject(deferred.promise, self._65);                                                                         // 119
+      }                                                                                                             // 120
+      return;                                                                                                       // 121
+    }                                                                                                               // 122
+    var ret = tryCallOne(cb, self._65);                                                                             // 123
+    if (ret === IS_ERROR) {                                                                                         // 124
+      reject(deferred.promise, LAST_ERROR);                                                                         // 125
+    } else {                                                                                                        // 126
+      resolve(deferred.promise, ret);                                                                               // 127
+    }                                                                                                               // 128
+  });                                                                                                               // 129
+}                                                                                                                   // 130
+function resolve(self, newValue) {                                                                                  // 131
+  // Promise Resolution Procedure: https://github.com/promises-aplus/promises-spec#the-promise-resolution-procedure
+  if (newValue === self) {                                                                                          // 133
+    return reject(                                                                                                  // 134
+      self,                                                                                                         // 135
+      new TypeError('A promise cannot be resolved with itself.')                                                    // 136
+    );                                                                                                              // 137
+  }                                                                                                                 // 138
+  if (                                                                                                              // 139
+    newValue &&                                                                                                     // 140
+    (typeof newValue === 'object' || typeof newValue === 'function')                                                // 141
+  ) {                                                                                                               // 142
+    var then = getThen(newValue);                                                                                   // 143
+    if (then === IS_ERROR) {                                                                                        // 144
+      return reject(self, LAST_ERROR);                                                                              // 145
+    }                                                                                                               // 146
+    if (                                                                                                            // 147
+      then === self.then &&                                                                                         // 148
+      newValue instanceof Promise                                                                                   // 149
+    ) {                                                                                                             // 150
+      self._81 = 3;                                                                                                 // 151
+      self._65 = newValue;                                                                                          // 152
+      finale(self);                                                                                                 // 153
+      return;                                                                                                       // 154
+    } else if (typeof then === 'function') {                                                                        // 155
+      doResolve(then.bind(newValue), self);                                                                         // 156
+      return;                                                                                                       // 157
+    }                                                                                                               // 158
+  }                                                                                                                 // 159
+  self._81 = 1;                                                                                                     // 160
+  self._65 = newValue;                                                                                              // 161
+  finale(self);                                                                                                     // 162
+}                                                                                                                   // 163
+                                                                                                                    // 164
+function reject(self, newValue) {                                                                                   // 165
+  self._81 = 2;                                                                                                     // 166
+  self._65 = newValue;                                                                                              // 167
+  if (Promise._97) {                                                                                                // 168
+    Promise._97(self, newValue);                                                                                    // 169
+  }                                                                                                                 // 170
+  finale(self);                                                                                                     // 171
+}                                                                                                                   // 172
+function finale(self) {                                                                                             // 173
+  if (self._45 === 1) {                                                                                             // 174
+    handle(self, self._54);                                                                                         // 175
+    self._54 = null;                                                                                                // 176
+  }                                                                                                                 // 177
+  if (self._45 === 2) {                                                                                             // 178
+    for (var i = 0; i < self._54.length; i++) {                                                                     // 179
+      handle(self, self._54[i]);                                                                                    // 180
+    }                                                                                                               // 181
+    self._54 = null;                                                                                                // 182
+  }                                                                                                                 // 183
+}                                                                                                                   // 184
+                                                                                                                    // 185
+function Handler(onFulfilled, onRejected, promise){                                                                 // 186
+  this.onFulfilled = typeof onFulfilled === 'function' ? onFulfilled : null;                                        // 187
+  this.onRejected = typeof onRejected === 'function' ? onRejected : null;                                           // 188
+  this.promise = promise;                                                                                           // 189
+}                                                                                                                   // 190
+                                                                                                                    // 191
+/**                                                                                                                 // 192
+ * Take a potentially misbehaving resolver function and make sure                                                   // 193
+ * onFulfilled and onRejected are only called once.                                                                 // 194
+ *                                                                                                                  // 195
+ * Makes no guarantees about asynchrony.                                                                            // 196
+ */                                                                                                                 // 197
+function doResolve(fn, promise) {                                                                                   // 198
+  var done = false;                                                                                                 // 199
+  var res = tryCallTwo(fn, function (value) {                                                                       // 200
+    if (done) return;                                                                                               // 201
+    done = true;                                                                                                    // 202
+    resolve(promise, value);                                                                                        // 203
+  }, function (reason) {                                                                                            // 204
+    if (done) return;                                                                                               // 205
+    done = true;                                                                                                    // 206
+    reject(promise, reason);                                                                                        // 207
+  })                                                                                                                // 208
+  if (!done && res === IS_ERROR) {                                                                                  // 209
+    done = true;                                                                                                    // 210
+    reject(promise, LAST_ERROR);                                                                                    // 211
+  }                                                                                                                 // 212
+}                                                                                                                   // 213
+                                                                                                                    // 214
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+}],"done.js":["./core.js",function(require,exports,module){
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                                                  //
+// node_modules/meteor/promise/node_modules/meteor-promise/node_modules/promise/lib/done.js                         //
+//                                                                                                                  //
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                                                                                                                    //
+'use strict';                                                                                                       // 1
+                                                                                                                    // 2
+var Promise = require('./core.js');                                                                                 // 3
+                                                                                                                    // 4
+module.exports = Promise;                                                                                           // 5
+Promise.prototype.done = function (onFulfilled, onRejected) {                                                       // 6
+  var self = arguments.length ? this.then.apply(this, arguments) : this;                                            // 7
+  self.then(null, function (err) {                                                                                  // 8
+    setTimeout(function () {                                                                                        // 9
+      throw err;                                                                                                    // 10
+    }, 0);                                                                                                          // 11
+  });                                                                                                               // 12
+};                                                                                                                  // 13
+                                                                                                                    // 14
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+}],"finally.js":["./core.js",function(require,exports,module){
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                                                  //
+// node_modules/meteor/promise/node_modules/meteor-promise/node_modules/promise/lib/finally.js                      //
+//                                                                                                                  //
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                                                                                                                    //
+'use strict';                                                                                                       // 1
+                                                                                                                    // 2
+var Promise = require('./core.js');                                                                                 // 3
+                                                                                                                    // 4
+module.exports = Promise;                                                                                           // 5
+Promise.prototype['finally'] = function (f) {                                                                       // 6
+  return this.then(function (value) {                                                                               // 7
+    return Promise.resolve(f()).then(function () {                                                                  // 8
+      return value;                                                                                                 // 9
+    });                                                                                                             // 10
+  }, function (err) {                                                                                               // 11
+    return Promise.resolve(f()).then(function () {                                                                  // 12
+      throw err;                                                                                                    // 13
+    });                                                                                                             // 14
+  });                                                                                                               // 15
+};                                                                                                                  // 16
+                                                                                                                    // 17
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+}],"es6-extensions.js":["./core.js",function(require,exports,module){
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                                                  //
+// node_modules/meteor/promise/node_modules/meteor-promise/node_modules/promise/lib/es6-extensions.js               //
+//                                                                                                                  //
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                                                                                                                    //
+'use strict';                                                                                                       // 1
+                                                                                                                    // 2
+//This file contains the ES6 extensions to the core Promises/A+ API                                                 // 3
+                                                                                                                    // 4
+var Promise = require('./core.js');                                                                                 // 5
+                                                                                                                    // 6
+module.exports = Promise;                                                                                           // 7
+                                                                                                                    // 8
+/* Static Functions */                                                                                              // 9
+                                                                                                                    // 10
+var TRUE = valuePromise(true);                                                                                      // 11
+var FALSE = valuePromise(false);                                                                                    // 12
+var NULL = valuePromise(null);                                                                                      // 13
+var UNDEFINED = valuePromise(undefined);                                                                            // 14
+var ZERO = valuePromise(0);                                                                                         // 15
+var EMPTYSTRING = valuePromise('');                                                                                 // 16
+                                                                                                                    // 17
+function valuePromise(value) {                                                                                      // 18
+  var p = new Promise(Promise._61);                                                                                 // 19
+  p._81 = 1;                                                                                                        // 20
+  p._65 = value;                                                                                                    // 21
+  return p;                                                                                                         // 22
+}                                                                                                                   // 23
+Promise.resolve = function (value) {                                                                                // 24
+  if (value instanceof Promise) return value;                                                                       // 25
+                                                                                                                    // 26
+  if (value === null) return NULL;                                                                                  // 27
+  if (value === undefined) return UNDEFINED;                                                                        // 28
+  if (value === true) return TRUE;                                                                                  // 29
+  if (value === false) return FALSE;                                                                                // 30
+  if (value === 0) return ZERO;                                                                                     // 31
+  if (value === '') return EMPTYSTRING;                                                                             // 32
+                                                                                                                    // 33
+  if (typeof value === 'object' || typeof value === 'function') {                                                   // 34
+    try {                                                                                                           // 35
+      var then = value.then;                                                                                        // 36
+      if (typeof then === 'function') {                                                                             // 37
+        return new Promise(then.bind(value));                                                                       // 38
+      }                                                                                                             // 39
+    } catch (ex) {                                                                                                  // 40
+      return new Promise(function (resolve, reject) {                                                               // 41
+        reject(ex);                                                                                                 // 42
+      });                                                                                                           // 43
+    }                                                                                                               // 44
+  }                                                                                                                 // 45
+  return valuePromise(value);                                                                                       // 46
+};                                                                                                                  // 47
+                                                                                                                    // 48
+Promise.all = function (arr) {                                                                                      // 49
+  var args = Array.prototype.slice.call(arr);                                                                       // 50
+                                                                                                                    // 51
+  return new Promise(function (resolve, reject) {                                                                   // 52
+    if (args.length === 0) return resolve([]);                                                                      // 53
+    var remaining = args.length;                                                                                    // 54
+    function res(i, val) {                                                                                          // 55
+      if (val && (typeof val === 'object' || typeof val === 'function')) {                                          // 56
+        if (val instanceof Promise && val.then === Promise.prototype.then) {                                        // 57
+          while (val._81 === 3) {                                                                                   // 58
+            val = val._65;                                                                                          // 59
+          }                                                                                                         // 60
+          if (val._81 === 1) return res(i, val._65);                                                                // 61
+          if (val._81 === 2) reject(val._65);                                                                       // 62
+          val.then(function (val) {                                                                                 // 63
+            res(i, val);                                                                                            // 64
+          }, reject);                                                                                               // 65
+          return;                                                                                                   // 66
+        } else {                                                                                                    // 67
+          var then = val.then;                                                                                      // 68
+          if (typeof then === 'function') {                                                                         // 69
+            var p = new Promise(then.bind(val));                                                                    // 70
+            p.then(function (val) {                                                                                 // 71
+              res(i, val);                                                                                          // 72
+            }, reject);                                                                                             // 73
+            return;                                                                                                 // 74
+          }                                                                                                         // 75
+        }                                                                                                           // 76
+      }                                                                                                             // 77
+      args[i] = val;                                                                                                // 78
+      if (--remaining === 0) {                                                                                      // 79
+        resolve(args);                                                                                              // 80
+      }                                                                                                             // 81
+    }                                                                                                               // 82
+    for (var i = 0; i < args.length; i++) {                                                                         // 83
+      res(i, args[i]);                                                                                              // 84
+    }                                                                                                               // 85
+  });                                                                                                               // 86
+};                                                                                                                  // 87
+                                                                                                                    // 88
+Promise.reject = function (value) {                                                                                 // 89
+  return new Promise(function (resolve, reject) {                                                                   // 90
+    reject(value);                                                                                                  // 91
+  });                                                                                                               // 92
+};                                                                                                                  // 93
+                                                                                                                    // 94
+Promise.race = function (values) {                                                                                  // 95
+  return new Promise(function (resolve, reject) {                                                                   // 96
+    values.forEach(function(value){                                                                                 // 97
+      Promise.resolve(value).then(resolve, reject);                                                                 // 98
+    });                                                                                                             // 99
+  });                                                                                                               // 100
+};                                                                                                                  // 101
+                                                                                                                    // 102
+/* Prototype Methods */                                                                                             // 103
+                                                                                                                    // 104
+Promise.prototype['catch'] = function (onRejected) {                                                                // 105
+  return this.then(null, onRejected);                                                                               // 106
+};                                                                                                                  // 107
+                                                                                                                    // 108
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+}],"node-extensions.js":["./core.js","asap",function(require,exports,module){
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                                                  //
+// node_modules/meteor/promise/node_modules/meteor-promise/node_modules/promise/lib/node-extensions.js              //
+//                                                                                                                  //
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                                                                                                                    //
+'use strict';                                                                                                       // 1
+                                                                                                                    // 2
+// This file contains then/promise specific extensions that are only useful                                         // 3
+// for node.js interop                                                                                              // 4
+                                                                                                                    // 5
+var Promise = require('./core.js');                                                                                 // 6
+var asap = require('asap');                                                                                         // 7
+                                                                                                                    // 8
+module.exports = Promise;                                                                                           // 9
+                                                                                                                    // 10
+/* Static Functions */                                                                                              // 11
+                                                                                                                    // 12
+Promise.denodeify = function (fn, argumentCount) {                                                                  // 13
+  if (                                                                                                              // 14
+    typeof argumentCount === 'number' && argumentCount !== Infinity                                                 // 15
+  ) {                                                                                                               // 16
+    return denodeifyWithCount(fn, argumentCount);                                                                   // 17
+  } else {                                                                                                          // 18
+    return denodeifyWithoutCount(fn);                                                                               // 19
+  }                                                                                                                 // 20
+}                                                                                                                   // 21
+                                                                                                                    // 22
+var callbackFn = (                                                                                                  // 23
+  'function (err, res) {' +                                                                                         // 24
+  'if (err) { rj(err); } else { rs(res); }' +                                                                       // 25
+  '}'                                                                                                               // 26
+);                                                                                                                  // 27
+function denodeifyWithCount(fn, argumentCount) {                                                                    // 28
+  var args = [];                                                                                                    // 29
+  for (var i = 0; i < argumentCount; i++) {                                                                         // 30
+    args.push('a' + i);                                                                                             // 31
+  }                                                                                                                 // 32
+  var body = [                                                                                                      // 33
+    'return function (' + args.join(',') + ') {',                                                                   // 34
+    'var self = this;',                                                                                             // 35
+    'return new Promise(function (rs, rj) {',                                                                       // 36
+    'var res = fn.call(',                                                                                           // 37
+    ['self'].concat(args).concat([callbackFn]).join(','),                                                           // 38
+    ');',                                                                                                           // 39
+    'if (res &&',                                                                                                   // 40
+    '(typeof res === "object" || typeof res === "function") &&',                                                    // 41
+    'typeof res.then === "function"',                                                                               // 42
+    ') {rs(res);}',                                                                                                 // 43
+    '});',                                                                                                          // 44
+    '};'                                                                                                            // 45
+  ].join('');                                                                                                       // 46
+  return Function(['Promise', 'fn'], body)(Promise, fn);                                                            // 47
+}                                                                                                                   // 48
+function denodeifyWithoutCount(fn) {                                                                                // 49
+  var fnLength = Math.max(fn.length - 1, 3);                                                                        // 50
+  var args = [];                                                                                                    // 51
+  for (var i = 0; i < fnLength; i++) {                                                                              // 52
+    args.push('a' + i);                                                                                             // 53
+  }                                                                                                                 // 54
+  var body = [                                                                                                      // 55
+    'return function (' + args.join(',') + ') {',                                                                   // 56
+    'var self = this;',                                                                                             // 57
+    'var args;',                                                                                                    // 58
+    'var argLength = arguments.length;',                                                                            // 59
+    'if (arguments.length > ' + fnLength + ') {',                                                                   // 60
+    'args = new Array(arguments.length + 1);',                                                                      // 61
+    'for (var i = 0; i < arguments.length; i++) {',                                                                 // 62
+    'args[i] = arguments[i];',                                                                                      // 63
+    '}',                                                                                                            // 64
+    '}',                                                                                                            // 65
+    'return new Promise(function (rs, rj) {',                                                                       // 66
+    'var cb = ' + callbackFn + ';',                                                                                 // 67
+    'var res;',                                                                                                     // 68
+    'switch (argLength) {',                                                                                         // 69
+    args.concat(['extra']).map(function (_, index) {                                                                // 70
+      return (                                                                                                      // 71
+        'case ' + (index) + ':' +                                                                                   // 72
+        'res = fn.call(' + ['self'].concat(args.slice(0, index)).concat('cb').join(',') + ');' +                    // 73
+        'break;'                                                                                                    // 74
+      );                                                                                                            // 75
+    }).join(''),                                                                                                    // 76
+    'default:',                                                                                                     // 77
+    'args[argLength] = cb;',                                                                                        // 78
+    'res = fn.apply(self, args);',                                                                                  // 79
+    '}',                                                                                                            // 80
+                                                                                                                    // 81
+    'if (res &&',                                                                                                   // 82
+    '(typeof res === "object" || typeof res === "function") &&',                                                    // 83
+    'typeof res.then === "function"',                                                                               // 84
+    ') {rs(res);}',                                                                                                 // 85
+    '});',                                                                                                          // 86
+    '};'                                                                                                            // 87
+  ].join('');                                                                                                       // 88
+                                                                                                                    // 89
+  return Function(                                                                                                  // 90
+    ['Promise', 'fn'],                                                                                              // 91
+    body                                                                                                            // 92
+  )(Promise, fn);                                                                                                   // 93
+}                                                                                                                   // 94
+                                                                                                                    // 95
+Promise.nodeify = function (fn) {                                                                                   // 96
+  return function () {                                                                                              // 97
+    var args = Array.prototype.slice.call(arguments);                                                               // 98
+    var callback =                                                                                                  // 99
+      typeof args[args.length - 1] === 'function' ? args.pop() : null;                                              // 100
+    var ctx = this;                                                                                                 // 101
+    try {                                                                                                           // 102
+      return fn.apply(this, arguments).nodeify(callback, ctx);                                                      // 103
+    } catch (ex) {                                                                                                  // 104
+      if (callback === null || typeof callback == 'undefined') {                                                    // 105
+        return new Promise(function (resolve, reject) {                                                             // 106
+          reject(ex);                                                                                               // 107
+        });                                                                                                         // 108
+      } else {                                                                                                      // 109
+        asap(function () {                                                                                          // 110
+          callback.call(ctx, ex);                                                                                   // 111
+        })                                                                                                          // 112
+      }                                                                                                             // 113
+    }                                                                                                               // 114
+  }                                                                                                                 // 115
+}                                                                                                                   // 116
+                                                                                                                    // 117
+Promise.prototype.nodeify = function (callback, ctx) {                                                              // 118
+  if (typeof callback != 'function') return this;                                                                   // 119
+                                                                                                                    // 120
+  this.then(function (value) {                                                                                      // 121
+    asap(function () {                                                                                              // 122
+      callback.call(ctx, null, value);                                                                              // 123
+    });                                                                                                             // 124
+  }, function (err) {                                                                                               // 125
+    asap(function () {                                                                                              // 126
+      callback.call(ctx, err);                                                                                      // 127
+    });                                                                                                             // 128
+  });                                                                                                               // 129
+}                                                                                                                   // 130
+                                                                                                                    // 131
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+}],"synchronous.js":["./core.js",function(require,exports,module){
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                                                  //
+// node_modules/meteor/promise/node_modules/meteor-promise/node_modules/promise/lib/synchronous.js                  //
+//                                                                                                                  //
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                                                                                                                    //
+'use strict';                                                                                                       // 1
+                                                                                                                    // 2
+var Promise = require('./core.js');                                                                                 // 3
+                                                                                                                    // 4
+module.exports = Promise;                                                                                           // 5
+Promise.enableSynchronous = function () {                                                                           // 6
+  Promise.prototype.isPending = function() {                                                                        // 7
+    return this.getState() == 0;                                                                                    // 8
+  };                                                                                                                // 9
+                                                                                                                    // 10
+  Promise.prototype.isFulfilled = function() {                                                                      // 11
+    return this.getState() == 1;                                                                                    // 12
+  };                                                                                                                // 13
+                                                                                                                    // 14
+  Promise.prototype.isRejected = function() {                                                                       // 15
+    return this.getState() == 2;                                                                                    // 16
+  };                                                                                                                // 17
+                                                                                                                    // 18
+  Promise.prototype.getValue = function () {                                                                        // 19
+    if (this._81 === 3) {                                                                                           // 20
+      return this._65.getValue();                                                                                   // 21
+    }                                                                                                               // 22
+                                                                                                                    // 23
+    if (!this.isFulfilled()) {                                                                                      // 24
+      throw new Error('Cannot get a value of an unfulfilled promise.');                                             // 25
+    }                                                                                                               // 26
+                                                                                                                    // 27
+    return this._65;                                                                                                // 28
+  };                                                                                                                // 29
+                                                                                                                    // 30
+  Promise.prototype.getReason = function () {                                                                       // 31
+    if (this._81 === 3) {                                                                                           // 32
+      return this._65.getReason();                                                                                  // 33
+    }                                                                                                               // 34
+                                                                                                                    // 35
+    if (!this.isRejected()) {                                                                                       // 36
+      throw new Error('Cannot get a rejection reason of a non-rejected promise.');                                  // 37
+    }                                                                                                               // 38
+                                                                                                                    // 39
+    return this._65;                                                                                                // 40
+  };                                                                                                                // 41
+                                                                                                                    // 42
+  Promise.prototype.getState = function () {                                                                        // 43
+    if (this._81 === 3) {                                                                                           // 44
+      return this._65.getState();                                                                                   // 45
+    }                                                                                                               // 46
+    if (this._81 === -1 || this._81 === -2) {                                                                       // 47
+      return 0;                                                                                                     // 48
+    }                                                                                                               // 49
+                                                                                                                    // 50
+    return this._81;                                                                                                // 51
+  };                                                                                                                // 52
+};                                                                                                                  // 53
+                                                                                                                    // 54
+Promise.disableSynchronous = function() {                                                                           // 55
+  Promise.prototype.isPending = undefined;                                                                          // 56
+  Promise.prototype.isFulfilled = undefined;                                                                        // 57
+  Promise.prototype.isRejected = undefined;                                                                         // 58
+  Promise.prototype.getValue = undefined;                                                                           // 59
+  Promise.prototype.getReason = undefined;                                                                          // 60
+  Promise.prototype.getState = undefined;                                                                           // 61
+};                                                                                                                  // 62
+                                                                                                                    // 63
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+}]},"node_modules":{"asap":{"raw.js":["domain",function(require,exports,module){
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                                                  //
+// node_modules/meteor/promise/node_modules/meteor-promise/node_modules/promise/node_modules/asap/raw.js            //
+//                                                                                                                  //
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                                                                                                                    //
+"use strict";                                                                                                       // 1
+                                                                                                                    // 2
+var domain; // The domain module is executed on demand                                                              // 3
+var hasSetImmediate = typeof setImmediate === "function";                                                           // 4
+                                                                                                                    // 5
+// Use the fastest means possible to execute a task in its own turn, with                                           // 6
+// priority over other events including network IO events in Node.js.                                               // 7
+//                                                                                                                  // 8
+// An exception thrown by a task will permanently interrupt the processing of                                       // 9
+// subsequent tasks. The higher level `asap` function ensures that if an                                            // 10
+// exception is thrown by a task, that the task queue will continue flushing as                                     // 11
+// soon as possible, but if you use `rawAsap` directly, you are responsible to                                      // 12
+// either ensure that no exceptions are thrown from your task, or to manually                                       // 13
+// call `rawAsap.requestFlush` if an exception is thrown.                                                           // 14
+module.exports = rawAsap;                                                                                           // 15
+function rawAsap(task) {                                                                                            // 16
+    if (!queue.length) {                                                                                            // 17
+        requestFlush();                                                                                             // 18
+        flushing = true;                                                                                            // 19
+    }                                                                                                               // 20
+    // Avoids a function call                                                                                       // 21
+    queue[queue.length] = task;                                                                                     // 22
+}                                                                                                                   // 23
+                                                                                                                    // 24
+var queue = [];                                                                                                     // 25
+// Once a flush has been requested, no further calls to `requestFlush` are                                          // 26
+// necessary until the next `flush` completes.                                                                      // 27
+var flushing = false;                                                                                               // 28
+// The position of the next task to execute in the task queue. This is                                              // 29
+// preserved between calls to `flush` so that it can be resumed if                                                  // 30
+// a task throws an exception.                                                                                      // 31
+var index = 0;                                                                                                      // 32
+// If a task schedules additional tasks recursively, the task queue can grow                                        // 33
+// unbounded. To prevent memory excaustion, the task queue will periodically                                        // 34
+// truncate already-completed tasks.                                                                                // 35
+var capacity = 1024;                                                                                                // 36
+                                                                                                                    // 37
+// The flush function processes all tasks that have been scheduled with                                             // 38
+// `rawAsap` unless and until one of those tasks throws an exception.                                               // 39
+// If a task throws an exception, `flush` ensures that its state will remain                                        // 40
+// consistent and will resume where it left off when called again.                                                  // 41
+// However, `flush` does not make any arrangements to be called again if an                                         // 42
+// exception is thrown.                                                                                             // 43
+function flush() {                                                                                                  // 44
+    while (index < queue.length) {                                                                                  // 45
+        var currentIndex = index;                                                                                   // 46
+        // Advance the index before calling the task. This ensures that we will                                     // 47
+        // begin flushing on the next task the task throws an error.                                                // 48
+        index = index + 1;                                                                                          // 49
+        queue[currentIndex].call();                                                                                 // 50
+        // Prevent leaking memory for long chains of recursive calls to `asap`.                                     // 51
+        // If we call `asap` within tasks scheduled by `asap`, the queue will                                       // 52
+        // grow, but to avoid an O(n) walk for every task we execute, we don't                                      // 53
+        // shift tasks off the queue after they have been executed.                                                 // 54
+        // Instead, we periodically shift 1024 tasks off the queue.                                                 // 55
+        if (index > capacity) {                                                                                     // 56
+            // Manually shift all values starting at the index back to the                                          // 57
+            // beginning of the queue.                                                                              // 58
+            for (var scan = 0, newLength = queue.length - index; scan < newLength; scan++) {                        // 59
+                queue[scan] = queue[scan + index];                                                                  // 60
+            }                                                                                                       // 61
+            queue.length -= index;                                                                                  // 62
+            index = 0;                                                                                              // 63
+        }                                                                                                           // 64
+    }                                                                                                               // 65
+    queue.length = 0;                                                                                               // 66
+    index = 0;                                                                                                      // 67
+    flushing = false;                                                                                               // 68
+}                                                                                                                   // 69
+                                                                                                                    // 70
+rawAsap.requestFlush = requestFlush;                                                                                // 71
+function requestFlush() {                                                                                           // 72
+    // Ensure flushing is not bound to any domain.                                                                  // 73
+    // It is not sufficient to exit the domain, because domains exist on a stack.                                   // 74
+    // To execute code outside of any domain, the following dance is necessary.                                     // 75
+    var parentDomain = process.domain;                                                                              // 76
+    if (parentDomain) {                                                                                             // 77
+        if (!domain) {                                                                                              // 78
+            // Lazy execute the domain module.                                                                      // 79
+            // Only employed if the user elects to use domains.                                                     // 80
+            domain = require("domain");                                                                             // 81
+        }                                                                                                           // 82
+        domain.active = process.domain = null;                                                                      // 83
+    }                                                                                                               // 84
+                                                                                                                    // 85
+    // `setImmediate` is slower that `process.nextTick`, but `process.nextTick`                                     // 86
+    // cannot handle recursion.                                                                                     // 87
+    // `requestFlush` will only be called recursively from `asap.js`, to resume                                     // 88
+    // flushing after an error is thrown into a domain.                                                             // 89
+    // Conveniently, `setImmediate` was introduced in the same version                                              // 90
+    // `process.nextTick` started throwing recursion errors.                                                        // 91
+    if (flushing && hasSetImmediate) {                                                                              // 92
+        setImmediate(flush);                                                                                        // 93
+    } else {                                                                                                        // 94
+        process.nextTick(flush);                                                                                    // 95
+    }                                                                                                               // 96
+                                                                                                                    // 97
+    if (parentDomain) {                                                                                             // 98
+        domain.active = process.domain = parentDomain;                                                              // 99
+    }                                                                                                               // 100
+}                                                                                                                   // 101
+                                                                                                                    // 102
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+}],"package.json":function(require,exports){
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                                                  //
+// ../npm/node_modules/meteor-promise/node_modules/promise/node_modules/asap/package.json                           //
+//                                                                                                                  //
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                                                                                                                    //
+exports.name = "asap";                                                                                              // 1
+exports.version = "2.0.3";                                                                                          // 2
+exports.main = "./asap.js";                                                                                         // 3
+                                                                                                                    // 4
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+},"asap.js":["./raw",function(require,exports,module){
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                                                  //
+// node_modules/meteor/promise/node_modules/meteor-promise/node_modules/promise/node_modules/asap/asap.js           //
+//                                                                                                                  //
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                                                                                                                    //
+"use strict";                                                                                                       // 1
+                                                                                                                    // 2
+var rawAsap = require("./raw");                                                                                     // 3
+var freeTasks = [];                                                                                                 // 4
+                                                                                                                    // 5
+/**                                                                                                                 // 6
+ * Calls a task as soon as possible after returning, in its own event, with                                         // 7
+ * priority over IO events. An exception thrown in a task can be handled by                                         // 8
+ * `process.on("uncaughtException") or `domain.on("error")`, but will otherwise                                     // 9
+ * crash the process. If the error is handled, all subsequent tasks will                                            // 10
+ * resume.                                                                                                          // 11
+ *                                                                                                                  // 12
+ * @param {{call}} task A callable object, typically a function that takes no                                       // 13
+ * arguments.                                                                                                       // 14
+ */                                                                                                                 // 15
+module.exports = asap;                                                                                              // 16
+function asap(task) {                                                                                               // 17
+    var rawTask;                                                                                                    // 18
+    if (freeTasks.length) {                                                                                         // 19
+        rawTask = freeTasks.pop();                                                                                  // 20
+    } else {                                                                                                        // 21
+        rawTask = new RawTask();                                                                                    // 22
+    }                                                                                                               // 23
+    rawTask.task = task;                                                                                            // 24
+    rawTask.domain = process.domain;                                                                                // 25
+    rawAsap(rawTask);                                                                                               // 26
+}                                                                                                                   // 27
+                                                                                                                    // 28
+function RawTask() {                                                                                                // 29
+    this.task = null;                                                                                               // 30
+    this.domain = null;                                                                                             // 31
+}                                                                                                                   // 32
+                                                                                                                    // 33
+RawTask.prototype.call = function () {                                                                              // 34
+    if (this.domain) {                                                                                              // 35
+        this.domain.enter();                                                                                        // 36
+    }                                                                                                               // 37
+    var threw = true;                                                                                               // 38
+    try {                                                                                                           // 39
+        this.task.call();                                                                                           // 40
+        threw = false;                                                                                              // 41
+        // If the task throws an exception (presumably) Node.js restores the                                        // 42
+        // domain stack for the next event.                                                                         // 43
+        if (this.domain) {                                                                                          // 44
+            this.domain.exit();                                                                                     // 45
+        }                                                                                                           // 46
+    } finally {                                                                                                     // 47
+        // We use try/finally and a threw flag to avoid messing up stack traces                                     // 48
+        // when we catch and release errors.                                                                        // 49
+        if (threw) {                                                                                                // 50
+            // In Node.js, uncaught exceptions are considered fatal errors.                                         // 51
+            // Re-throw them to interrupt flushing!                                                                 // 52
+            // Ensure that flushing continues if an uncaught exception is                                           // 53
+            // suppressed listening process.on("uncaughtException") or                                              // 54
+            // domain.on("error").                                                                                  // 55
+            rawAsap.requestFlush();                                                                                 // 56
+        }                                                                                                           // 57
+        // If the task threw an error, we do not want to exit the domain here.                                      // 58
+        // Exiting the domain would prevent the domain from catching the error.                                     // 59
+        this.task = null;                                                                                           // 60
+        this.domain = null;                                                                                         // 61
+        freeTasks.push(this);                                                                                       // 62
+    }                                                                                                               // 63
+};                                                                                                                  // 64
+                                                                                                                    // 65
+                                                                                                                    // 66
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+}]}}}}}}}}}},{"extensions":[".js",".json"]});
+var exports = require("./node_modules/meteor/promise/client.js");
 
 /* Exports */
 if (typeof Package === 'undefined') Package = {};
 (function (pkg, symbols) {
   for (var s in symbols)
     (s in pkg) || (pkg[s] = symbols[s]);
-})(Package.promise = {}, {
+})(Package.promise = exports, {
   Promise: Promise
 });
 

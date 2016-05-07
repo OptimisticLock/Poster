@@ -1,9 +1,9 @@
 (function () {
 
 /* Imports */
-var meteorEnv = Package.meteor.meteorEnv;
 var Meteor = Package.meteor.Meteor;
 var global = Package.meteor.global;
+var meteorEnv = Package.meteor.meteorEnv;
 var _ = Package.underscore._;
 var EJSON = Package.ejson.EJSON;
 
@@ -12,12 +12,12 @@ var Log;
 
 (function(){
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//                                                                                                                //
-// packages/logging/logging.js                                                                                    //
-//                                                                                                                //
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                                                                                                                  //
+/////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                     //
+// packages/logging/logging.js                                                         //
+//                                                                                     //
+/////////////////////////////////////////////////////////////////////////////////////////
+                                                                                       //
 Log = function () {
   return Log.info.apply(this, arguments);
 };
@@ -295,7 +295,7 @@ Log.objFromText = function (line, override) {
   return _.extend(obj, override);
 };
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////
 
 }).call(this);
 

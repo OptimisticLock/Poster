@@ -4,33 +4,7 @@
 var _ = Package.underscore._;
 
 /* Package-scope variables */
-var meteorEnv, global, Meteor;
-
-(function(){
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//                                                                                                                 //
-// packages/meteor/import_meteorEnv.js                                                                             //
-//                                                                                                                 //
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                                                                                                                   //
-// Need to re-export `meteorEnv` from `Package["meteor-env-{dev,prod}"]`
-// because the linker doesn't automatically import symbols from
-// `debugOnly` or `prodOnly` packages.
-
-meteorEnv = (
-  Package["meteor-env-dev"] ||
-  Package["meteor-env-prod"]
-).meteorEnv;
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-}).call(this);
-
-
-
-
-
+var global, meteorEnv, Meteor;
 
 (function(){
 
@@ -59,9 +33,18 @@ global = this;
 //                                                                                                                 //
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
                                                                                                                    //
+meteorEnv = {
+  NODE_ENV: process.env.NODE_ENV || "production",
+  TEST_METADATA: process.env.TEST_METADATA || "{}"
+};
+
+if (typeof __meteor_runtime_config__ === "object") {
+  __meteor_runtime_config__.meteorEnv = meteorEnv;
+}
+
 Meteor = {
   isProduction: meteorEnv.NODE_ENV === "production",
-  isDevelopment: meteorEnv.NODE_ENV === "development",
+  isDevelopment: meteorEnv.NODE_ENV !== "production",
   isClient: false,
   isServer: true,
   isCordova: false
@@ -520,6 +503,13 @@ _.extend(Meteor, {
   // Tracker.afterFlush or Node's nextTick (in practice). Then tests can do:
   //    callSomethingThatDefersSomeWork();
   //    Meteor.defer(expect(somethingThatValidatesThatTheWorkHappened));
+
+  /**
+   * @memberOf Meteor
+   * @summary Defer execution of a function to run asynchronously in the background (similar to `Meteor.setTimeout(func, 0)`.
+   * @locus Anywhere
+   * @param {Function} func The function to run
+   */
   defer: function (f) {
     Meteor._setImmediate(bindAndCatch("defer callback", f));
   }
@@ -999,6 +989,62 @@ Meteor._escapeRegExp = function (string) {
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                                                 //
+// packages/meteor/test_environment.js                                                                             //
+//                                                                                                                 //
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                                                                                                                   //
+var TEST_METADATA_STR;
+if (Meteor.isClient) {
+  TEST_METADATA_STR = meteorEnv.TEST_METADATA;
+} else {
+  TEST_METADATA_STR = process.env.TEST_METADATA;
+}
+
+var TEST_METADATA = JSON.parse(TEST_METADATA_STR || "{}");
+var testDriverPackageName = TEST_METADATA.driverPackage;
+
+// Note that if we are in test-packages mode neither of these will be set,
+// but we will have a test driver package
+Meteor.isTest = !!TEST_METADATA.isTest;
+Meteor.isAppTest = !!TEST_METADATA.isAppTest;
+Meteor.isPackageTest = !!testDriverPackageName && !Meteor.isTest && !Meteor.isAppTest; 
+
+if (typeof testDriverPackageName === "string") {
+  Meteor.startup(function() {
+    var testDriverPackage = Package[testDriverPackageName];
+    if (! testDriverPackage) {
+      throw new Error("Can't find test driver package: " + testDriverPackageName);
+    }
+
+    // On the client, the test driver *must* define `runTests`
+    if (Meteor.isClient) {
+      if (typeof testDriverPackage.runTests !== "function") {
+        throw new Error("Test driver package " + testDriverPackageName
+          + " missing `runTests` export");
+      }
+      testDriverPackage.runTests();
+    } else {
+      // The server can optionally define `start`
+      if (typeof testDriverPackage.start === "function") {
+        testDriverPackage.start();
+      }
+    }
+  });
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+}).call(this);
+
+
+
+
+
+
+(function(){
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                                                 //
 // packages/meteor/dynamics_nodejs.js                                                                              //
 //                                                                                                                 //
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1185,7 +1231,7 @@ if (process.env.ROOT_URL &&
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
                                                                                                                    //
 /**
- * @summary Generate an absolute URL pointing to the application. The server reads from the `ROOT_URL` environment variable to determine where it is running. This is taken care of automatically for apps deployed with `meteor deploy`, but must be provided when using `meteor build`.
+ * @summary Generate an absolute URL pointing to the application. The server reads from the `ROOT_URL` environment variable to determine where it is running. This is taken care of automatically for apps deployed to Galaxy, but must be provided when using `meteor build`.
  * @locus Anywhere
  * @param {String} [path] A path to append to the root URL. Do not include a leading "`/`".
  * @param {Object} [options]
@@ -1311,9 +1357,9 @@ if (typeof Package === 'undefined') Package = {};
   for (var s in symbols)
     (s in pkg) || (pkg[s] = symbols[s]);
 })(Package.meteor = {}, {
-  meteorEnv: meteorEnv,
   Meteor: Meteor,
-  global: global
+  global: global,
+  meteorEnv: meteorEnv
 });
 
 })();

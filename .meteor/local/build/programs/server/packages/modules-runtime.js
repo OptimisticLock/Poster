@@ -1,33 +1,33 @@
 (function () {
 
 /* Imports */
-var meteorEnv = Package.meteor.meteorEnv;
 var Meteor = Package.meteor.Meteor;
 var global = Package.meteor.global;
+var meteorEnv = Package.meteor.meteorEnv;
 
 /* Package-scope variables */
 var makeInstaller, meteorInstall;
 
-//////////////////////////////////////////////////////////////////////////////
-//                                                                          //
-// packages/modules-runtime/.npm/package/node_modules/install/install.js    //
-// This file is in bare mode and is not in its own closure.                 //
-//                                                                          //
-//////////////////////////////////////////////////////////////////////////////
-                                                                            //
+/////////////////////////////////////////////////////////////////////////////
+//                                                                         //
+// packages/modules-runtime/.npm/package/node_modules/install/install.js   //
+// This file is in bare mode and is not in its own closure.                //
+//                                                                         //
+/////////////////////////////////////////////////////////////////////////////
+                                                                           //
 makeInstaller = function (options) {
   options = options || {};
 
   // These file extensions will be appended to required module identifiers
   // if they do not exactly match an installed module.
-  var extensions = options.extensions || [".js", ".json"];
+  var defaultExtensions = options.extensions || [".js", ".json"];
 
   // This constructor will be used to instantiate the module objects
   // passed to module factory functions (i.e. the third argument after
   // require and exports).
-  var Module = options.Module || function Module(id, parent) {
+  var Module = options.Module || function Module(id) {
     this.id = id;
-    this.parent = parent;
+    this.children = [];
   };
 
   // If defined, the options.onInstall function will be called any time
@@ -46,13 +46,6 @@ makeInstaller = function (options) {
   // options.fallback will be implemented in terms of the native Node
   // require function, which has the ability to load binary modules.
   var fallback = options.fallback;
-
-  // Whenever a new require function is created in the makeRequire
-  // function below, any methods contained by options.requireMethods will
-  // be bound and attached as methods to that function object. This option
-  // is intended to support user-defined require.* extensions like
-  // require.ensure and require.promise.
-  var requireMethods = options.requireMethods;
 
   // Nothing special about MISSING.hasOwnProperty, except that it's fewer
   // characters than Object.prototype.hasOwnProperty after minification.
@@ -96,7 +89,7 @@ makeInstaller = function (options) {
     function require(id) {
       var result = fileResolve(file, id);
       if (result) {
-        return fileEvaluate(result);
+        return fileEvaluate(result, file.m);
       }
 
       var error = new Error("Cannot find module '" + id + "'");
@@ -117,22 +110,6 @@ makeInstaller = function (options) {
       if (f) return f.m.id;
       throw new Error("Cannot find module '" + id + "'");
     };
-
-    // A function that immediately returns true iff all the transitive
-    // dependencies of the module identified by id have been installed.
-    // This function can be used with options.onInstall to implement
-    // asynchronous module loading APIs like require.ensure.
-    require.ready = function (id) {
-      return fileReady(fileResolve(file, id));
-    };
-
-    if (requireMethods) {
-      Object.keys(requireMethods).forEach(function (name) {
-        if (isFunction(requireMethods[name])) {
-          require[name] = requireMethods[name].bind(require);
-        }
-      });
-    }
 
     return require;
   }
@@ -159,44 +136,33 @@ makeInstaller = function (options) {
 
     // The module object for this File, which will eventually boast an
     // .exports property when/if the file is evaluated.
-    file.m = new Module(name, parent && parent.m);
+    file.m = new Module(name);
   }
 
-  // A file is ready if all of its dependencies are installed and ready.
-  function fileReady(file) {
-    return file && (
-      file.ready || ( // Return true immediately if already ready.
-        file.ready = true, // Short-circuit circular fileReady calls.
-        file.ready = // Now compute the actual value of file.ready.
-          // The current file is aliased (or symbolically linked) to the
-          // file obtained by resolving the `file.c` string as a module
-          // identifier, so regard it as ready iff the resolved file exists
-          // and is ready.
-          isString(file.c) ? fileReady(fileResolve(file, file.c)) :
-          // Here file.c is a module factory function with an array of
-          // dependencies `.d` that must be ready before the current file
-          // can be considered ready.
-          isFunction(file.c) && file.c.d.every(function (dep, i) {
-            if (fileReady(fileResolve(file, dep))) {
-              delete file.c.d[i]; // Ignore this dependency once ready.
-              return true;
-            }
-          })
-      )
-    );
-  }
-
-  function fileEvaluate(file) {
+  function fileEvaluate(file, parentModule) {
     var contents = file && file.c;
     var module = file.m;
     if (! hasOwn.call(module, "exports")) {
-      contents(
-        file.r = file.r || makeRequire(file),
-        module.exports = {},
-        module,
-        file.m.id,
-        file.p.m.id
-      );
+      if (parentModule) {
+        module.parent = parentModule;
+        var children = parentModule.children;
+        if (Array.isArray(children)) {
+          children.push(module);
+        }
+      }
+
+      // If a Module.prototype.useNode method is defined, give it a chance
+      // to define module.exports based on module.id using Node.
+      if (! isFunction(module.useNode) ||
+          ! module.useNode()) {
+        contents(
+          file.r = file.r || makeRequire(file),
+          module.exports = {},
+          module,
+          file.m.id,
+          file.p.m.id
+        );
+      }
     }
     return module.exports;
   }
@@ -262,6 +228,10 @@ makeInstaller = function (options) {
     }
   }
 
+  function fileGetExtensions(file) {
+    return file.o && file.o.extensions || defaultExtensions;
+  }
+
   function fileAppendIdPart(file, part, extensions) {
     // Always append relative to a directory.
     while (file && ! fileIsDirectory(file)) {
@@ -293,34 +263,35 @@ makeInstaller = function (options) {
     return exactChild;
   }
 
-  function fileAppendId(file, id) {
+  function fileAppendId(file, id, extensions) {
     var parts = id.split("/");
-    var exts = file.o && file.o.extensions || extensions;
 
     // Use `Array.prototype.every` to terminate iteration early if
     // `fileAppendIdPart` returns a falsy value.
     parts.every(function (part, i) {
       return file = i < parts.length - 1
         ? fileAppendIdPart(file, part)
-        : fileAppendIdPart(file, part, exts);
+        : fileAppendIdPart(file, part, extensions);
     });
 
     return file;
   }
 
   function fileResolve(file, id, seenDirFiles) {
+    var extensions = fileGetExtensions(file);
+
     file =
       // Absolute module identifiers (i.e. those that begin with a `/`
       // character) are interpreted relative to the root directory, which
       // is a slight deviation from Node, which has access to the entire
       // file system.
-      id.charAt(0) === "/" ? fileAppendId(root, id) :
+      id.charAt(0) === "/" ? fileAppendId(root, id, extensions) :
       // Relative module identifiers are interpreted relative to the
       // current file, naturally.
-      id.charAt(0) === "." ? fileAppendId(file, id) :
+      id.charAt(0) === "." ? fileAppendId(file, id, extensions) :
       // Top-level module identifiers are interpreted as referring to
       // packages in `node_modules` directories.
-      nodeModulesLookup(file, id);
+      nodeModulesLookup(file, id, extensions);
 
     // If the identifier resolves to a directory, we use the same logic as
     // Node to find an `index.js` or `package.json` file to evaluate.
@@ -344,7 +315,7 @@ makeInstaller = function (options) {
           // appending it to the directory path before falling back to a
           // full fileResolve, which might return a package from a
           // node_modules directory.
-          file = fileAppendId(file, main) ||
+          file = fileAppendId(file, main, extensions) ||
             fileResolve(file, main, seenDirFiles);
 
           if (file) {
@@ -374,7 +345,7 @@ makeInstaller = function (options) {
     return file;
   };
 
-  function nodeModulesLookup(file, id) {
+  function nodeModulesLookup(file, id, extensions) {
     if (isFunction(override)) {
       id = override(id, file.m.id);
     }
@@ -382,7 +353,7 @@ makeInstaller = function (options) {
     if (isString(id)) {
       for (var resolved; file && ! resolved; file = file.p) {
         resolved = fileIsDirectory(file) &&
-          fileAppendId(file, "node_modules/" + id);
+          fileAppendId(file, "node_modules/" + id, extensions);
       }
 
       return resolved;
@@ -396,7 +367,7 @@ if (typeof exports === "object") {
   exports.makeInstaller = makeInstaller;
 }
 
-//////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
 
 
 
@@ -406,18 +377,13 @@ if (typeof exports === "object") {
 
 (function(){
 
-//////////////////////////////////////////////////////////////////////////////
-//                                                                          //
-// packages/modules-runtime/modules-runtime.js                              //
-//                                                                          //
-//////////////////////////////////////////////////////////////////////////////
-                                                                            //
-var options = {
-  // File extensions to try when an imported module identifier does not
-  // exactly match any installed file.
-  extensions: []
-};
-
+/////////////////////////////////////////////////////////////////////////////
+//                                                                         //
+// packages/modules-runtime/modules-runtime.js                             //
+//                                                                         //
+/////////////////////////////////////////////////////////////////////////////
+                                                                           //
+var options = {};
 var hasOwn = options.hasOwnProperty;
 
 // RegExp matching strings that don't start with a `.` or a `/`.
@@ -435,13 +401,6 @@ options.fallback = function (id, dir, error) {
   // some arbitrary location on the file system), and we only really need
   // the fallback for dependencies installed in node_modules directories.
   if (topLevelIdPattern.test(id)) {
-    var parts = id.split("/");
-    if (parts.length === 2 &&
-        parts[0] === "meteor" &&
-        hasOwn.call(Package, parts[1])) {
-      return Package[parts[1]];
-    }
-
     if (typeof Npm === "object" &&
         typeof Npm.require === "function") {
       return Npm.require(id);
@@ -451,27 +410,48 @@ options.fallback = function (id, dir, error) {
   throw error;
 };
 
-var install = makeInstaller(options);
-
-(install.addExtension = function (ext) {
-  var args = arguments;
-  for (var i = 0; i < args.length; ++i) {
-    ext = args[i].toLowerCase();
-
-    if (! /^\.\w+/.test(ext)) {
-      throw new Error("bad module extension: " + ext);
+if (Meteor.isServer) {
+  // Defining Module.prototype.useNode allows the module system to
+  // delegate evaluation to Node, unless useNode returns false.
+  (options.Module = function Module(id) {
+    // Same as the default Module constructor implementation.
+    this.id = id;
+    this.children = [];
+  }).prototype.useNode = function () {
+    if (typeof npmRequire !== "function") {
+      // Can't use Node if npmRequire is not defined.
+      return false;
     }
 
-    var extensions = options.extensions;
-    if (extensions.indexOf(ext) < 0) {
-      extensions.push(ext);
+    var parts = this.id.split("/");
+    var start = 0;
+    if (parts[start] === "") ++start;
+    if (parts[start] === "node_modules" &&
+        parts[start + 1] === "meteor") {
+      start += 2;
     }
-  }
-})(".js", ".json");
 
-meteorInstall = install;
+    if (parts.indexOf("node_modules", start) < 0) {
+      // Don't try to use Node for modules that aren't in node_modules
+      // directories.
+      return false;
+    }
 
-//////////////////////////////////////////////////////////////////////////////
+    try {
+      npmRequire.resolve(this.id);
+    } catch (e) {
+      return false;
+    }
+
+    this.exports = npmRequire(this.id);
+
+    return true;
+  };
+}
+
+meteorInstall = makeInstaller(options);
+
+/////////////////////////////////////////////////////////////////////////////
 
 }).call(this);
 

@@ -24,10 +24,8 @@ import java.util.TimerTask;
 import okhttp3.HttpUrl;
 
 public class WebAppLocalServer extends CordovaPlugin implements AssetBundleManager.Callback {
-    private static final String LOG_TAG = WebAppLocalServer.class.getSimpleName();
+    private static final String LOG_TAG = "MeteorWebApp";
     public static final String PREFS_NAME = "MeteorWebApp";
-
-    private static final long STARTUP_TIMEOUT = 10000;
 
     private static final String LOCAL_FILESYSTEM_PATH = "/local-filesystem";
 
@@ -42,7 +40,7 @@ public class WebAppLocalServer extends CordovaPlugin implements AssetBundleManag
     private Uri applicationDirectoryUri;
 
     private String launchUrl;
-    private int localServerPort = 0;
+    private int localServerPort;
 
     private List<WebResourceHandler> resourceHandlers;
 
@@ -62,9 +60,9 @@ public class WebAppLocalServer extends CordovaPlugin implements AssetBundleManag
     private CallbackContext newVersionReadyCallbackContext;
     private CallbackContext errorCallbackContext;
 
-
     /** Timer used to wait for startup to complete after a reload */
     private Timer startupTimer;
+    private long startupTimeout;
 
     WebAppConfiguration getConfiguration() {
         return configuration;
@@ -98,6 +96,7 @@ public class WebAppLocalServer extends CordovaPlugin implements AssetBundleManag
         launchUrl = Config.getStartUrl();
 
         localServerPort = preferences.getInteger("WebAppLocalServerPort", Uri.parse(launchUrl).getPort());
+        startupTimeout = preferences.getInteger("WebAppStartupTimeout", 20000);
 
         SharedPreferences preferences = cordova.getActivity().getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
         configuration = new WebAppConfiguration(preferences);
@@ -111,13 +110,18 @@ public class WebAppLocalServer extends CordovaPlugin implements AssetBundleManag
             return;
         }
 
-        initializeAssetBundles();
+        try {
+            initializeAssetBundles();
+        } catch (WebAppException e) {
+            Log.e(LOG_TAG, "Could not initialize asset bundles", e);
+            return;
+        }
 
         resourceHandlers = new ArrayList<WebResourceHandler>();
         initializeResourceHandlers();
     }
 
-    void initializeAssetBundles() {
+    void initializeAssetBundles() throws WebAppException {
         // The initial asset bundle consists of the assets bundled with the app
         AssetBundle initialAssetBundle = new AssetBundle(resourceApi, applicationDirectoryUri);
 
@@ -128,7 +132,7 @@ public class WebAppLocalServer extends CordovaPlugin implements AssetBundleManag
         // version, we delete the versions directory and unset lastDownloadedVersion
         // and blacklistedVersions
         if (!initialAssetBundle.getVersion().equals(configuration.getLastSeenInitialVersion()))  {
-            Log.w(LOG_TAG, "Detected new bundled version, removing versions directory if it exists");
+            Log.d(LOG_TAG, "Detected new bundled version, removing versions directory if it exists");
             if (versionsDirectory.exists()) {
                 if (!IOUtils.deleteRecursively(versionsDirectory)) {
                     Log.w(LOG_TAG, "Could not remove versions directory");
@@ -179,10 +183,11 @@ public class WebAppLocalServer extends CordovaPlugin implements AssetBundleManag
             pendingAssetBundle = null;
         }
 
-        Log.d(LOG_TAG, "Serving asset bundle with version: " + currentAssetBundle.getVersion());
+        Log.i(LOG_TAG, "Serving asset bundle with version: " + currentAssetBundle.getVersion());
 
         configuration.setAppId(currentAssetBundle.getAppId());
         configuration.setRootUrlString(currentAssetBundle.getRootUrlString());
+        configuration.setCordovaCompatibilityVersion(currentAssetBundle.getCordovaCompatibilityVersion());
 
         // Don't start startup timer when running a test
         if (testingDelegate == null) {
@@ -200,7 +205,7 @@ public class WebAppLocalServer extends CordovaPlugin implements AssetBundleManag
                 Log.w(LOG_TAG, "App startup timed out, reverting to last known good version");
                 revertToLastKnownGoodVersion();
             }
-        }, STARTUP_TIMEOUT);
+        }, startupTimeout);
     }
 
     private void removeStartupTimer() {
@@ -277,6 +282,7 @@ public class WebAppLocalServer extends CordovaPlugin implements AssetBundleManag
     }
 
     private void notifyError(Throwable cause) {
+        Log.e(LOG_TAG, "Download failure", cause);
         if (errorCallbackContext != null) {
             PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, cause.getMessage());
             pluginResult.setKeepCallback(true);
@@ -352,7 +358,13 @@ public class WebAppLocalServer extends CordovaPlugin implements AssetBundleManag
 
         // Don't download blacklisted versions
         if (configuration.getBlacklistedVersions().contains(version)) {
-            Log.i(LOG_TAG, "Skipping downloading blacklisted version: " + version);
+            notifyError(new WebAppException("Skipping downloading blacklisted version: " + version));
+            return false;
+        }
+
+        // Don't download versions potentially incompatible with the bundled native code
+        if (!configuration.getCordovaCompatibilityVersion().equals(manifest.cordovaCompatibilityVersion)) {
+            notifyError(new WebAppException("Skipping downloading new version because the Cordova platform version or plugin versions have changed and are potentially incompatible"));
             return false;
         }
 

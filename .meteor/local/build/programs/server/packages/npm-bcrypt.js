@@ -1,22 +1,14 @@
 (function () {
 
 /* Imports */
-var meteorEnv = Package.meteor.meteorEnv;
 var Meteor = Package.meteor.Meteor;
 var global = Package.meteor.global;
+var meteorEnv = Package.meteor.meteorEnv;
 
 /* Package-scope variables */
 var NpmModuleBcrypt;
 
 (function(){
-
-////////////////////////////////////////////////////////////////////////////
-//                                                                        //
-// packages/npm-bcrypt/packages/npm-bcrypt.js                             //
-//                                                                        //
-////////////////////////////////////////////////////////////////////////////
-                                                                          //
-(function () {
 
 ///////////////////////////////////////////////////////////////////////
 //                                                                   //
@@ -24,13 +16,9 @@ var NpmModuleBcrypt;
 //                                                                   //
 ///////////////////////////////////////////////////////////////////////
                                                                      //
-NpmModuleBcrypt = Npm.require('bcrypt');                             // 1
-                                                                     // 2
+NpmModuleBcrypt = Npm.require('bcrypt');
+
 ///////////////////////////////////////////////////////////////////////
-
-}).call(this);
-
-////////////////////////////////////////////////////////////////////////////
 
 }).call(this);
 

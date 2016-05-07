@@ -11,9 +11,9 @@
 (function () {
 
 /* Imports */
-var meteorEnv = Package.meteor.meteorEnv;
 var Meteor = Package.meteor.Meteor;
 var global = Package.meteor.global;
+var meteorEnv = Package.meteor.meteorEnv;
 var AllowDeny = Package['allow-deny'].AllowDeny;
 var Random = Package.random.Random;
 var EJSON = Package.ejson.EJSON;
@@ -616,8 +616,8 @@ Mongo.Collection.prototype.insert = function () {                               
       // If the user provided a callback and the collection implements this                                           //
       // operation asynchronously, then queryRet will be undefined, and the                                           //
       // result will be returned through the callback instead.                                                        //
-      var result = this._collection.insert(doc, wrappedCallback);                                                     // 507
-      return chooseReturnValueFromCollectionResult(result);                                                           // 508
+      var _result = this._collection.insert(doc, wrappedCallback);                                                    // 507
+      return chooseReturnValueFromCollectionResult(_result);                                                          // 508
     } catch (e) {                                                                                                     //
       if (callback) {                                                                                                 // 510
         callback(e);                                                                                                  // 511

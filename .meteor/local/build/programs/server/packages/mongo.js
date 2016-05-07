@@ -1,9 +1,9 @@
 (function () {
 
 /* Imports */
-var meteorEnv = Package.meteor.meteorEnv;
 var Meteor = Package.meteor.Meteor;
 var global = Package.meteor.global;
+var meteorEnv = Package.meteor.meteorEnv;
 var NpmModuleMongodb = Package['npm-mongo'].NpmModuleMongodb;
 var NpmModuleMongodbVersion = Package['npm-mongo'].NpmModuleMongodbVersion;
 var AllowDeny = Package['allow-deny'].AllowDeny;
@@ -84,7 +84,7 @@ MongoInternals.NpmModule = MongoDB;                                             
 // This is used to add or remove EJSON from the beginning of everything nested                                        //
 // inside an EJSON custom type. It should only be called on pure JSON!                                                //
 var replaceNames = function replaceNames(filter, thing) {                                                             // 33
-  if ((typeof thing === 'undefined' ? 'undefined' : (0, _typeof3.default)(thing)) === "object") {                     // 34
+  if ((typeof thing === 'undefined' ? 'undefined' : (0, _typeof3['default'])(thing)) === "object") {                  // 34
     if (_.isArray(thing)) {                                                                                           // 35
       return _.map(thing, _.bind(replaceNames, null, filter));                                                        // 36
     }                                                                                                                 //
@@ -159,7 +159,7 @@ var replaceMeteorAtomWithMongo = function replaceMeteorAtomWithMongo(document) {
 };                                                                                                                    //
                                                                                                                       //
 var replaceTypes = function replaceTypes(document, atomTransformer) {                                                 // 105
-  if ((typeof document === 'undefined' ? 'undefined' : (0, _typeof3.default)(document)) !== 'object' || document === null) return document;
+  if ((typeof document === 'undefined' ? 'undefined' : (0, _typeof3['default'])(document)) !== 'object' || document === null) return document;
                                                                                                                       //
   var replacedTopLevelAtom = atomTransformer(document);                                                               // 109
   if (replacedTopLevelAtom !== undefined) return replacedTopLevelAtom;                                                // 110
@@ -495,7 +495,7 @@ MongoConnection.prototype._update = function (collection_name, selector, mod, op
   // non-object modifier in that they don't crash, they are not                                                       //
   // meaningful operations and do not do anything. Defensively throw an                                               //
   // error here.                                                                                                      //
-  if (!mod || (typeof mod === 'undefined' ? 'undefined' : (0, _typeof3.default)(mod)) !== 'object') throw new Error("Invalid modifier. Modifier must be an object.");
+  if (!mod || (typeof mod === 'undefined' ? 'undefined' : (0, _typeof3['default'])(mod)) !== 'object') throw new Error("Invalid modifier. Modifier must be an object.");
                                                                                                                       //
   if (!(LocalCollection._isPlainObject(mod) && !EJSON._isCustomType(mod))) {                                          // 483
     throw new Error("Only plain objects may be used as replacement" + " documents in MongoDB");                       // 485
@@ -655,7 +655,7 @@ var simulateUpsertWithInsertedId = function simulateUpsertWithInsertedId(collect
         // up what mongo does in this case.                                                                           //
                                                                                                                       //
         while (key = trail.shift()) {                                                                                 // 646
-          if ((0, _typeof3.default)(obj[key]) !== "object") {                                                         // 659
+          if ((0, _typeof3['default'])(obj[key]) !== "object") {                                                      // 659
             obj[key] = {};                                                                                            // 660
           }                                                                                                           //
                                                                                                                       //
@@ -3860,8 +3860,8 @@ Mongo.Collection.prototype.insert = function () {                               
       // If the user provided a callback and the collection implements this                                           //
       // operation asynchronously, then queryRet will be undefined, and the                                           //
       // result will be returned through the callback instead.                                                        //
-      var result = this._collection.insert(doc, wrappedCallback);                                                     // 507
-      return chooseReturnValueFromCollectionResult(result);                                                           // 508
+      var _result = this._collection.insert(doc, wrappedCallback);                                                    // 507
+      return chooseReturnValueFromCollectionResult(_result);                                                          // 508
     } catch (e) {                                                                                                     //
       if (callback) {                                                                                                 // 510
         callback(e);                                                                                                  // 511

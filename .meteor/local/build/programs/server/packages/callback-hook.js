@@ -1,9 +1,9 @@
 (function () {
 
 /* Imports */
-var meteorEnv = Package.meteor.meteorEnv;
 var Meteor = Package.meteor.Meteor;
 var global = Package.meteor.global;
+var meteorEnv = Package.meteor.meteorEnv;
 var _ = Package.underscore._;
 
 /* Package-scope variables */
@@ -11,12 +11,12 @@ var Hook;
 
 (function(){
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////
-//                                                                                                    //
-// packages/callback-hook/hook.js                                                                     //
-//                                                                                                    //
-////////////////////////////////////////////////////////////////////////////////////////////////////////
-                                                                                                      //
+////////////////////////////////////////////////////////////////////////////////////
+//                                                                                //
+// packages/callback-hook/hook.js                                                 //
+//                                                                                //
+////////////////////////////////////////////////////////////////////////////////////
+                                                                                  //
 // XXX This pattern is under development. Do not add more callsites
 // using this package for now. See:
 // https://meteor.hackpad.com/Design-proposal-Hooks-YxvgEW06q6f
@@ -160,7 +160,7 @@ var dontBindEnvironment = function (func, onException, _this) {
   };
 };
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////
 
 }).call(this);
 
