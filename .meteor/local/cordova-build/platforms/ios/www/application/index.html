@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="format-detection" content="telephone=no">
+  <meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width, height=device-height">
+  <meta name="msapplication-tap-highlight" content="no">
+  <meta http-equiv="Content-Security-Policy" content="default-src * data: blob: 'unsafe-inline' 'unsafe-eval';">
+
+
+
+  <link rel="stylesheet" type="text/css" class="__meteor-css__" href="/merged-stylesheets.css?hash=91468f127a44848652e04bbbe1662e9933480c7a">
+
+  <script type="text/javascript">
+    __meteor_runtime_config__ = JSON.parse(decodeURIComponent("%7B%22meteorRelease%22%3A%22METEOR%401.3-beta.12%22%2C%22ROOT_URL%22%3A%22http%3A%2F%2Fec2-52-38-181-108.us-west-2.compute.amazonaws.com%2F%22%2C%22ROOT_URL_PATH_PREFIX%22%3A%22%22%2C%22DDP_DEFAULT_CONNECTION_URL%22%3A%22http%3A%2F%2Fec2-52-38-181-108.us-west-2.compute.amazonaws.com%2F%22%2C%22autoupdateVersionCordova%22%3A%2286f55612df09d8048a754348bb8c6e69a75fa013%22%2C%22appId%22%3A%22bl75yn1mnks64ujs26r%22%7D"));
+
+    if (/Android/i.test(navigator.userAgent)) {
+      // When Android app is emulated, it cannot connect to localhost,
+      // instead it should connect to 10.0.2.2
+      // (unless we're using an http proxy; then it works!)
+      if (!__meteor_runtime_config__.httpProxyPort) {
+        __meteor_runtime_config__.ROOT_URL = (__meteor_runtime_config__.ROOT_URL || '').replace(/localhost/i, '10.0.2.2');
+        __meteor_runtime_config__.DDP_DEFAULT_CONNECTION_URL = (__meteor_runtime_config__.DDP_DEFAULT_CONNECTION_URL || '').replace(/localhost/i, '10.0.2.2');
+      }
+    }
+  </script>
+
+  <script type="text/javascript" src="/cordova.js"></script>
+  <script type="text/javascript" src="/packages/es5-shim.js?hash=3118bedfa5c982ade1c6a57c23775fe0347a5f73"></script>
+  <script type="text/javascript" src="/packages/meteor-env-dev.js?hash=f25f3131fe619b7f6e3ce52b8a2604cd67fe1ee3"></script>
+  <script type="text/javascript" src="/packages/underscore.js?hash=27b3d669b418de8577518760446467e6ff429b1e"></script>
+  <script type="text/javascript" src="/packages/meteor.js?hash=a72e4b23842863d577532cbc96135a7980d5f2ed"></script>
+  <script type="text/javascript" src="/packages/meteor-base.js?hash=e93ae55430bb072fbd3b8ae7fb9947828a3257dd"></script>
+  <script type="text/javascript" src="/packages/mobile-experience.js?hash=400a5c753849706e1e4223966ef1afde58cfa0aa"></script>
+  <script type="text/javascript" src="/packages/base64.js?hash=16c66f6ceb922e2c84a03a83c3b9508e2d0b39b2"></script>
+  <script type="text/javascript" src="/packages/ejson.js?hash=17e8fd94f8ed7ed07b88c94baa4d5fc8b80a8946"></script>
+  <script type="text/javascript" src="/packages/check.js?hash=c2b9ad22d9b92a44518b7a333919e26ee698e918"></script>
+  <script type="text/javascript" src="/packages/babel-compiler.js?hash=7b0f318d3088bba08b9556da0a5735c6c0976155"></script>
+  <script type="text/javascript" src="/packages/ecmascript.js?hash=c216c6f8ec4154900102f6069100a0db868d4d0d"></script>
+  <script type="text/javascript" src="/packages/id-map.js?hash=859af7169c32fabf5052d24ffd2d42d6b765ef7a"></script>
+  <script type="text/javascript" src="/packages/ordered-dict.js?hash=6cf571ffb6cf6bd300ea0a1bd81f388997bbaf83"></script>
+  <script type="text/javascript" src="/packages/tracker.js?hash=85b895f5af5e5c936cae33d0d16049588e2da556"></script>
+  <script type="text/javascript" src="/packages/modules-runtime.js?hash=8adcf52a6ab7076a450af4e2760665f6f1da582a"></script>
+  <script type="text/javascript" src="/packages/modules.js?hash=afb649c037c9e4027de4b059925555eb66034566"></script>
+  <script type="text/javascript" src="/packages/promise.js?hash=69bb0ee71fe727da6b2c37bff714afe1d2396a58"></script>
+  <script type="text/javascript" src="/packages/ecmascript-runtime.js?hash=95ade4f8ba9dd98cb764330598ef66cc6a5374ad"></script>
+  <script type="text/javascript" src="/packages/babel-runtime.js?hash=331a694da6c174d97e9335b7115f7e00b5e9656f"></script>
+  <script type="text/javascript" src="/packages/random.js?hash=a82726451c5503baf3d5b1cdde21b383d09e9fd3"></script>
+  <script type="text/javascript" src="/packages/mongo-id.js?hash=f209e82d49b362a39ca9aadb0bcd25a862b4e316"></script>
+  <script type="text/javascript" src="/packages/diff-sequence.js?hash=4ae6470eff9fe24fcacb992a831b48eb2c9d6507"></script>
+  <script type="text/javascript" src="/packages/geojson-utils.js?hash=901fc88bf22581859618b9f6fd1dbe329e3dd818"></script>
+  <script type="text/javascript" src="/packages/minimongo.js?hash=9f4607fc4d2835f5f8ad32b2c9fec1f9d68d40e7"></script>
+  <script type="text/javascript" src="/packages/retry.js?hash=e03ecd77f389d8da9d0d8670f615a9dfa7b528ab"></script>
+  <script type="text/javascript" src="/packages/ddp-common.js?hash=5feeb4319649347951960f7aa7630ef2c77e22b4"></script>
+  <script type="text/javascript" src="/packages/reload.js?hash=5e5343bded4cf11e94e12b24e169da96a4936dc0"></script>
+  <script type="text/javascript" src="/packages/ddp-client.js?hash=67ef784978f8a931afd6cded99a0f59b8f72a9e4"></script>
+  <script type="text/javascript" src="/packages/ddp.js?hash=3c86314c388d899d385f06205be70df813080343"></script>
+  <script type="text/javascript" src="/packages/ddp-server.js?hash=b086cdf1e095870a581de99db34f95280ca2c9d2"></script>
+  <script type="text/javascript" src="/packages/allow-deny.js?hash=3b63d78150a195bc1a58d782e564a854eef534e6"></script>
+  <script type="text/javascript" src="/packages/insecure.js?hash=6d68eef7b6dee8d8c915f646c482d3ecf112df1f"></script>
+  <script type="text/javascript" src="/packages/mongo.js?hash=decd4d0d27b3c167c13739057ed4c3865a83d589"></script>
+  <script type="text/javascript" src="/packages/blaze-html-templates.js?hash=4bf886d9483ad4b0d598b0d00b33d6a0193c2fd6"></script>
+  <script type="text/javascript" src="/packages/reactive-dict.js?hash=1667830740a98bc39f07c4eebdc49b0008813f9e"></script>
+  <script type="text/javascript" src="/packages/session.js?hash=0b2f7476e91ed9b62c752d6779fccb200d3777e3"></script>
+  <script type="text/javascript" src="/packages/jquery.js?hash=e93eb7c1714695d89be4262ae8573a56f0403403"></script>
+  <script type="text/javascript" src="/packages/autopublish.js?hash=e279db0974ead9fe28ae458826bbaf0c4fb0bef6"></script>
+  <script type="text/javascript" src="/packages/ddp-rate-limiter.js?hash=d423f57203115cd7278491820d3ed9197b6f653e"></script>
+  <script type="text/javascript" src="/packages/localstorage.js?hash=6e235f4e7c1670a50a1f1a8584d21164667756ca"></script>
+  <script type="text/javascript" src="/packages/callback-hook.js?hash=38e43972385acdc58343abd400f8442b6ac1640c"></script>
+  <script type="text/javascript" src="/packages/deps.js?hash=c278fd5d2e4473b7b774d5302736c09efc3fa05b"></script>
+  <script type="text/javascript" src="/packages/htmljs.js?hash=6c22e7d941777b671e2b03be4fe909e9f276f9ea"></script>
+  <script type="text/javascript" src="/packages/observe-sequence.js?hash=d8b898a0f5f69f1b029388bb20ebb79448c5bbaa"></script>
+  <script type="text/javascript" src="/packages/reactive-var.js?hash=4a36055ac9da876ead608fbac731ab41f41efdb0"></script>
+  <script type="text/javascript" src="/packages/blaze.js?hash=7abafff7bd98fa1fc0a6478fb26dd08cdd3fe7ee"></script>
+  <script type="text/javascript" src="/packages/accounts-base.js?hash=3ad7533b1cae3f17a59a2518c3e26a974f96ab24"></script>
+  <script type="text/javascript" src="/packages/service-configuration.js?hash=e2b2c3ff7b9905ead7cde0312af89c647017186e"></script>
+  <script type="text/javascript" src="/packages/spacebars.js?hash=3d8a9c5963df1a2bb9a727c51e4c5fe8aa612f7a"></script>
+  <script type="text/javascript" src="/packages/templating.js?hash=8ec3e171cb7980787d946532af4b7e8e1733afcb"></script>
+  <script type="text/javascript" src="/packages/url.js?hash=bf1817054e95f85c00784bb9b61716ffe391735e"></script>
+  <script type="text/javascript" src="/packages/oauth.js?hash=f1639bea11a76be39ef95a1211ea74e7243cedbd"></script>
+  <script type="text/javascript" src="/packages/accounts-oauth.js?hash=e88950ecde62152dfbd33e21bacc4a3b89756fb4"></script>
+  <script type="text/javascript" src="/packages/npm-bcrypt.js?hash=739e2139ad5da8af98e2f7f89b3b3eb69ed010f8"></script>
+  <script type="text/javascript" src="/packages/sha.js?hash=327added22124794b2ec67880b30ca5d2e7337c8"></script>
+  <script type="text/javascript" src="/packages/srp.js?hash=a671246bc5f5a5521d3f49c95b04aca4c3a802ae"></script>
+  <script type="text/javascript" src="/packages/accounts-password.js?hash=841b4853a3e9339ec228fb361c84cfd9c7c01461"></script>
+  <script type="text/javascript" src="/packages/less.js?hash=f63ae14acb73fff09de9399284ffbec93ff40afd"></script>
+  <script type="text/javascript" src="/packages/accounts-ui-unstyled.js?hash=766351e7252cc006cbc98214685a73d9384b7edb"></script>
+  <script type="text/javascript" src="/packages/accounts-ui.js?hash=4196a77728776a2ef61b79dcebe7ea56d5cf4e05"></script>
+  <script type="text/javascript" src="/packages/twbs_bootstrap.js?hash=a259d1ff166d520213ab515b94c4c52303e01481"></script>
+  <script type="text/javascript" src="/packages/jparker_crypto-core.js?hash=0647a1b28f0426abef60289c335d28a4dfd8970a"></script>
+  <script type="text/javascript" src="/packages/jparker_crypto-md5.js?hash=26974068e4131719cd56da2b7f3345b1a0adf976"></script>
+  <script type="text/javascript" src="/packages/jparker_gravatar.js?hash=59d373b989999f4c3f44df0662d8b89ea60b6bf5"></script>
+  <script type="text/javascript" src="/packages/utilities_avatar.js?hash=ec4d173a433c2f8345ef5dd17de6d1af161ca96f"></script>
+  <script type="text/javascript" src="/packages/oauth2.js?hash=3d34db13f9b9548b263a93f19c464683627ab9d0"></script>
+  <script type="text/javascript" src="/packages/facebook.js?hash=1dafa72455d4ca7a974969d98111ef4434c1c578"></script>
+  <script type="text/javascript" src="/packages/accounts-facebook.js?hash=b282812881db511500ca2ac4c15842fed2b24a1b"></script>
+  <script type="text/javascript" src="/packages/http.js?hash=596345a4bde509699531a849cff5db0029167306"></script>
+  <script type="text/javascript" src="/packages/oauth1.js?hash=5ee0015b514e8a20f0ea9ddfc873cfd7e1d014c8"></script>
+  <script type="text/javascript" src="/packages/twitter.js?hash=33327a088103c988558cedf0d281dae78f77ed41"></script>
+  <script type="text/javascript" src="/packages/accounts-twitter.js?hash=a21199f301a3a74a0cbfa05c484de36362735ea4"></script>
+  <script type="text/javascript" src="/packages/github.js?hash=12ee65e4f9d57c7aceb992a69d597ef977f17908"></script>
+  <script type="text/javascript" src="/packages/accounts-github.js?hash=77d65d586c4ae41dc4307a659411955bcfb64690"></script>
+  <script type="text/javascript" src="/packages/summernote_standalone.js?hash=646e87ed27ec1637a084f941f8903fb08cd4f96d"></script>
+  <script type="text/javascript" src="/packages/standard-minifier-css.js?hash=b8c65ee72ca7d5c5e4b56d6d7901f399610d9f7c"></script>
+  <script type="text/javascript" src="/packages/standard-minifier-js.js?hash=59926b36bbd62350ba03e374471700ddb6fc481e"></script>
+  <script type="text/javascript" src="/packages/webapp.js?hash=4587a2b00044ade35a4a186da12f20e1f6fe6e63"></script>
+  <script type="text/javascript" src="/packages/livedata.js?hash=bcfe4350c4a92048cae9a62c3b50031a24c777bf"></script>
+  <script type="text/javascript" src="/packages/hot-code-push.js?hash=c4e1e1e4ae2bafd9dc7911bcad781027542ff3aa"></script>
+  <script type="text/javascript" src="/packages/fastclick.js?hash=58531e3ffba482a048fcb038f80b0d356e760714"></script>
+  <script type="text/javascript" src="/packages/mobile-status-bar.js?hash=2ff737c77019e7b54e312570c5b0cc472d0f5201"></script>
+  <script type="text/javascript" src="/packages/launch-screen.js?hash=5deaf300957b6a772ebb8b31d31f3c4d9389d76f"></script>
+  <script type="text/javascript" src="/packages/ui.js?hash=f2a8f82b006b1b964e73e85f973cc3e9a419a9e2"></script>
+  <script type="text/javascript" src="/packages/autoupdate.js?hash=297c3f1a2cb8474e90ef59e75f45228cbed64670"></script>
+  <script type="text/javascript" src="/packages/global-imports.js?hash=63d892325aeb24290daffb07759244250cef62a2"></script>
+  <script type="text/javascript" src="/app/app.js?hash=3b14245025a96a74043e443c62f5804ca09a7ecf"></script>
+
+
+  <meta charset="UTF-8">
+    <meta name="viewport" content="user-scalable=no, initial-scale=1, minimal-ui, maximum-scale=1, minimum-scale=1" />
+    <!-- <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" /-->
+    <title>Poster</title>
+</head>
+
+<body>
+  
+</body>
+</html>

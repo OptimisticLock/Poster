@@ -1,0 +1,1 @@
+{"version":3,"sources":["meteor://💻app/packages/meteor-env-dev/env.js"],"names":[],"mappings":";;;;;;;;;;;;;;;;;;;;;;;AAAA;AACA;AACA;AACA,yE","file":"/packages/meteor-env-dev.js","sourcesContent":["meteorEnv = {\n  NODE_ENV: \"development\"\n};\n"]}
