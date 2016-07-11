@@ -36,11 +36,16 @@ Template.mySummerNote.events({
             // me.profile.name if user logged in with Facebook and maybe other OAuth services.
             var username = me.username || me.profile.name
 
+            var latLng = Geolocation.latLng()
+            console.log("latLng", latLng)
+
             // Insert a post into the collection
             Posts.insert({
                 html,
                 createdAt: new Date(),            // current time
                 author: Meteor.userId(),           // _id of logged in user
+                lat: latLng.lat,
+                lng: latLng.lng,
                 username: username  // username of logged in user
             });
 
