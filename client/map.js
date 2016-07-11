@@ -1,6 +1,7 @@
 
 Meteor.startup(() => {
     GoogleMaps.load()
+    GoogleMaps.loadUtilityLibrary('/path/to/library.js')
 })
 
 var MAP_ZOOM = 15
@@ -32,7 +33,8 @@ Template.map.onCreated(function() {
 
         var marker = new google.maps.Marker({
             position: new google.maps.LatLng(latLng.lat, latLng.lng),
-            map: map.instance
+            map: map.instance,
+            icon: "http://maps.google.com/mapfiles/ms/icons/blue-dot.png"
         })
     })
 })
