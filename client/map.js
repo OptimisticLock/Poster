@@ -3,23 +3,24 @@ Meteor.startup(() => {
     GoogleMaps.load()
 })
 
+var MAP_ZOOM = 15
 
 Template.map.helpers({
 
     mapOptions: function() {
-        // Make sure the maps API has loaded
-        if (GoogleMaps.loaded()) {
-            // Map initialization options
+        var latLng = Geolocation.latLng();
+        // Initialize the map once we have the latLng.
+        if (GoogleMaps.loaded() && latLng) {
             return {
-                center: new google.maps.LatLng(-37.8136, 144.9631),
-                zoom: 8
+                center: new google.maps.LatLng(latLng.lat, latLng.lng),
+                zoom: MAP_ZOOM
             };
         }
     },
 
-    geolocationError : function() {
-        console.log("GeolocationError called")
-        return false
+    geolocationError: function() {
+        var error = Geolocation.error();
+        return error && error.message;
     }
 });
 
