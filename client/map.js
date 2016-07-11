@@ -27,10 +27,12 @@ Template.map.helpers({
 Template.map.onCreated(function() {
     // We can use the `ready` callback to interact with the map API once the map is ready.
     GoogleMaps.ready('myMap', function(map) {
-        // Add a marker to the map once it's ready
+
+        var latLng = Geolocation.latLng()
+
         var marker = new google.maps.Marker({
-            position: map.options.center,
+            position: new google.maps.LatLng(latLng.lat, latLng.lng),
             map: map.instance
         })
-    });
-});
+    })
+})
