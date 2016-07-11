@@ -38,8 +38,7 @@ Template.mySummerNote.events({
 
             // Insert a post into the collection
             Posts.insert({
-                // TODO: this field should now be "html", not "text", but too lazy to do another db migration
-                text: html,
+                html,
                 createdAt: new Date(),            // current time
                 author: Meteor.userId(),           // _id of logged in user
                 username: username  // username of logged in user
