@@ -5,7 +5,8 @@ Meteor.startup(() => {
 
 
 Template.map.helpers({
-    exampleMapOptions: function() {
+
+    mapOptions: function() {
         // Make sure the maps API has loaded
         if (GoogleMaps.loaded()) {
             // Map initialization options
@@ -14,12 +15,17 @@ Template.map.helpers({
                 zoom: 8
             };
         }
+    },
+
+    geolocationError : function() {
+        console.log("GeolocationError called")
+        return false
     }
 });
 
-Template.map.onCreated(function() {
+/* Template.map.onCreated(function() {
     // We can use the `ready` callback to interact with the map API once the map is ready.
-    GoogleMaps.ready('exampleMap', function(map) {
+    GoogleMaps.ready('map', function(map) {
         // Add a marker to the map once it's ready
         var marker = new google.maps.Marker({
             position: map.options.center,
@@ -27,3 +33,4 @@ Template.map.onCreated(function() {
         })
     });
 });
+*/
