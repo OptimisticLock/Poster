@@ -52,7 +52,6 @@
 <template name="map">
     <div class="map-container">
         {{#unless geolocationError}}
-            googleMap goes here!
             {{> googleMap name="myMap" options=mapOptions}}
         {{else}}
             Geolocation failed: {{geolocationError}}
