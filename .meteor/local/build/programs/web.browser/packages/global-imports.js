@@ -7,6 +7,7 @@ jQuery = Package.jquery.jQuery;
 Tracker = Package.tracker.Tracker;
 Deps = Package.tracker.Deps;
 Avatar = Package['utilities:avatar'].Avatar;
+GoogleMaps = Package['dburles:google-maps'].GoogleMaps;
 Meteor = Package.meteor.Meteor;
 global = Package.meteor.global;
 meteorEnv = Package.meteor.meteorEnv;

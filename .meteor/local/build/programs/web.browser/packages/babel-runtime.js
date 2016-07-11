@@ -22,7 +22,7 @@ var Promise = Package.promise.Promise;
 /* Package-scope variables */
 var meteorBabelHelpers;
 
-var require = meteorInstall({"node_modules":{"meteor":{"babel-runtime":{"babel-runtime.js":["meteor-babel-helpers","regenerator/runtime-module",function(require,exports,module){
+var require = meteorInstall({"node_modules":{"meteor":{"babel-runtime":{"babel-runtime.js":["meteor-babel-helpers","regenerator-runtime",function(require,exports,module){
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                                         //
@@ -392,7 +392,7 @@ meteorInstall({                                                                 
       "regenerator.js": function (r, e, module) {                                                          // 360
         // Note that we use the require function provided to the                                           // 361
         // babel-runtime.js file, not the one named 'r' above.                                             // 362
-        var runtime = require("regenerator/runtime-module");                                               // 363
+        var runtime = require("regenerator-runtime");                                                      // 363
                                                                                                            // 364
         // If Promise.asyncApply is defined, use it to wrap calls to                                       // 365
         // runtime.async so that the entire async function will run in its                                 // 366
@@ -491,11 +491,25 @@ meteorBabelHelpers = module.exports = {                                         
                                                                                                            // 54
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-}},"regenerator":{"runtime-module.js":["./runtime",function(require,exports,module){
+}},"regenerator-runtime":{"package.json":function(require,exports,module){
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                                         //
-// node_modules/meteor/babel-runtime/node_modules/regenerator/runtime-module.js                            //
+// ../npm/node_modules/regenerator-runtime/package.json                                                    //
+//                                                                                                         //
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                                                                                                           //
+exports.name = "regenerator-runtime";                                                                      // 1
+exports.version = "0.9.5";                                                                                 // 2
+exports.main = "runtime-module.js";                                                                        // 3
+                                                                                                           // 4
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+},"runtime-module.js":["./runtime",function(require,exports,module){
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                                         //
+// node_modules/meteor/babel-runtime/node_modules/regenerator-runtime/runtime-module.js                    //
 //                                                                                                         //
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
                                                                                                            //
@@ -537,7 +551,7 @@ if (hadRuntime) {                                                               
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                                         //
-// node_modules/meteor/babel-runtime/node_modules/regenerator/runtime.js                                   //
+// node_modules/meteor/babel-runtime/node_modules/regenerator-runtime/runtime.js                           //
 //                                                                                                         //
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
                                                                                                            //
@@ -853,184 +867,184 @@ if (hadRuntime) {                                                               
         }                                                                                                  // 310
                                                                                                            // 311
         if (method === "next") {                                                                           // 312
-          if (state === GenStateSuspendedYield) {                                                          // 313
-            context.sent = arg;                                                                            // 314
-          } else {                                                                                         // 315
-            context.sent = undefined;                                                                      // 316
-          }                                                                                                // 317
-                                                                                                           // 318
-        } else if (method === "throw") {                                                                   // 319
-          if (state === GenStateSuspendedStart) {                                                          // 320
-            state = GenStateCompleted;                                                                     // 321
-            throw arg;                                                                                     // 322
-          }                                                                                                // 323
-                                                                                                           // 324
-          if (context.dispatchException(arg)) {                                                            // 325
-            // If the dispatched exception was caught by a catch block,                                    // 326
-            // then let that catch block handle the exception normally.                                    // 327
-            method = "next";                                                                               // 328
-            arg = undefined;                                                                               // 329
-          }                                                                                                // 330
-                                                                                                           // 331
-        } else if (method === "return") {                                                                  // 332
-          context.abrupt("return", arg);                                                                   // 333
-        }                                                                                                  // 334
+          // Setting context._sent for legacy support of Babel's                                           // 313
+          // function.sent implementation.                                                                 // 314
+          context.sent = context._sent = arg;                                                              // 315
+                                                                                                           // 316
+        } else if (method === "throw") {                                                                   // 317
+          if (state === GenStateSuspendedStart) {                                                          // 318
+            state = GenStateCompleted;                                                                     // 319
+            throw arg;                                                                                     // 320
+          }                                                                                                // 321
+                                                                                                           // 322
+          if (context.dispatchException(arg)) {                                                            // 323
+            // If the dispatched exception was caught by a catch block,                                    // 324
+            // then let that catch block handle the exception normally.                                    // 325
+            method = "next";                                                                               // 326
+            arg = undefined;                                                                               // 327
+          }                                                                                                // 328
+                                                                                                           // 329
+        } else if (method === "return") {                                                                  // 330
+          context.abrupt("return", arg);                                                                   // 331
+        }                                                                                                  // 332
+                                                                                                           // 333
+        state = GenStateExecuting;                                                                         // 334
                                                                                                            // 335
-        state = GenStateExecuting;                                                                         // 336
-                                                                                                           // 337
-        var record = tryCatch(innerFn, self, context);                                                     // 338
-        if (record.type === "normal") {                                                                    // 339
-          // If an exception is thrown from innerFn, we leave state ===                                    // 340
-          // GenStateExecuting and loop back for another invocation.                                       // 341
-          state = context.done                                                                             // 342
-            ? GenStateCompleted                                                                            // 343
-            : GenStateSuspendedYield;                                                                      // 344
-                                                                                                           // 345
-          var info = {                                                                                     // 346
-            value: record.arg,                                                                             // 347
-            done: context.done                                                                             // 348
-          };                                                                                               // 349
-                                                                                                           // 350
-          if (record.arg === ContinueSentinel) {                                                           // 351
-            if (context.delegate && method === "next") {                                                   // 352
-              // Deliberately forget the last sent value so that we don't                                  // 353
-              // accidentally pass it on to the delegate.                                                  // 354
-              arg = undefined;                                                                             // 355
-            }                                                                                              // 356
-          } else {                                                                                         // 357
-            return info;                                                                                   // 358
-          }                                                                                                // 359
-                                                                                                           // 360
-        } else if (record.type === "throw") {                                                              // 361
-          state = GenStateCompleted;                                                                       // 362
-          // Dispatch the exception by looping back around to the                                          // 363
-          // context.dispatchException(arg) call above.                                                    // 364
-          method = "throw";                                                                                // 365
-          arg = record.arg;                                                                                // 366
-        }                                                                                                  // 367
-      }                                                                                                    // 368
-    };                                                                                                     // 369
-  }                                                                                                        // 370
-                                                                                                           // 371
-  // Define Generator.prototype.{next,throw,return} in terms of the                                        // 372
-  // unified ._invoke helper method.                                                                       // 373
-  defineIteratorMethods(Gp);                                                                               // 374
-                                                                                                           // 375
-  Gp[iteratorSymbol] = function() {                                                                        // 376
-    return this;                                                                                           // 377
-  };                                                                                                       // 378
+        var record = tryCatch(innerFn, self, context);                                                     // 336
+        if (record.type === "normal") {                                                                    // 337
+          // If an exception is thrown from innerFn, we leave state ===                                    // 338
+          // GenStateExecuting and loop back for another invocation.                                       // 339
+          state = context.done                                                                             // 340
+            ? GenStateCompleted                                                                            // 341
+            : GenStateSuspendedYield;                                                                      // 342
+                                                                                                           // 343
+          var info = {                                                                                     // 344
+            value: record.arg,                                                                             // 345
+            done: context.done                                                                             // 346
+          };                                                                                               // 347
+                                                                                                           // 348
+          if (record.arg === ContinueSentinel) {                                                           // 349
+            if (context.delegate && method === "next") {                                                   // 350
+              // Deliberately forget the last sent value so that we don't                                  // 351
+              // accidentally pass it on to the delegate.                                                  // 352
+              arg = undefined;                                                                             // 353
+            }                                                                                              // 354
+          } else {                                                                                         // 355
+            return info;                                                                                   // 356
+          }                                                                                                // 357
+                                                                                                           // 358
+        } else if (record.type === "throw") {                                                              // 359
+          state = GenStateCompleted;                                                                       // 360
+          // Dispatch the exception by looping back around to the                                          // 361
+          // context.dispatchException(arg) call above.                                                    // 362
+          method = "throw";                                                                                // 363
+          arg = record.arg;                                                                                // 364
+        }                                                                                                  // 365
+      }                                                                                                    // 366
+    };                                                                                                     // 367
+  }                                                                                                        // 368
+                                                                                                           // 369
+  // Define Generator.prototype.{next,throw,return} in terms of the                                        // 370
+  // unified ._invoke helper method.                                                                       // 371
+  defineIteratorMethods(Gp);                                                                               // 372
+                                                                                                           // 373
+  Gp[iteratorSymbol] = function() {                                                                        // 374
+    return this;                                                                                           // 375
+  };                                                                                                       // 376
+                                                                                                           // 377
+  Gp[toStringTagSymbol] = "Generator";                                                                     // 378
                                                                                                            // 379
-  Gp[toStringTagSymbol] = "Generator";                                                                     // 380
-                                                                                                           // 381
-  Gp.toString = function() {                                                                               // 382
-    return "[object Generator]";                                                                           // 383
-  };                                                                                                       // 384
-                                                                                                           // 385
-  function pushTryEntry(locs) {                                                                            // 386
-    var entry = { tryLoc: locs[0] };                                                                       // 387
-                                                                                                           // 388
-    if (1 in locs) {                                                                                       // 389
-      entry.catchLoc = locs[1];                                                                            // 390
-    }                                                                                                      // 391
-                                                                                                           // 392
-    if (2 in locs) {                                                                                       // 393
-      entry.finallyLoc = locs[2];                                                                          // 394
-      entry.afterLoc = locs[3];                                                                            // 395
-    }                                                                                                      // 396
-                                                                                                           // 397
-    this.tryEntries.push(entry);                                                                           // 398
-  }                                                                                                        // 399
-                                                                                                           // 400
-  function resetTryEntry(entry) {                                                                          // 401
-    var record = entry.completion || {};                                                                   // 402
-    record.type = "normal";                                                                                // 403
-    delete record.arg;                                                                                     // 404
-    entry.completion = record;                                                                             // 405
-  }                                                                                                        // 406
-                                                                                                           // 407
-  function Context(tryLocsList) {                                                                          // 408
-    // The root entry object (effectively a try statement without a catch                                  // 409
-    // or a finally block) gives us a place to store values thrown from                                    // 410
-    // locations where there is no enclosing try statement.                                                // 411
-    this.tryEntries = [{ tryLoc: "root" }];                                                                // 412
-    tryLocsList.forEach(pushTryEntry, this);                                                               // 413
-    this.reset(true);                                                                                      // 414
-  }                                                                                                        // 415
-                                                                                                           // 416
-  runtime.keys = function(object) {                                                                        // 417
-    var keys = [];                                                                                         // 418
-    for (var key in object) {                                                                              // 419
-      keys.push(key);                                                                                      // 420
-    }                                                                                                      // 421
-    keys.reverse();                                                                                        // 422
-                                                                                                           // 423
-    // Rather than returning an object with a next method, we keep                                         // 424
-    // things simple and return the next function itself.                                                  // 425
-    return function next() {                                                                               // 426
-      while (keys.length) {                                                                                // 427
-        var key = keys.pop();                                                                              // 428
-        if (key in object) {                                                                               // 429
-          next.value = key;                                                                                // 430
-          next.done = false;                                                                               // 431
-          return next;                                                                                     // 432
-        }                                                                                                  // 433
-      }                                                                                                    // 434
-                                                                                                           // 435
-      // To avoid creating an additional object, we just hang the .value                                   // 436
-      // and .done properties off the next function object itself. This                                    // 437
-      // also ensures that the minifier will not anonymize the function.                                   // 438
-      next.done = true;                                                                                    // 439
-      return next;                                                                                         // 440
-    };                                                                                                     // 441
-  };                                                                                                       // 442
-                                                                                                           // 443
-  function values(iterable) {                                                                              // 444
-    if (iterable) {                                                                                        // 445
-      var iteratorMethod = iterable[iteratorSymbol];                                                       // 446
-      if (iteratorMethod) {                                                                                // 447
-        return iteratorMethod.call(iterable);                                                              // 448
-      }                                                                                                    // 449
-                                                                                                           // 450
-      if (typeof iterable.next === "function") {                                                           // 451
-        return iterable;                                                                                   // 452
-      }                                                                                                    // 453
-                                                                                                           // 454
-      if (!isNaN(iterable.length)) {                                                                       // 455
-        var i = -1, next = function next() {                                                               // 456
-          while (++i < iterable.length) {                                                                  // 457
-            if (hasOwn.call(iterable, i)) {                                                                // 458
-              next.value = iterable[i];                                                                    // 459
-              next.done = false;                                                                           // 460
-              return next;                                                                                 // 461
-            }                                                                                              // 462
-          }                                                                                                // 463
-                                                                                                           // 464
-          next.value = undefined;                                                                          // 465
-          next.done = true;                                                                                // 466
-                                                                                                           // 467
-          return next;                                                                                     // 468
-        };                                                                                                 // 469
-                                                                                                           // 470
-        return next.next = next;                                                                           // 471
-      }                                                                                                    // 472
-    }                                                                                                      // 473
-                                                                                                           // 474
-    // Return an iterator with no values.                                                                  // 475
-    return { next: doneResult };                                                                           // 476
-  }                                                                                                        // 477
-  runtime.values = values;                                                                                 // 478
-                                                                                                           // 479
-  function doneResult() {                                                                                  // 480
-    return { value: undefined, done: true };                                                               // 481
-  }                                                                                                        // 482
-                                                                                                           // 483
-  Context.prototype = {                                                                                    // 484
-    constructor: Context,                                                                                  // 485
-                                                                                                           // 486
-    reset: function(skipTempReset) {                                                                       // 487
-      this.prev = 0;                                                                                       // 488
-      this.next = 0;                                                                                       // 489
-      this.sent = undefined;                                                                               // 490
+  Gp.toString = function() {                                                                               // 380
+    return "[object Generator]";                                                                           // 381
+  };                                                                                                       // 382
+                                                                                                           // 383
+  function pushTryEntry(locs) {                                                                            // 384
+    var entry = { tryLoc: locs[0] };                                                                       // 385
+                                                                                                           // 386
+    if (1 in locs) {                                                                                       // 387
+      entry.catchLoc = locs[1];                                                                            // 388
+    }                                                                                                      // 389
+                                                                                                           // 390
+    if (2 in locs) {                                                                                       // 391
+      entry.finallyLoc = locs[2];                                                                          // 392
+      entry.afterLoc = locs[3];                                                                            // 393
+    }                                                                                                      // 394
+                                                                                                           // 395
+    this.tryEntries.push(entry);                                                                           // 396
+  }                                                                                                        // 397
+                                                                                                           // 398
+  function resetTryEntry(entry) {                                                                          // 399
+    var record = entry.completion || {};                                                                   // 400
+    record.type = "normal";                                                                                // 401
+    delete record.arg;                                                                                     // 402
+    entry.completion = record;                                                                             // 403
+  }                                                                                                        // 404
+                                                                                                           // 405
+  function Context(tryLocsList) {                                                                          // 406
+    // The root entry object (effectively a try statement without a catch                                  // 407
+    // or a finally block) gives us a place to store values thrown from                                    // 408
+    // locations where there is no enclosing try statement.                                                // 409
+    this.tryEntries = [{ tryLoc: "root" }];                                                                // 410
+    tryLocsList.forEach(pushTryEntry, this);                                                               // 411
+    this.reset(true);                                                                                      // 412
+  }                                                                                                        // 413
+                                                                                                           // 414
+  runtime.keys = function(object) {                                                                        // 415
+    var keys = [];                                                                                         // 416
+    for (var key in object) {                                                                              // 417
+      keys.push(key);                                                                                      // 418
+    }                                                                                                      // 419
+    keys.reverse();                                                                                        // 420
+                                                                                                           // 421
+    // Rather than returning an object with a next method, we keep                                         // 422
+    // things simple and return the next function itself.                                                  // 423
+    return function next() {                                                                               // 424
+      while (keys.length) {                                                                                // 425
+        var key = keys.pop();                                                                              // 426
+        if (key in object) {                                                                               // 427
+          next.value = key;                                                                                // 428
+          next.done = false;                                                                               // 429
+          return next;                                                                                     // 430
+        }                                                                                                  // 431
+      }                                                                                                    // 432
+                                                                                                           // 433
+      // To avoid creating an additional object, we just hang the .value                                   // 434
+      // and .done properties off the next function object itself. This                                    // 435
+      // also ensures that the minifier will not anonymize the function.                                   // 436
+      next.done = true;                                                                                    // 437
+      return next;                                                                                         // 438
+    };                                                                                                     // 439
+  };                                                                                                       // 440
+                                                                                                           // 441
+  function values(iterable) {                                                                              // 442
+    if (iterable) {                                                                                        // 443
+      var iteratorMethod = iterable[iteratorSymbol];                                                       // 444
+      if (iteratorMethod) {                                                                                // 445
+        return iteratorMethod.call(iterable);                                                              // 446
+      }                                                                                                    // 447
+                                                                                                           // 448
+      if (typeof iterable.next === "function") {                                                           // 449
+        return iterable;                                                                                   // 450
+      }                                                                                                    // 451
+                                                                                                           // 452
+      if (!isNaN(iterable.length)) {                                                                       // 453
+        var i = -1, next = function next() {                                                               // 454
+          while (++i < iterable.length) {                                                                  // 455
+            if (hasOwn.call(iterable, i)) {                                                                // 456
+              next.value = iterable[i];                                                                    // 457
+              next.done = false;                                                                           // 458
+              return next;                                                                                 // 459
+            }                                                                                              // 460
+          }                                                                                                // 461
+                                                                                                           // 462
+          next.value = undefined;                                                                          // 463
+          next.done = true;                                                                                // 464
+                                                                                                           // 465
+          return next;                                                                                     // 466
+        };                                                                                                 // 467
+                                                                                                           // 468
+        return next.next = next;                                                                           // 469
+      }                                                                                                    // 470
+    }                                                                                                      // 471
+                                                                                                           // 472
+    // Return an iterator with no values.                                                                  // 473
+    return { next: doneResult };                                                                           // 474
+  }                                                                                                        // 475
+  runtime.values = values;                                                                                 // 476
+                                                                                                           // 477
+  function doneResult() {                                                                                  // 478
+    return { value: undefined, done: true };                                                               // 479
+  }                                                                                                        // 480
+                                                                                                           // 481
+  Context.prototype = {                                                                                    // 482
+    constructor: Context,                                                                                  // 483
+                                                                                                           // 484
+    reset: function(skipTempReset) {                                                                       // 485
+      this.prev = 0;                                                                                       // 486
+      this.next = 0;                                                                                       // 487
+      // Resetting context._sent for legacy support of Babel's                                             // 488
+      // function.sent implementation.                                                                     // 489
+      this.sent = this._sent = undefined;                                                                  // 490
       this.done = false;                                                                                   // 491
       this.delegate = null;                                                                                // 492
                                                                                                            // 493

@@ -132,15 +132,20 @@ Facebook.requestCredential = function (options, credentialRequestCompleteCallbac
         '&display=' + display + '&scope=' + scope +                                                  // 36
         '&state=' + OAuth._stateParam(loginStyle, credentialToken, options && options.redirectUrl);  // 37
                                                                                                      // 38
-  OAuth.launchLogin({                                                                                // 39
-    loginService: "facebook",                                                                        // 40
-    loginStyle: loginStyle,                                                                          // 41
-    loginUrl: loginUrl,                                                                              // 42
-    credentialRequestCompleteCallback: credentialRequestCompleteCallback,                            // 43
-    credentialToken: credentialToken                                                                 // 44
-  });                                                                                                // 45
-};                                                                                                   // 46
-                                                                                                     // 47
+  // Handle authentication type (e.g. for force login you need authType: "reauthenticate")           // 39
+  if (options && options.authType) {                                                                 // 40
+    loginUrl += "&authType=" + encodeURIComponent(options.authType);                                 // 41
+  }                                                                                                  // 42
+                                                                                                     // 43
+  OAuth.launchLogin({                                                                                // 44
+    loginService: "facebook",                                                                        // 45
+    loginStyle: loginStyle,                                                                          // 46
+    loginUrl: loginUrl,                                                                              // 47
+    credentialRequestCompleteCallback: credentialRequestCompleteCallback,                            // 48
+    credentialToken: credentialToken                                                                 // 49
+  });                                                                                                // 50
+};                                                                                                   // 51
+                                                                                                     // 52
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 
 }).call(this);

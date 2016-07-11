@@ -45,14 +45,14 @@ makeErrorByStatus = function makeErrorByStatus(statusCode, content) {           
     var stringContent = typeof content == "string" ? content : content.toString();                                    // 7
                                                                                                                       //
     message += ' ' + truncate(stringContent.replace(/\n/g, ' '), MAX_LENGTH);                                         // 10
-  }                                                                                                                   //
+  }                                                                                                                   // 11
                                                                                                                       //
   return new Error(message);                                                                                          // 13
-};                                                                                                                    //
+};                                                                                                                    // 14
                                                                                                                       //
 function truncate(str, length) {                                                                                      // 16
   return str.length > length ? str.slice(0, length) + '...' : str;                                                    // 17
-}                                                                                                                     //
+}                                                                                                                     // 18
                                                                                                                       //
 // Fill in `response.data` if the content-type is JSON.                                                               //
 populateData = function populateData(response) {                                                                      // 21
@@ -65,13 +65,13 @@ populateData = function populateData(response) {                                
   if (_.include(['application/json', 'text/javascript', 'application/javascript', 'application/x-javascript'], contentType)) {
     try {                                                                                                             // 30
       response.data = JSON.parse(response.content);                                                                   // 31
-    } catch (err) {                                                                                                   //
+    } catch (err) {                                                                                                   // 32
       response.data = null;                                                                                           // 33
-    }                                                                                                                 //
-  } else {                                                                                                            //
+    }                                                                                                                 // 34
+  } else {                                                                                                            // 35
     response.data = null;                                                                                             // 36
-  }                                                                                                                   //
-};                                                                                                                    //
+  }                                                                                                                   // 37
+};                                                                                                                    // 38
                                                                                                                       //
 HTTP = {};                                                                                                            // 40
                                                                                                                       //
@@ -84,7 +84,7 @@ HTTP = {};                                                                      
  */                                                                                                                   //
 HTTP.get = function () /* varargs */{                                                                                 // 49
   return HTTP.call.apply(this, ["GET"].concat(_.toArray(arguments)));                                                 // 50
-};                                                                                                                    //
+};                                                                                                                    // 51
                                                                                                                       //
 /**                                                                                                                   //
  * @summary Send an HTTP `POST` request. Equivalent to calling [`HTTP.call`](#http_call) with "POST" as the first argument.
@@ -95,7 +95,7 @@ HTTP.get = function () /* varargs */{                                           
  */                                                                                                                   //
 HTTP.post = function () /* varargs */{                                                                                // 60
   return HTTP.call.apply(this, ["POST"].concat(_.toArray(arguments)));                                                // 61
-};                                                                                                                    //
+};                                                                                                                    // 62
                                                                                                                       //
 /**                                                                                                                   //
  * @summary Send an HTTP `PUT` request. Equivalent to calling [`HTTP.call`](#http_call) with "PUT" as the first argument.
@@ -106,7 +106,7 @@ HTTP.post = function () /* varargs */{                                          
  */                                                                                                                   //
 HTTP.put = function () /* varargs */{                                                                                 // 71
   return HTTP.call.apply(this, ["PUT"].concat(_.toArray(arguments)));                                                 // 72
-};                                                                                                                    //
+};                                                                                                                    // 73
                                                                                                                       //
 /**                                                                                                                   //
  * @summary Send an HTTP `DELETE` request. Equivalent to calling [`HTTP.call`](#http_call) with "DELETE" as the first argument. (Named `del` to avoid conflict with the Javascript keyword `delete`)
@@ -117,7 +117,7 @@ HTTP.put = function () /* varargs */{                                           
  */                                                                                                                   //
 HTTP.del = function () /* varargs */{                                                                                 // 82
   return HTTP.call.apply(this, ["DELETE"].concat(_.toArray(arguments)));                                              // 83
-};                                                                                                                    //
+};                                                                                                                    // 84
                                                                                                                       //
 /**                                                                                                                   //
  * @summary Send an HTTP `PATCH` request. Equivalent to calling [`HTTP.call`](#http_call) with "PATCH" as the first argument.
@@ -128,7 +128,7 @@ HTTP.del = function () /* varargs */{                                           
  */                                                                                                                   //
 HTTP.patch = function () /* varargs */{                                                                               // 93
   return HTTP.call.apply(this, ["PATCH"].concat(_.toArray(arguments)));                                               // 94
-};                                                                                                                    //
+};                                                                                                                    // 95
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 },"httpcall_client.js":function(require,exports,module){
@@ -165,7 +165,7 @@ HTTP.call = function (method, url, options, callback) {                         
     // support (method, url, callback) argument list                                                                  //
     callback = options;                                                                                               // 25
     options = null;                                                                                                   // 26
-  }                                                                                                                   //
+  }                                                                                                                   // 27
                                                                                                                       //
   options = options || {};                                                                                            // 29
                                                                                                                       //
@@ -179,7 +179,7 @@ HTTP.call = function (method, url, options, callback) {                         
   if (options.data) {                                                                                                 // 40
     content = JSON.stringify(options.data);                                                                           // 41
     headers['Content-Type'] = 'application/json';                                                                     // 42
-  }                                                                                                                   //
+  }                                                                                                                   // 43
                                                                                                                       //
   var params_for_url, params_for_body;                                                                                // 45
   if (content || method === "GET" || method === "HEAD") params_for_url = options.params;else params_for_body = options.params;
@@ -190,7 +190,7 @@ HTTP.call = function (method, url, options, callback) {                         
                                                                                                                       //
   if (_.has(options, 'npmRequestOptions')) {                                                                          // 56
     throw new Error("Option npmRequestOptions not supported on client.");                                             // 57
-  }                                                                                                                   //
+  }                                                                                                                   // 58
                                                                                                                       //
   var username, password;                                                                                             // 60
   if (options.auth) {                                                                                                 // 61
@@ -198,11 +198,11 @@ HTTP.call = function (method, url, options, callback) {                         
     if (colonLoc < 0) throw new Error('auth option should be of the form "username:password"');                       // 63
     username = options.auth.substring(0, colonLoc);                                                                   // 65
     password = options.auth.substring(colonLoc + 1);                                                                  // 66
-  }                                                                                                                   //
+  }                                                                                                                   // 67
                                                                                                                       //
   if (params_for_body) {                                                                                              // 69
     content = URL._encodeParams(params_for_body);                                                                     // 70
-  }                                                                                                                   //
+  }                                                                                                                   // 71
                                                                                                                       //
   _.extend(headers, options.headers || {});                                                                           // 73
                                                                                                                       //
@@ -210,53 +210,53 @@ HTTP.call = function (method, url, options, callback) {                         
                                                                                                                       //
   // wrap callback to add a 'response' property on an error, in case                                                  //
   // we have both (http 4xx/5xx error, which has a response payload)                                                  //
-  callback = function (callback) {                                                                                    // 19
+  callback = function (callback) {                                                                                    // 79
     return function (error, response) {                                                                               // 80
       if (error && response) error.response = response;                                                               // 81
       callback(error, response);                                                                                      // 83
-    };                                                                                                                //
-  }(callback);                                                                                                        //
+    };                                                                                                                // 84
+  }(callback);                                                                                                        // 85
                                                                                                                       //
   // safety belt: only call the callback once.                                                                        //
-  callback = _.once(callback);                                                                                        // 19
+  callback = _.once(callback);                                                                                        // 88
                                                                                                                       //
   ////////// Kickoff! //////////                                                                                      //
                                                                                                                       //
   // from this point on, errors are because of something remote, not                                                  //
   // something we should check in advance. Turn exceptions into error                                                 //
   // results.                                                                                                         //
-  try {                                                                                                               // 19
+  try {                                                                                                               // 96
     // setup XHR object                                                                                               //
     var xhr;                                                                                                          // 98
     if (typeof XMLHttpRequest !== "undefined") xhr = new XMLHttpRequest();else if (typeof ActiveXObject !== "undefined") xhr = new ActiveXObject("Microsoft.XMLHttp"); // IE6
     else throw new Error("Can't create XMLHttpRequest"); // ???                                                       // 101
                                                                                                                       //
-    xhr.open(method, url, true, username, password);                                                                  // 96
+    xhr.open(method, url, true, username, password);                                                                  // 106
                                                                                                                       //
     for (var k in meteorBabelHelpers.sanitizeForInObject(headers)) {                                                  // 108
       xhr.setRequestHeader(k, headers[k]);                                                                            // 109
-    } // setup timeout                                                                                                //
-    var timed_out = false;                                                                                            // 96
+    } // setup timeout                                                                                                // 108
+    var timed_out = false;                                                                                            // 113
     var timer;                                                                                                        // 114
     if (options.timeout) {                                                                                            // 115
       timer = Meteor.setTimeout(function () {                                                                         // 116
         timed_out = true;                                                                                             // 117
         xhr.abort();                                                                                                  // 118
-      }, options.timeout);                                                                                            //
-    };                                                                                                                //
+      }, options.timeout);                                                                                            // 119
+    };                                                                                                                // 120
                                                                                                                       //
     // callback on complete                                                                                           //
-    xhr.onreadystatechange = function (evt) {                                                                         // 96
+    xhr.onreadystatechange = function (evt) {                                                                         // 123
       if (xhr.readyState === 4) {                                                                                     // 124
         // COMPLETE                                                                                                   //
         if (timer) Meteor.clearTimeout(timer);                                                                        // 125
                                                                                                                       //
         if (timed_out) {                                                                                              // 128
           callback(new Error("timeout"));                                                                             // 129
-        } else if (!xhr.status) {                                                                                     //
+        } else if (!xhr.status) {                                                                                     // 130
           // no HTTP response                                                                                         //
           callback(new Error("network"));                                                                             // 132
-        } else {                                                                                                      //
+        } else {                                                                                                      // 133
                                                                                                                       //
           var response = {};                                                                                          // 135
           response.statusCode = xhr.status;                                                                           // 136
@@ -284,7 +284,7 @@ HTTP.call = function (method, url, options, callback) {                         
           _.each(headers_raw, function (h) {                                                                          // 160
             var m = /^(.*?):(?:\s+)(.*)$/.exec(h);                                                                    // 161
             if (m && m.length === 3) response.headers[m[1].toLowerCase()] = m[2];                                     // 162
-          });                                                                                                         //
+          });                                                                                                         // 164
                                                                                                                       //
           populateData(response);                                                                                     // 166
                                                                                                                       //
@@ -292,27 +292,27 @@ HTTP.call = function (method, url, options, callback) {                         
           if (response.statusCode >= 400) error = makeErrorByStatus(response.statusCode, response.content);           // 169
                                                                                                                       //
           callback(error, response);                                                                                  // 172
-        }                                                                                                             //
-      }                                                                                                               //
-    };                                                                                                                //
+        }                                                                                                             // 173
+      }                                                                                                               // 174
+    };                                                                                                                // 175
                                                                                                                       //
     // Allow custom control over XHR and abort early.                                                                 //
-    if (options.beforeSend) {                                                                                         // 96
+    if (options.beforeSend) {                                                                                         // 178
       // Sanity                                                                                                       //
       var beforeSend = _.once(options.beforeSend);                                                                    // 180
                                                                                                                       //
       // Call the callback and check to see if the request was aborted                                                //
-      if (false === beforeSend.call(null, xhr, options)) {                                                            // 178
+      if (false === beforeSend.call(null, xhr, options)) {                                                            // 183
         return xhr.abort();                                                                                           // 184
-      }                                                                                                               //
-    }                                                                                                                 //
+      }                                                                                                               // 185
+    }                                                                                                                 // 186
                                                                                                                       //
     // send it on its way                                                                                             //
-    xhr.send(content);                                                                                                // 96
-  } catch (err) {                                                                                                     //
+    xhr.send(content);                                                                                                // 189
+  } catch (err) {                                                                                                     // 191
     callback(err);                                                                                                    // 192
-  }                                                                                                                   //
-};                                                                                                                    //
+  }                                                                                                                   // 193
+};                                                                                                                    // 195
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 },"deprecated.js":function(){

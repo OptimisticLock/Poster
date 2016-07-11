@@ -140,17 +140,22 @@ Twitter.requestCredential = function (options, credentialRequestCompleteCallback
     }                                                                                                 // 38
   }                                                                                                   // 39
                                                                                                       // 40
-  var loginUrl = Meteor.absoluteUrl(loginPath);                                                       // 41
-                                                                                                      // 42
-  OAuth.launchLogin({                                                                                 // 43
-    loginService: "twitter",                                                                          // 44
-    loginStyle: loginStyle,                                                                           // 45
-    loginUrl: loginUrl,                                                                               // 46
-    credentialRequestCompleteCallback: credentialRequestCompleteCallback,                             // 47
-    credentialToken: credentialToken                                                                  // 48
-  });                                                                                                 // 49
-};                                                                                                    // 50
-                                                                                                      // 51
+  // Handle force login (request the user to enter their credentials)                                 // 41
+  if (options && options.force_login) {                                                               // 42
+    loginPath += "&force_login=true";                                                                 // 43
+  }                                                                                                   // 44
+                                                                                                      // 45
+  var loginUrl = Meteor.absoluteUrl(loginPath);                                                       // 46
+                                                                                                      // 47
+  OAuth.launchLogin({                                                                                 // 48
+    loginService: "twitter",                                                                          // 49
+    loginStyle: loginStyle,                                                                           // 50
+    loginUrl: loginUrl,                                                                               // 51
+    credentialRequestCompleteCallback: credentialRequestCompleteCallback,                             // 52
+    credentialToken: credentialToken                                                                  // 53
+  });                                                                                                 // 54
+};                                                                                                    // 55
+                                                                                                      // 56
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 }).call(this);

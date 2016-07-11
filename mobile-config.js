@@ -6,4 +6,8 @@ App.info({
     website: 'http://apexsft.com',
     version: '0.0.4',
     id: 'com.optimisticlock.poster'
-});
+})
+
+App.accessRule('*.google.com/*')
+App.accessRule('*.googleapis.com/*')
+App.accessRule('*.gstatic.com/*')

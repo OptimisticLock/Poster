@@ -1,8 +1,8 @@
-var require = meteorInstall({"BothClientAndServer":{"poster.js":function(){
+var require = meteorInstall({"both":{"poster.js":function(){
 
 ///////////////////////////////////////////////////////////////////////
 //                                                                   //
-// BothClientAndServer/poster.js                                     //
+// both/poster.js                                                    //
 //                                                                   //
 ///////////////////////////////////////////////////////////////////////
                                                                      //
@@ -24,10 +24,10 @@ Meteor.startup(function () {                                         // 1
   //    ServiceConfiguration.configurations.remove({                 //
   //        service: "facebook"                                      //
   //    });                                                          //
-});                                                                  //
+});                                                                  // 8
 ///////////////////////////////////////////////////////////////////////
 
 }}},{"extensions":[".js",".json"]});
-require("./BothClientAndServer/poster.js");
+require("./both/poster.js");
 require("./server/configure.js");
 //# sourceMappingURL=app.js.map

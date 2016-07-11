@@ -69,7 +69,7 @@ Meteor.loginWithPassword = function (selector, password, callback) {            
     methodArguments: [{                                                                                       // 32
       user: selector,                                                                                         // 33
       password: Accounts._hashPassword(password)                                                              // 34
-    }],                                                                                                       //
+    }],                                                                                                       // 32
     userCallback: function () {                                                                               // 36
       function userCallback(error, result) {                                                                  // 36
         if (error && error.error === 400 && error.reason === 'old password format') {                         // 37
@@ -89,25 +89,25 @@ Meteor.loginWithPassword = function (selector, password, callback) {            
             upgradeError: error,                                                                              // 52
             userSelector: selector,                                                                           // 53
             plaintextPassword: password                                                                       // 54
-          }, callback);                                                                                       //
-        } else if (error) {                                                                                   //
+          }, callback);                                                                                       // 51
+        } else if (error) {                                                                                   // 56
           callback && callback(error);                                                                        // 58
-        } else {                                                                                              //
+        } else {                                                                                              // 59
           callback && callback();                                                                             // 60
-        }                                                                                                     //
-      }                                                                                                       //
+        }                                                                                                     // 61
+      }                                                                                                       // 62
                                                                                                               //
-      return userCallback;                                                                                    //
-    }()                                                                                                       //
-  });                                                                                                         //
-};                                                                                                            //
+      return userCallback;                                                                                    // 36
+    }()                                                                                                       // 36
+  });                                                                                                         // 31
+};                                                                                                            // 64
                                                                                                               //
 Accounts._hashPassword = function (password) {                                                                // 66
   return {                                                                                                    // 67
     digest: SHA256(password),                                                                                 // 68
     algorithm: "sha-256"                                                                                      // 69
-  };                                                                                                          //
-};                                                                                                            //
+  };                                                                                                          // 67
+};                                                                                                            // 71
                                                                                                               //
 // XXX COMPAT WITH 0.8.1.3                                                                                    //
 // The server requested an upgrade from the old SRP password format,                                          //
@@ -120,20 +120,20 @@ var srpUpgradePath = function srpUpgradePath(options, callback) {               
   var details;                                                                                                // 81
   try {                                                                                                       // 82
     details = EJSON.parse(options.upgradeError.details);                                                      // 83
-  } catch (e) {}                                                                                              //
+  } catch (e) {}                                                                                              // 84
   if (!(details && details.format === 'srp')) {                                                               // 85
     callback && callback(new Meteor.Error(400, "Password is old. Please reset your " + "password."));         // 86
-  } else {                                                                                                    //
+  } else {                                                                                                    // 89
     Accounts.callLoginMethod({                                                                                // 90
       methodArguments: [{                                                                                     // 91
         user: options.userSelector,                                                                           // 92
         srp: SHA256(details.identity + ":" + options.plaintextPassword),                                      // 93
         password: Accounts._hashPassword(options.plaintextPassword)                                           // 94
-      }],                                                                                                     //
+      }],                                                                                                     // 91
       userCallback: callback                                                                                  // 96
-    });                                                                                                       //
-  }                                                                                                           //
-};                                                                                                            //
+    });                                                                                                       // 90
+  }                                                                                                           // 98
+};                                                                                                            // 99
                                                                                                               //
 // Attempt to log in as a new user.                                                                           //
                                                                                                               //
@@ -151,21 +151,21 @@ var srpUpgradePath = function srpUpgradePath(options, callback) {               
 Accounts.createUser = function (options, callback) {                                                          // 115
   options = _.clone(options); // we'll be modifying options                                                   // 116
                                                                                                               //
-  if (typeof options.password !== 'string') throw new Error("options.password must be a string");             // 115
+  if (typeof options.password !== 'string') throw new Error("options.password must be a string");             // 118
   if (!options.password) {                                                                                    // 120
     callback(new Meteor.Error(400, "Password may not be empty"));                                             // 121
     return;                                                                                                   // 122
-  }                                                                                                           //
+  }                                                                                                           // 123
                                                                                                               //
   // Replace password with the hashed password.                                                               //
-  options.password = Accounts._hashPassword(options.password);                                                // 115
+  options.password = Accounts._hashPassword(options.password);                                                // 126
                                                                                                               //
   Accounts.callLoginMethod({                                                                                  // 128
     methodName: 'createUser',                                                                                 // 129
     methodArguments: [options],                                                                               // 130
     userCallback: callback                                                                                    // 131
-  });                                                                                                         //
-};                                                                                                            //
+  });                                                                                                         // 128
+};                                                                                                            // 133
                                                                                                               //
 // Change password. Must be logged in.                                                                        //
 //                                                                                                            //
@@ -187,13 +187,13 @@ Accounts.changePassword = function (oldPassword, newPassword, callback) {       
   if (!Meteor.user()) {                                                                                       // 152
     callback && callback(new Error("Must be logged in to change password."));                                 // 153
     return;                                                                                                   // 154
-  }                                                                                                           //
+  }                                                                                                           // 155
                                                                                                               //
   check(newPassword, String);                                                                                 // 157
   if (!newPassword) {                                                                                         // 158
     callback(new Meteor.Error(400, "Password may not be empty"));                                             // 159
     return;                                                                                                   // 160
-  }                                                                                                           //
+  }                                                                                                           // 161
                                                                                                               //
   Accounts.connection.apply('changePassword', [oldPassword ? Accounts._hashPassword(oldPassword) : null, Accounts._hashPassword(newPassword)], function (error, result) {
     if (error || !result) {                                                                                   // 168
@@ -205,24 +205,24 @@ Accounts.changePassword = function (oldPassword, newPassword, callback) {       
           upgradeError: error,                                                                                // 175
           userSelector: { id: Meteor.userId() },                                                              // 176
           plaintextPassword: oldPassword                                                                      // 177
-        }, function (err) {                                                                                   //
+        }, function (err) {                                                                                   // 174
           if (err) {                                                                                          // 179
             callback && callback(err);                                                                        // 180
-          } else {                                                                                            //
+          } else {                                                                                            // 181
             // Now that we've successfully migrated from srp to                                               //
             // bcrypt, try changing the password again.                                                       //
             Accounts.changePassword(oldPassword, newPassword, callback);                                      // 184
-          }                                                                                                   //
-        });                                                                                                   //
-      } else {                                                                                                //
+          }                                                                                                   // 185
+        });                                                                                                   // 186
+      } else {                                                                                                // 187
         // A normal error, not an error telling us to upgrade to bcrypt                                       //
         callback && callback(error || new Error("No result from changePassword."));                           // 189
-      }                                                                                                       //
-    } else {                                                                                                  //
+      }                                                                                                       // 191
+    } else {                                                                                                  // 192
       callback && callback();                                                                                 // 193
-    }                                                                                                         //
-  });                                                                                                         //
-};                                                                                                            //
+    }                                                                                                         // 194
+  });                                                                                                         // 195
+};                                                                                                            // 197
                                                                                                               //
 // Sends an email to a user with a link that can be used to reset                                             //
 // their password                                                                                             //
@@ -242,7 +242,7 @@ Accounts.changePassword = function (oldPassword, newPassword, callback) {       
 Accounts.forgotPassword = function (options, callback) {                                                      // 214
   if (!options.email) throw new Error("Must pass options.email");                                             // 215
   Accounts.connection.call("forgotPassword", options, callback);                                              // 217
-};                                                                                                            //
+};                                                                                                            // 218
                                                                                                               //
 // Resets a password based on a token originally created by                                                   //
 // Accounts.forgotPassword, and then logs in the matching user.                                               //
@@ -266,13 +266,13 @@ Accounts.resetPassword = function (token, newPassword, callback) {              
   if (!newPassword) {                                                                                         // 239
     callback(new Meteor.Error(400, "Password may not be empty"));                                             // 240
     return;                                                                                                   // 241
-  }                                                                                                           //
+  }                                                                                                           // 242
                                                                                                               //
   Accounts.callLoginMethod({                                                                                  // 244
     methodName: 'resetPassword',                                                                              // 245
     methodArguments: [token, Accounts._hashPassword(newPassword)],                                            // 246
     userCallback: callback });                                                                                // 247
-};                                                                                                            //
+};                                                                                                            // 248
                                                                                                               //
 // Verifies a user's email address based on a token originally                                                //
 // created by Accounts.sendVerificationEmail                                                                  //
@@ -294,7 +294,7 @@ Accounts.verifyEmail = function (token, callback) {                             
     methodName: 'verifyEmail',                                                                                // 268
     methodArguments: [token],                                                                                 // 269
     userCallback: callback });                                                                                // 270
-};                                                                                                            //
+};                                                                                                            // 271
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 }}}}},{"extensions":[".js",".json"]});

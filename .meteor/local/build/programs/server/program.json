@@ -23,6 +23,31 @@
       "path": "packages/npm-mongo.js"
     },
     {
+      "node_modules": "npm/node_modules/meteor/modules-runtime/node_modules",
+      "sourceMap": "packages/modules-runtime.js.map",
+      "path": "packages/modules-runtime.js"
+    },
+    {
+      "node_modules": "npm/node_modules/meteor/modules/node_modules",
+      "sourceMap": "packages/modules.js.map",
+      "path": "packages/modules.js"
+    },
+    {
+      "node_modules": "npm/node_modules/meteor/es5-shim/node_modules",
+      "sourceMap": "packages/es5-shim.js.map",
+      "path": "packages/es5-shim.js"
+    },
+    {
+      "node_modules": "npm/node_modules/meteor/promise/node_modules",
+      "sourceMap": "packages/promise.js.map",
+      "path": "packages/promise.js"
+    },
+    {
+      "node_modules": "npm/node_modules/meteor/ecmascript-runtime/node_modules",
+      "sourceMap": "packages/ecmascript-runtime.js.map",
+      "path": "packages/ecmascript-runtime.js"
+    },
+    {
       "node_modules": "npm/node_modules/meteor/babel-compiler/node_modules",
       "sourceMap": "packages/babel-compiler.js.map",
       "path": "packages/babel-compiler.js"
@@ -50,30 +75,6 @@
     {
       "sourceMap": "packages/tracker.js.map",
       "path": "packages/tracker.js"
-    },
-    {
-      "node_modules": "npm/node_modules/meteor/modules-runtime/node_modules",
-      "sourceMap": "packages/modules-runtime.js.map",
-      "path": "packages/modules-runtime.js"
-    },
-    {
-      "sourceMap": "packages/modules.js.map",
-      "path": "packages/modules.js"
-    },
-    {
-      "node_modules": "npm/node_modules/meteor/es5-shim/node_modules",
-      "sourceMap": "packages/es5-shim.js.map",
-      "path": "packages/es5-shim.js"
-    },
-    {
-      "node_modules": "npm/node_modules/meteor/promise/node_modules",
-      "sourceMap": "packages/promise.js.map",
-      "path": "packages/promise.js"
-    },
-    {
-      "node_modules": "npm/node_modules/meteor/ecmascript-runtime/node_modules",
-      "sourceMap": "packages/ecmascript-runtime.js.map",
-      "path": "packages/ecmascript-runtime.js"
     },
     {
       "node_modules": "npm/node_modules/meteor/babel-runtime/node_modules",
@@ -355,6 +356,12 @@
       "path": "packages/standard-minifier-js.js"
     },
     {
+      "path": "packages/templating.js"
+    },
+    {
+      "path": "packages/dburles_google-maps.js"
+    },
+    {
       "path": "packages/livedata.js"
     },
     {
@@ -362,9 +369,6 @@
     },
     {
       "path": "packages/launch-screen.js"
-    },
-    {
-      "path": "packages/templating.js"
     },
     {
       "sourceMap": "packages/autoupdate.js.map",

@@ -366,768 +366,790 @@ _.extend(LocalCollection.Cursor.prototype, {                                    
       throw Error("You may not observe a cursor with {fields: {_id: 0}}");                                    // 328
                                                                                                               // 329
     var query = {                                                                                             // 330
-      matcher: self.matcher, // not fast pathed                                                               // 331
-      sorter: ordered && self.sorter,                                                                         // 332
-      distances: (                                                                                            // 333
-        self.matcher.hasGeoQuery() && ordered && new LocalCollection._IdMap),                                 // 334
-      resultsSnapshot: null,                                                                                  // 335
-      ordered: ordered,                                                                                       // 336
-      cursor: self,                                                                                           // 337
-      projectionFn: self._projectionFn                                                                        // 338
-    };                                                                                                        // 339
-    var qid;                                                                                                  // 340
-                                                                                                              // 341
-    // Non-reactive queries call added[Before] and then never call anything                                   // 342
-    // else.                                                                                                  // 343
-    if (self.reactive) {                                                                                      // 344
-      qid = self.collection.next_qid++;                                                                       // 345
-      self.collection.queries[qid] = query;                                                                   // 346
-    }                                                                                                         // 347
-    query.results = self._getRawObjects({                                                                     // 348
-      ordered: ordered, distances: query.distances});                                                         // 349
-    if (self.collection.paused)                                                                               // 350
-      query.resultsSnapshot = (ordered ? [] : new LocalCollection._IdMap);                                    // 351
-                                                                                                              // 352
-    // wrap callbacks we were passed. callbacks only fire when not paused and                                 // 353
-    // are never undefined                                                                                    // 354
-    // Filters out blacklisted fields according to cursor's projection.                                       // 355
-    // XXX wrong place for this?                                                                              // 356
-                                                                                                              // 357
-    // furthermore, callbacks enqueue until the operation we're working on is                                 // 358
-    // done.                                                                                                  // 359
-    var wrapCallback = function (f) {                                                                         // 360
-      if (!f)                                                                                                 // 361
-        return function () {};                                                                                // 362
-      return function (/*args*/) {                                                                            // 363
-        var context = this;                                                                                   // 364
-        var args = arguments;                                                                                 // 365
-                                                                                                              // 366
-        if (self.collection.paused)                                                                           // 367
-          return;                                                                                             // 368
-                                                                                                              // 369
-        self.collection._observeQueue.queueTask(function () {                                                 // 370
-          f.apply(context, args);                                                                             // 371
-        });                                                                                                   // 372
-      };                                                                                                      // 373
-    };                                                                                                        // 374
-    query.added = wrapCallback(options.added);                                                                // 375
-    query.changed = wrapCallback(options.changed);                                                            // 376
-    query.removed = wrapCallback(options.removed);                                                            // 377
-    if (ordered) {                                                                                            // 378
-      query.addedBefore = wrapCallback(options.addedBefore);                                                  // 379
-      query.movedBefore = wrapCallback(options.movedBefore);                                                  // 380
-    }                                                                                                         // 381
-                                                                                                              // 382
-    if (!options._suppress_initial && !self.collection.paused) {                                              // 383
-      // XXX unify ordered and unordered interface                                                            // 384
-      var each = ordered                                                                                      // 385
-            ? _.bind(_.each, null, query.results)                                                             // 386
-            : _.bind(query.results.forEach, query.results);                                                   // 387
-      each(function (doc) {                                                                                   // 388
-        var fields = EJSON.clone(doc);                                                                        // 389
-                                                                                                              // 390
-        delete fields._id;                                                                                    // 391
-        if (ordered)                                                                                          // 392
-          query.addedBefore(doc._id, self._projectionFn(fields), null);                                       // 393
-        query.added(doc._id, self._projectionFn(fields));                                                     // 394
-      });                                                                                                     // 395
-    }                                                                                                         // 396
-                                                                                                              // 397
-    var handle = new LocalCollection.ObserveHandle;                                                           // 398
-    _.extend(handle, {                                                                                        // 399
-      collection: self.collection,                                                                            // 400
-      stop: function () {                                                                                     // 401
-        if (self.reactive)                                                                                    // 402
-          delete self.collection.queries[qid];                                                                // 403
-      }                                                                                                       // 404
-    });                                                                                                       // 405
-                                                                                                              // 406
-    if (self.reactive && Tracker.active) {                                                                    // 407
-      // XXX in many cases, the same observe will be recreated when                                           // 408
-      // the current autorun is rerun.  we could save work by                                                 // 409
-      // letting it linger across rerun and potentially get                                                   // 410
-      // repurposed if the same observe is performed, using logic                                             // 411
-      // similar to that of Meteor.subscribe.                                                                 // 412
-      Tracker.onInvalidate(function () {                                                                      // 413
-        handle.stop();                                                                                        // 414
-      });                                                                                                     // 415
-    }                                                                                                         // 416
-    // run the observe callbacks resulting from the initial contents                                          // 417
-    // before we leave the observe.                                                                           // 418
-    self.collection._observeQueue.drain();                                                                    // 419
-                                                                                                              // 420
-    return handle;                                                                                            // 421
-  }                                                                                                           // 422
-});                                                                                                           // 423
-                                                                                                              // 424
-// Returns a collection of matching objects, but doesn't deep copy them.                                      // 425
-//                                                                                                            // 426
-// If ordered is set, returns a sorted array, respecting sorter, skip, and limit                              // 427
-// properties of the query.  if sorter is falsey, no sort -- you get the natural                              // 428
-// order.                                                                                                     // 429
-//                                                                                                            // 430
-// If ordered is not set, returns an object mapping from ID to doc (sorter, skip                              // 431
-// and limit should not be set).                                                                              // 432
-//                                                                                                            // 433
-// If ordered is set and this cursor is a $near geoquery, then this function                                  // 434
-// will use an _IdMap to track each distance from the $near argument point in                                 // 435
-// order to use it as a sort key. If an _IdMap is passed in the 'distances'                                   // 436
-// argument, this function will clear it and use it for this purpose (otherwise                               // 437
-// it will just create its own _IdMap). The observeChanges implementation uses                                // 438
-// this to remember the distances after this function returns.                                                // 439
-LocalCollection.Cursor.prototype._getRawObjects = function (options) {                                        // 440
-  var self = this;                                                                                            // 441
-  options = options || {};                                                                                    // 442
-                                                                                                              // 443
-  // XXX use OrderedDict instead of array, and make IdMap and OrderedDict                                     // 444
-  // compatible                                                                                               // 445
-  var results = options.ordered ? [] : new LocalCollection._IdMap;                                            // 446
-                                                                                                              // 447
-  // fast path for single ID value                                                                            // 448
-  if (self._selectorId !== undefined) {                                                                       // 449
-    // If you have non-zero skip and ask for a single id, you get                                             // 450
-    // nothing. This is so it matches the behavior of the '{_id: foo}'                                        // 451
-    // path.                                                                                                  // 452
-    if (self.skip)                                                                                            // 453
-      return results;                                                                                         // 454
-                                                                                                              // 455
-    var selectedDoc = self.collection._docs.get(self._selectorId);                                            // 456
-    if (selectedDoc) {                                                                                        // 457
-      if (options.ordered)                                                                                    // 458
-        results.push(selectedDoc);                                                                            // 459
-      else                                                                                                    // 460
-        results.set(self._selectorId, selectedDoc);                                                           // 461
-    }                                                                                                         // 462
-    return results;                                                                                           // 463
-  }                                                                                                           // 464
-                                                                                                              // 465
-  // slow path for arbitrary selector, sort, skip, limit                                                      // 466
-                                                                                                              // 467
-  // in the observeChanges case, distances is actually part of the "query" (ie,                               // 468
-  // live results set) object.  in other cases, distances is only used inside                                 // 469
-  // this function.                                                                                           // 470
-  var distances;                                                                                              // 471
-  if (self.matcher.hasGeoQuery() && options.ordered) {                                                        // 472
-    if (options.distances) {                                                                                  // 473
-      distances = options.distances;                                                                          // 474
-      distances.clear();                                                                                      // 475
-    } else {                                                                                                  // 476
-      distances = new LocalCollection._IdMap();                                                               // 477
-    }                                                                                                         // 478
-  }                                                                                                           // 479
-                                                                                                              // 480
-  self.collection._docs.forEach(function (doc, id) {                                                          // 481
-    var matchResult = self.matcher.documentMatches(doc);                                                      // 482
-    if (matchResult.result) {                                                                                 // 483
-      if (options.ordered) {                                                                                  // 484
-        results.push(doc);                                                                                    // 485
-        if (distances && matchResult.distance !== undefined)                                                  // 486
-          distances.set(id, matchResult.distance);                                                            // 487
-      } else {                                                                                                // 488
-        results.set(id, doc);                                                                                 // 489
-      }                                                                                                       // 490
-    }                                                                                                         // 491
-    // Fast path for limited unsorted queries.                                                                // 492
-    // XXX 'length' check here seems wrong for ordered                                                        // 493
-    if (self.limit && !self.skip && !self.sorter &&                                                           // 494
-        results.length === self.limit)                                                                        // 495
-      return false;  // break                                                                                 // 496
-    return true;  // continue                                                                                 // 497
-  });                                                                                                         // 498
-                                                                                                              // 499
-  if (!options.ordered)                                                                                       // 500
-    return results;                                                                                           // 501
-                                                                                                              // 502
-  if (self.sorter) {                                                                                          // 503
-    var comparator = self.sorter.getComparator({distances: distances});                                       // 504
-    results.sort(comparator);                                                                                 // 505
-  }                                                                                                           // 506
-                                                                                                              // 507
-  var idx_start = self.skip || 0;                                                                             // 508
-  var idx_end = self.limit ? (self.limit + idx_start) : results.length;                                       // 509
-  return results.slice(idx_start, idx_end);                                                                   // 510
-};                                                                                                            // 511
-                                                                                                              // 512
-// XXX Maybe we need a version of observe that just calls a callback if                                       // 513
-// anything changed.                                                                                          // 514
-LocalCollection.Cursor.prototype._depend = function (changers, _allow_unordered) {                            // 515
-  var self = this;                                                                                            // 516
-                                                                                                              // 517
-  if (Tracker.active) {                                                                                       // 518
-    var v = new Tracker.Dependency;                                                                           // 519
-    v.depend();                                                                                               // 520
-    var notifyChange = _.bind(v.changed, v);                                                                  // 521
-                                                                                                              // 522
-    var options = {                                                                                           // 523
-      _suppress_initial: true,                                                                                // 524
-      _allow_unordered: _allow_unordered                                                                      // 525
-    };                                                                                                        // 526
-    _.each(['added', 'changed', 'removed', 'addedBefore', 'movedBefore'],                                     // 527
-           function (fnName) {                                                                                // 528
-             if (changers[fnName])                                                                            // 529
-               options[fnName] = notifyChange;                                                                // 530
-           });                                                                                                // 531
-                                                                                                              // 532
-    // observeChanges will stop() when this computation is invalidated                                        // 533
-    self.observeChanges(options);                                                                             // 534
-  }                                                                                                           // 535
-};                                                                                                            // 536
-                                                                                                              // 537
-// XXX enforce rule that field names can't start with '$' or contain '.'                                      // 538
-// (real mongodb does in fact enforce this)                                                                   // 539
-// XXX possibly enforce that 'undefined' does not appear (we assume                                           // 540
-// this in our handling of null and $exists)                                                                  // 541
-LocalCollection.prototype.insert = function (doc, callback) {                                                 // 542
-  var self = this;                                                                                            // 543
-  doc = EJSON.clone(doc);                                                                                     // 544
-                                                                                                              // 545
-  if (!_.has(doc, '_id')) {                                                                                   // 546
-    // if you really want to use ObjectIDs, set this global.                                                  // 547
-    // Mongo.Collection specifies its own ids and does not use this code.                                     // 548
-    doc._id = LocalCollection._useOID ? new MongoID.ObjectID()                                                // 549
-                                      : Random.id();                                                          // 550
-  }                                                                                                           // 551
-  var id = doc._id;                                                                                           // 552
-                                                                                                              // 553
-  if (self._docs.has(id))                                                                                     // 554
-    throw MinimongoError("Duplicate _id '" + id + "'");                                                       // 555
-                                                                                                              // 556
-  self._saveOriginal(id, undefined);                                                                          // 557
-  self._docs.set(id, doc);                                                                                    // 558
-                                                                                                              // 559
-  var queriesToRecompute = [];                                                                                // 560
-  // trigger live queries that match                                                                          // 561
-  for (var qid in self.queries) {                                                                             // 562
-    var query = self.queries[qid];                                                                            // 563
-    var matchResult = query.matcher.documentMatches(doc);                                                     // 564
-    if (matchResult.result) {                                                                                 // 565
-      if (query.distances && matchResult.distance !== undefined)                                              // 566
-        query.distances.set(id, matchResult.distance);                                                        // 567
-      if (query.cursor.skip || query.cursor.limit)                                                            // 568
-        queriesToRecompute.push(qid);                                                                         // 569
-      else                                                                                                    // 570
-        LocalCollection._insertInResults(query, doc);                                                         // 571
-    }                                                                                                         // 572
-  }                                                                                                           // 573
-                                                                                                              // 574
-  _.each(queriesToRecompute, function (qid) {                                                                 // 575
-    if (self.queries[qid])                                                                                    // 576
-      self._recomputeResults(self.queries[qid]);                                                              // 577
-  });                                                                                                         // 578
-  self._observeQueue.drain();                                                                                 // 579
-                                                                                                              // 580
-  // Defer because the caller likely doesn't expect the callback to be run                                    // 581
-  // immediately.                                                                                             // 582
-  if (callback)                                                                                               // 583
-    Meteor.defer(function () {                                                                                // 584
-      callback(null, id);                                                                                     // 585
-    });                                                                                                       // 586
-  return id;                                                                                                  // 587
-};                                                                                                            // 588
-                                                                                                              // 589
-// Iterates over a subset of documents that could match selector; calls                                       // 590
-// f(doc, id) on each of them.  Specifically, if selector specifies                                           // 591
-// specific _id's, it only looks at those.  doc is *not* cloned: it is the                                    // 592
-// same object that is in _docs.                                                                              // 593
-LocalCollection.prototype._eachPossiblyMatchingDoc = function (selector, f) {                                 // 594
-  var self = this;                                                                                            // 595
-  var specificIds = LocalCollection._idsMatchedBySelector(selector);                                          // 596
-  if (specificIds) {                                                                                          // 597
-    for (var i = 0; i < specificIds.length; ++i) {                                                            // 598
-      var id = specificIds[i];                                                                                // 599
-      var doc = self._docs.get(id);                                                                           // 600
-      if (doc) {                                                                                              // 601
-        var breakIfFalse = f(doc, id);                                                                        // 602
-        if (breakIfFalse === false)                                                                           // 603
-          break;                                                                                              // 604
-      }                                                                                                       // 605
-    }                                                                                                         // 606
-  } else {                                                                                                    // 607
-    self._docs.forEach(f);                                                                                    // 608
-  }                                                                                                           // 609
-};                                                                                                            // 610
-                                                                                                              // 611
-LocalCollection.prototype.remove = function (selector, callback) {                                            // 612
-  var self = this;                                                                                            // 613
-                                                                                                              // 614
-  // Easy special case: if we're not calling observeChanges callbacks and we're                               // 615
-  // not saving originals and we got asked to remove everything, then just empty                              // 616
-  // everything directly.                                                                                     // 617
-  if (self.paused && !self._savedOriginals && EJSON.equals(selector, {})) {                                   // 618
-    var result = self._docs.size();                                                                           // 619
-    self._docs.clear();                                                                                       // 620
-    _.each(self.queries, function (query) {                                                                   // 621
-      if (query.ordered) {                                                                                    // 622
-        query.results = [];                                                                                   // 623
-      } else {                                                                                                // 624
-        query.results.clear();                                                                                // 625
-      }                                                                                                       // 626
-    });                                                                                                       // 627
-    if (callback) {                                                                                           // 628
-      Meteor.defer(function () {                                                                              // 629
-        callback(null, result);                                                                               // 630
-      });                                                                                                     // 631
-    }                                                                                                         // 632
-    return result;                                                                                            // 633
-  }                                                                                                           // 634
-                                                                                                              // 635
-  var matcher = new Minimongo.Matcher(selector);                                                              // 636
-  var remove = [];                                                                                            // 637
-  self._eachPossiblyMatchingDoc(selector, function (doc, id) {                                                // 638
-    if (matcher.documentMatches(doc).result)                                                                  // 639
-      remove.push(id);                                                                                        // 640
-  });                                                                                                         // 641
-                                                                                                              // 642
-  var queriesToRecompute = [];                                                                                // 643
-  var queryRemove = [];                                                                                       // 644
-  for (var i = 0; i < remove.length; i++) {                                                                   // 645
-    var removeId = remove[i];                                                                                 // 646
-    var removeDoc = self._docs.get(removeId);                                                                 // 647
-    _.each(self.queries, function (query, qid) {                                                              // 648
-      if (query.matcher.documentMatches(removeDoc).result) {                                                  // 649
-        if (query.cursor.skip || query.cursor.limit)                                                          // 650
-          queriesToRecompute.push(qid);                                                                       // 651
-        else                                                                                                  // 652
-          queryRemove.push({qid: qid, doc: removeDoc});                                                       // 653
-      }                                                                                                       // 654
-    });                                                                                                       // 655
-    self._saveOriginal(removeId, removeDoc);                                                                  // 656
-    self._docs.remove(removeId);                                                                              // 657
-  }                                                                                                           // 658
-                                                                                                              // 659
-  // run live query callbacks _after_ we've removed the documents.                                            // 660
-  _.each(queryRemove, function (remove) {                                                                     // 661
-    var query = self.queries[remove.qid];                                                                     // 662
-    if (query) {                                                                                              // 663
-      query.distances && query.distances.remove(remove.doc._id);                                              // 664
-      LocalCollection._removeFromResults(query, remove.doc);                                                  // 665
-    }                                                                                                         // 666
-  });                                                                                                         // 667
-  _.each(queriesToRecompute, function (qid) {                                                                 // 668
-    var query = self.queries[qid];                                                                            // 669
-    if (query)                                                                                                // 670
-      self._recomputeResults(query);                                                                          // 671
-  });                                                                                                         // 672
-  self._observeQueue.drain();                                                                                 // 673
-  result = remove.length;                                                                                     // 674
-  if (callback)                                                                                               // 675
-    Meteor.defer(function () {                                                                                // 676
-      callback(null, result);                                                                                 // 677
-    });                                                                                                       // 678
-  return result;                                                                                              // 679
-};                                                                                                            // 680
-                                                                                                              // 681
-// XXX atomicity: if multi is true, and one modification fails, do                                            // 682
-// we rollback the whole operation, or what?                                                                  // 683
-LocalCollection.prototype.update = function (selector, mod, options, callback) {                              // 684
-  var self = this;                                                                                            // 685
-  if (! callback && options instanceof Function) {                                                            // 686
-    callback = options;                                                                                       // 687
-    options = null;                                                                                           // 688
-  }                                                                                                           // 689
-  if (!options) options = {};                                                                                 // 690
-                                                                                                              // 691
-  var matcher = new Minimongo.Matcher(selector);                                                              // 692
-                                                                                                              // 693
-  // Save the original results of any query that we might need to                                             // 694
-  // _recomputeResults on, because _modifyAndNotify will mutate the objects in                                // 695
-  // it. (We don't need to save the original results of paused queries because                                // 696
-  // they already have a resultsSnapshot and we won't be diffing in                                           // 697
-  // _recomputeResults.)                                                                                      // 698
-  var qidToOriginalResults = {};                                                                              // 699
-  // We should only clone each document once, even if it appears in multiple queries                          // 700
-  var docMap = new LocalCollection._IdMap;                                                                    // 701
-  var idsMatchedBySelector = LocalCollection._idsMatchedBySelector(selector);                                 // 702
-                                                                                                              // 703
-  _.each(self.queries, function (query, qid) {                                                                // 704
-    if ((query.cursor.skip || query.cursor.limit) && ! self.paused) {                                         // 705
-      // Catch the case of a reactive `count()` on a cursor with skip                                         // 706
-      // or limit, which registers an unordered observe. This is a                                            // 707
-      // pretty rare case, so we just clone the entire result set with                                        // 708
-      // no optimizations for documents that appear in these result                                           // 709
-      // sets and other queries.                                                                              // 710
-      if (query.results instanceof LocalCollection._IdMap) {                                                  // 711
-        qidToOriginalResults[qid] = query.results.clone();                                                    // 712
-        return;                                                                                               // 713
-      }                                                                                                       // 714
-                                                                                                              // 715
-      if (!(query.results instanceof Array)) {                                                                // 716
-        throw new Error("Assertion failed: query.results not an array");                                      // 717
+      dirty: false,                                                                                           // 331
+      matcher: self.matcher, // not fast pathed                                                               // 332
+      sorter: ordered && self.sorter,                                                                         // 333
+      distances: (                                                                                            // 334
+        self.matcher.hasGeoQuery() && ordered && new LocalCollection._IdMap),                                 // 335
+      resultsSnapshot: null,                                                                                  // 336
+      ordered: ordered,                                                                                       // 337
+      cursor: self,                                                                                           // 338
+      projectionFn: self._projectionFn                                                                        // 339
+    };                                                                                                        // 340
+    var qid;                                                                                                  // 341
+                                                                                                              // 342
+    // Non-reactive queries call added[Before] and then never call anything                                   // 343
+    // else.                                                                                                  // 344
+    if (self.reactive) {                                                                                      // 345
+      qid = self.collection.next_qid++;                                                                       // 346
+      self.collection.queries[qid] = query;                                                                   // 347
+    }                                                                                                         // 348
+    query.results = self._getRawObjects({                                                                     // 349
+      ordered: ordered, distances: query.distances});                                                         // 350
+    if (self.collection.paused)                                                                               // 351
+      query.resultsSnapshot = (ordered ? [] : new LocalCollection._IdMap);                                    // 352
+                                                                                                              // 353
+    // wrap callbacks we were passed. callbacks only fire when not paused and                                 // 354
+    // are never undefined                                                                                    // 355
+    // Filters out blacklisted fields according to cursor's projection.                                       // 356
+    // XXX wrong place for this?                                                                              // 357
+                                                                                                              // 358
+    // furthermore, callbacks enqueue until the operation we're working on is                                 // 359
+    // done.                                                                                                  // 360
+    var wrapCallback = function (f) {                                                                         // 361
+      if (!f)                                                                                                 // 362
+        return function () {};                                                                                // 363
+      return function (/*args*/) {                                                                            // 364
+        var context = this;                                                                                   // 365
+        var args = arguments;                                                                                 // 366
+                                                                                                              // 367
+        if (self.collection.paused)                                                                           // 368
+          return;                                                                                             // 369
+                                                                                                              // 370
+        self.collection._observeQueue.queueTask(function () {                                                 // 371
+          f.apply(context, args);                                                                             // 372
+        });                                                                                                   // 373
+      };                                                                                                      // 374
+    };                                                                                                        // 375
+    query.added = wrapCallback(options.added);                                                                // 376
+    query.changed = wrapCallback(options.changed);                                                            // 377
+    query.removed = wrapCallback(options.removed);                                                            // 378
+    if (ordered) {                                                                                            // 379
+      query.addedBefore = wrapCallback(options.addedBefore);                                                  // 380
+      query.movedBefore = wrapCallback(options.movedBefore);                                                  // 381
+    }                                                                                                         // 382
+                                                                                                              // 383
+    if (!options._suppress_initial && !self.collection.paused) {                                              // 384
+      // XXX unify ordered and unordered interface                                                            // 385
+      var each = ordered                                                                                      // 386
+            ? _.bind(_.each, null, query.results)                                                             // 387
+            : _.bind(query.results.forEach, query.results);                                                   // 388
+      each(function (doc) {                                                                                   // 389
+        var fields = EJSON.clone(doc);                                                                        // 390
+                                                                                                              // 391
+        delete fields._id;                                                                                    // 392
+        if (ordered)                                                                                          // 393
+          query.addedBefore(doc._id, self._projectionFn(fields), null);                                       // 394
+        query.added(doc._id, self._projectionFn(fields));                                                     // 395
+      });                                                                                                     // 396
+    }                                                                                                         // 397
+                                                                                                              // 398
+    var handle = new LocalCollection.ObserveHandle;                                                           // 399
+    _.extend(handle, {                                                                                        // 400
+      collection: self.collection,                                                                            // 401
+      stop: function () {                                                                                     // 402
+        if (self.reactive)                                                                                    // 403
+          delete self.collection.queries[qid];                                                                // 404
+      }                                                                                                       // 405
+    });                                                                                                       // 406
+                                                                                                              // 407
+    if (self.reactive && Tracker.active) {                                                                    // 408
+      // XXX in many cases, the same observe will be recreated when                                           // 409
+      // the current autorun is rerun.  we could save work by                                                 // 410
+      // letting it linger across rerun and potentially get                                                   // 411
+      // repurposed if the same observe is performed, using logic                                             // 412
+      // similar to that of Meteor.subscribe.                                                                 // 413
+      Tracker.onInvalidate(function () {                                                                      // 414
+        handle.stop();                                                                                        // 415
+      });                                                                                                     // 416
+    }                                                                                                         // 417
+    // run the observe callbacks resulting from the initial contents                                          // 418
+    // before we leave the observe.                                                                           // 419
+    self.collection._observeQueue.drain();                                                                    // 420
+                                                                                                              // 421
+    return handle;                                                                                            // 422
+  }                                                                                                           // 423
+});                                                                                                           // 424
+                                                                                                              // 425
+// Returns a collection of matching objects, but doesn't deep copy them.                                      // 426
+//                                                                                                            // 427
+// If ordered is set, returns a sorted array, respecting sorter, skip, and limit                              // 428
+// properties of the query.  if sorter is falsey, no sort -- you get the natural                              // 429
+// order.                                                                                                     // 430
+//                                                                                                            // 431
+// If ordered is not set, returns an object mapping from ID to doc (sorter, skip                              // 432
+// and limit should not be set).                                                                              // 433
+//                                                                                                            // 434
+// If ordered is set and this cursor is a $near geoquery, then this function                                  // 435
+// will use an _IdMap to track each distance from the $near argument point in                                 // 436
+// order to use it as a sort key. If an _IdMap is passed in the 'distances'                                   // 437
+// argument, this function will clear it and use it for this purpose (otherwise                               // 438
+// it will just create its own _IdMap). The observeChanges implementation uses                                // 439
+// this to remember the distances after this function returns.                                                // 440
+LocalCollection.Cursor.prototype._getRawObjects = function (options) {                                        // 441
+  var self = this;                                                                                            // 442
+  options = options || {};                                                                                    // 443
+                                                                                                              // 444
+  // XXX use OrderedDict instead of array, and make IdMap and OrderedDict                                     // 445
+  // compatible                                                                                               // 446
+  var results = options.ordered ? [] : new LocalCollection._IdMap;                                            // 447
+                                                                                                              // 448
+  // fast path for single ID value                                                                            // 449
+  if (self._selectorId !== undefined) {                                                                       // 450
+    // If you have non-zero skip and ask for a single id, you get                                             // 451
+    // nothing. This is so it matches the behavior of the '{_id: foo}'                                        // 452
+    // path.                                                                                                  // 453
+    if (self.skip)                                                                                            // 454
+      return results;                                                                                         // 455
+                                                                                                              // 456
+    var selectedDoc = self.collection._docs.get(self._selectorId);                                            // 457
+    if (selectedDoc) {                                                                                        // 458
+      if (options.ordered)                                                                                    // 459
+        results.push(selectedDoc);                                                                            // 460
+      else                                                                                                    // 461
+        results.set(self._selectorId, selectedDoc);                                                           // 462
+    }                                                                                                         // 463
+    return results;                                                                                           // 464
+  }                                                                                                           // 465
+                                                                                                              // 466
+  // slow path for arbitrary selector, sort, skip, limit                                                      // 467
+                                                                                                              // 468
+  // in the observeChanges case, distances is actually part of the "query" (ie,                               // 469
+  // live results set) object.  in other cases, distances is only used inside                                 // 470
+  // this function.                                                                                           // 471
+  var distances;                                                                                              // 472
+  if (self.matcher.hasGeoQuery() && options.ordered) {                                                        // 473
+    if (options.distances) {                                                                                  // 474
+      distances = options.distances;                                                                          // 475
+      distances.clear();                                                                                      // 476
+    } else {                                                                                                  // 477
+      distances = new LocalCollection._IdMap();                                                               // 478
+    }                                                                                                         // 479
+  }                                                                                                           // 480
+                                                                                                              // 481
+  self.collection._docs.forEach(function (doc, id) {                                                          // 482
+    var matchResult = self.matcher.documentMatches(doc);                                                      // 483
+    if (matchResult.result) {                                                                                 // 484
+      if (options.ordered) {                                                                                  // 485
+        results.push(doc);                                                                                    // 486
+        if (distances && matchResult.distance !== undefined)                                                  // 487
+          distances.set(id, matchResult.distance);                                                            // 488
+      } else {                                                                                                // 489
+        results.set(id, doc);                                                                                 // 490
+      }                                                                                                       // 491
+    }                                                                                                         // 492
+    // Fast path for limited unsorted queries.                                                                // 493
+    // XXX 'length' check here seems wrong for ordered                                                        // 494
+    if (self.limit && !self.skip && !self.sorter &&                                                           // 495
+        results.length === self.limit)                                                                        // 496
+      return false;  // break                                                                                 // 497
+    return true;  // continue                                                                                 // 498
+  });                                                                                                         // 499
+                                                                                                              // 500
+  if (!options.ordered)                                                                                       // 501
+    return results;                                                                                           // 502
+                                                                                                              // 503
+  if (self.sorter) {                                                                                          // 504
+    var comparator = self.sorter.getComparator({distances: distances});                                       // 505
+    results.sort(comparator);                                                                                 // 506
+  }                                                                                                           // 507
+                                                                                                              // 508
+  var idx_start = self.skip || 0;                                                                             // 509
+  var idx_end = self.limit ? (self.limit + idx_start) : results.length;                                       // 510
+  return results.slice(idx_start, idx_end);                                                                   // 511
+};                                                                                                            // 512
+                                                                                                              // 513
+// XXX Maybe we need a version of observe that just calls a callback if                                       // 514
+// anything changed.                                                                                          // 515
+LocalCollection.Cursor.prototype._depend = function (changers, _allow_unordered) {                            // 516
+  var self = this;                                                                                            // 517
+                                                                                                              // 518
+  if (Tracker.active) {                                                                                       // 519
+    var v = new Tracker.Dependency;                                                                           // 520
+    v.depend();                                                                                               // 521
+    var notifyChange = _.bind(v.changed, v);                                                                  // 522
+                                                                                                              // 523
+    var options = {                                                                                           // 524
+      _suppress_initial: true,                                                                                // 525
+      _allow_unordered: _allow_unordered                                                                      // 526
+    };                                                                                                        // 527
+    _.each(['added', 'changed', 'removed', 'addedBefore', 'movedBefore'],                                     // 528
+           function (fnName) {                                                                                // 529
+             if (changers[fnName])                                                                            // 530
+               options[fnName] = notifyChange;                                                                // 531
+           });                                                                                                // 532
+                                                                                                              // 533
+    // observeChanges will stop() when this computation is invalidated                                        // 534
+    self.observeChanges(options);                                                                             // 535
+  }                                                                                                           // 536
+};                                                                                                            // 537
+                                                                                                              // 538
+// XXX enforce rule that field names can't start with '$' or contain '.'                                      // 539
+// (real mongodb does in fact enforce this)                                                                   // 540
+// XXX possibly enforce that 'undefined' does not appear (we assume                                           // 541
+// this in our handling of null and $exists)                                                                  // 542
+LocalCollection.prototype.insert = function (doc, callback) {                                                 // 543
+  var self = this;                                                                                            // 544
+  doc = EJSON.clone(doc);                                                                                     // 545
+                                                                                                              // 546
+  if (!_.has(doc, '_id')) {                                                                                   // 547
+    // if you really want to use ObjectIDs, set this global.                                                  // 548
+    // Mongo.Collection specifies its own ids and does not use this code.                                     // 549
+    doc._id = LocalCollection._useOID ? new MongoID.ObjectID()                                                // 550
+                                      : Random.id();                                                          // 551
+  }                                                                                                           // 552
+  var id = doc._id;                                                                                           // 553
+                                                                                                              // 554
+  if (self._docs.has(id))                                                                                     // 555
+    throw MinimongoError("Duplicate _id '" + id + "'");                                                       // 556
+                                                                                                              // 557
+  self._saveOriginal(id, undefined);                                                                          // 558
+  self._docs.set(id, doc);                                                                                    // 559
+                                                                                                              // 560
+  var queriesToRecompute = [];                                                                                // 561
+  // trigger live queries that match                                                                          // 562
+  for (var qid in self.queries) {                                                                             // 563
+    var query = self.queries[qid];                                                                            // 564
+    if (query.dirty) continue;                                                                                // 565
+    var matchResult = query.matcher.documentMatches(doc);                                                     // 566
+    if (matchResult.result) {                                                                                 // 567
+      if (query.distances && matchResult.distance !== undefined)                                              // 568
+        query.distances.set(id, matchResult.distance);                                                        // 569
+      if (query.cursor.skip || query.cursor.limit)                                                            // 570
+        queriesToRecompute.push(qid);                                                                         // 571
+      else                                                                                                    // 572
+        LocalCollection._insertInResults(query, doc);                                                         // 573
+    }                                                                                                         // 574
+  }                                                                                                           // 575
+                                                                                                              // 576
+  _.each(queriesToRecompute, function (qid) {                                                                 // 577
+    if (self.queries[qid])                                                                                    // 578
+      self._recomputeResults(self.queries[qid]);                                                              // 579
+  });                                                                                                         // 580
+  self._observeQueue.drain();                                                                                 // 581
+                                                                                                              // 582
+  // Defer because the caller likely doesn't expect the callback to be run                                    // 583
+  // immediately.                                                                                             // 584
+  if (callback)                                                                                               // 585
+    Meteor.defer(function () {                                                                                // 586
+      callback(null, id);                                                                                     // 587
+    });                                                                                                       // 588
+  return id;                                                                                                  // 589
+};                                                                                                            // 590
+                                                                                                              // 591
+// Iterates over a subset of documents that could match selector; calls                                       // 592
+// f(doc, id) on each of them.  Specifically, if selector specifies                                           // 593
+// specific _id's, it only looks at those.  doc is *not* cloned: it is the                                    // 594
+// same object that is in _docs.                                                                              // 595
+LocalCollection.prototype._eachPossiblyMatchingDoc = function (selector, f) {                                 // 596
+  var self = this;                                                                                            // 597
+  var specificIds = LocalCollection._idsMatchedBySelector(selector);                                          // 598
+  if (specificIds) {                                                                                          // 599
+    for (var i = 0; i < specificIds.length; ++i) {                                                            // 600
+      var id = specificIds[i];                                                                                // 601
+      var doc = self._docs.get(id);                                                                           // 602
+      if (doc) {                                                                                              // 603
+        var breakIfFalse = f(doc, id);                                                                        // 604
+        if (breakIfFalse === false)                                                                           // 605
+          break;                                                                                              // 606
+      }                                                                                                       // 607
+    }                                                                                                         // 608
+  } else {                                                                                                    // 609
+    self._docs.forEach(f);                                                                                    // 610
+  }                                                                                                           // 611
+};                                                                                                            // 612
+                                                                                                              // 613
+LocalCollection.prototype.remove = function (selector, callback) {                                            // 614
+  var self = this;                                                                                            // 615
+                                                                                                              // 616
+  // Easy special case: if we're not calling observeChanges callbacks and we're                               // 617
+  // not saving originals and we got asked to remove everything, then just empty                              // 618
+  // everything directly.                                                                                     // 619
+  if (self.paused && !self._savedOriginals && EJSON.equals(selector, {})) {                                   // 620
+    var result = self._docs.size();                                                                           // 621
+    self._docs.clear();                                                                                       // 622
+    _.each(self.queries, function (query) {                                                                   // 623
+      if (query.ordered) {                                                                                    // 624
+        query.results = [];                                                                                   // 625
+      } else {                                                                                                // 626
+        query.results.clear();                                                                                // 627
+      }                                                                                                       // 628
+    });                                                                                                       // 629
+    if (callback) {                                                                                           // 630
+      Meteor.defer(function () {                                                                              // 631
+        callback(null, result);                                                                               // 632
+      });                                                                                                     // 633
+    }                                                                                                         // 634
+    return result;                                                                                            // 635
+  }                                                                                                           // 636
+                                                                                                              // 637
+  var matcher = new Minimongo.Matcher(selector);                                                              // 638
+  var remove = [];                                                                                            // 639
+  self._eachPossiblyMatchingDoc(selector, function (doc, id) {                                                // 640
+    if (matcher.documentMatches(doc).result)                                                                  // 641
+      remove.push(id);                                                                                        // 642
+  });                                                                                                         // 643
+                                                                                                              // 644
+  var queriesToRecompute = [];                                                                                // 645
+  var queryRemove = [];                                                                                       // 646
+  for (var i = 0; i < remove.length; i++) {                                                                   // 647
+    var removeId = remove[i];                                                                                 // 648
+    var removeDoc = self._docs.get(removeId);                                                                 // 649
+    _.each(self.queries, function (query, qid) {                                                              // 650
+      if (query.dirty) return;                                                                                // 651
+                                                                                                              // 652
+      if (query.matcher.documentMatches(removeDoc).result) {                                                  // 653
+        if (query.cursor.skip || query.cursor.limit)                                                          // 654
+          queriesToRecompute.push(qid);                                                                       // 655
+        else                                                                                                  // 656
+          queryRemove.push({qid: qid, doc: removeDoc});                                                       // 657
+      }                                                                                                       // 658
+    });                                                                                                       // 659
+    self._saveOriginal(removeId, removeDoc);                                                                  // 660
+    self._docs.remove(removeId);                                                                              // 661
+  }                                                                                                           // 662
+                                                                                                              // 663
+  // run live query callbacks _after_ we've removed the documents.                                            // 664
+  _.each(queryRemove, function (remove) {                                                                     // 665
+    var query = self.queries[remove.qid];                                                                     // 666
+    if (query) {                                                                                              // 667
+      query.distances && query.distances.remove(remove.doc._id);                                              // 668
+      LocalCollection._removeFromResults(query, remove.doc);                                                  // 669
+    }                                                                                                         // 670
+  });                                                                                                         // 671
+  _.each(queriesToRecompute, function (qid) {                                                                 // 672
+    var query = self.queries[qid];                                                                            // 673
+    if (query)                                                                                                // 674
+      self._recomputeResults(query);                                                                          // 675
+  });                                                                                                         // 676
+  self._observeQueue.drain();                                                                                 // 677
+  result = remove.length;                                                                                     // 678
+  if (callback)                                                                                               // 679
+    Meteor.defer(function () {                                                                                // 680
+      callback(null, result);                                                                                 // 681
+    });                                                                                                       // 682
+  return result;                                                                                              // 683
+};                                                                                                            // 684
+                                                                                                              // 685
+// XXX atomicity: if multi is true, and one modification fails, do                                            // 686
+// we rollback the whole operation, or what?                                                                  // 687
+LocalCollection.prototype.update = function (selector, mod, options, callback) {                              // 688
+  var self = this;                                                                                            // 689
+  if (! callback && options instanceof Function) {                                                            // 690
+    callback = options;                                                                                       // 691
+    options = null;                                                                                           // 692
+  }                                                                                                           // 693
+  if (!options) options = {};                                                                                 // 694
+                                                                                                              // 695
+  var matcher = new Minimongo.Matcher(selector);                                                              // 696
+                                                                                                              // 697
+  // Save the original results of any query that we might need to                                             // 698
+  // _recomputeResults on, because _modifyAndNotify will mutate the objects in                                // 699
+  // it. (We don't need to save the original results of paused queries because                                // 700
+  // they already have a resultsSnapshot and we won't be diffing in                                           // 701
+  // _recomputeResults.)                                                                                      // 702
+  var qidToOriginalResults = {};                                                                              // 703
+  // We should only clone each document once, even if it appears in multiple queries                          // 704
+  var docMap = new LocalCollection._IdMap;                                                                    // 705
+  var idsMatchedBySelector = LocalCollection._idsMatchedBySelector(selector);                                 // 706
+                                                                                                              // 707
+  _.each(self.queries, function (query, qid) {                                                                // 708
+    if ((query.cursor.skip || query.cursor.limit) && ! self.paused) {                                         // 709
+      // Catch the case of a reactive `count()` on a cursor with skip                                         // 710
+      // or limit, which registers an unordered observe. This is a                                            // 711
+      // pretty rare case, so we just clone the entire result set with                                        // 712
+      // no optimizations for documents that appear in these result                                           // 713
+      // sets and other queries.                                                                              // 714
+      if (query.results instanceof LocalCollection._IdMap) {                                                  // 715
+        qidToOriginalResults[qid] = query.results.clone();                                                    // 716
+        return;                                                                                               // 717
       }                                                                                                       // 718
                                                                                                               // 719
-      // Clones a document to be stored in `qidToOriginalResults`                                             // 720
-      // because it may be modified before the new and old result sets                                        // 721
-      // are diffed. But if we know exactly which document IDs we're                                          // 722
-      // going to modify, then we only need to clone those.                                                   // 723
-      var memoizedCloneIfNeeded = function(doc) {                                                             // 724
-        if (docMap.has(doc._id)) {                                                                            // 725
-          return docMap.get(doc._id);                                                                         // 726
-        } else {                                                                                              // 727
-          var docToMemoize;                                                                                   // 728
-                                                                                                              // 729
-          if (idsMatchedBySelector && !_.any(idsMatchedBySelector, function(id) {                             // 730
-            return EJSON.equals(id, doc._id);                                                                 // 731
-          })) {                                                                                               // 732
-            docToMemoize = doc;                                                                               // 733
-          } else {                                                                                            // 734
-            docToMemoize = EJSON.clone(doc);                                                                  // 735
-          }                                                                                                   // 736
-                                                                                                              // 737
-          docMap.set(doc._id, docToMemoize);                                                                  // 738
-          return docToMemoize;                                                                                // 739
-        }                                                                                                     // 740
-      };                                                                                                      // 741
-                                                                                                              // 742
-      qidToOriginalResults[qid] = query.results.map(memoizedCloneIfNeeded);                                   // 743
-    }                                                                                                         // 744
-  });                                                                                                         // 745
-  var recomputeQids = {};                                                                                     // 746
-                                                                                                              // 747
-  var updateCount = 0;                                                                                        // 748
-                                                                                                              // 749
-  self._eachPossiblyMatchingDoc(selector, function (doc, id) {                                                // 750
-    var queryResult = matcher.documentMatches(doc);                                                           // 751
-    if (queryResult.result) {                                                                                 // 752
-      // XXX Should we save the original even if mod ends up being a no-op?                                   // 753
-      self._saveOriginal(id, doc);                                                                            // 754
-      self._modifyAndNotify(doc, mod, recomputeQids, queryResult.arrayIndices);                               // 755
-      ++updateCount;                                                                                          // 756
-      if (!options.multi)                                                                                     // 757
-        return false;  // break                                                                               // 758
-    }                                                                                                         // 759
-    return true;                                                                                              // 760
-  });                                                                                                         // 761
-                                                                                                              // 762
-  _.each(recomputeQids, function (dummy, qid) {                                                               // 763
-    var query = self.queries[qid];                                                                            // 764
-    if (query)                                                                                                // 765
-      self._recomputeResults(query, qidToOriginalResults[qid]);                                               // 766
-  });                                                                                                         // 767
-  self._observeQueue.drain();                                                                                 // 768
-                                                                                                              // 769
-  // If we are doing an upsert, and we didn't modify any documents yet, then                                  // 770
-  // it's time to do an insert. Figure out what document we are inserting, and                                // 771
-  // generate an id for it.                                                                                   // 772
-  var insertedId;                                                                                             // 773
-  if (updateCount === 0 && options.upsert) {                                                                  // 774
-    var newDoc = LocalCollection._removeDollarOperators(selector);                                            // 775
-    LocalCollection._modify(newDoc, mod, {isInsert: true});                                                   // 776
-    if (! newDoc._id && options.insertedId)                                                                   // 777
-      newDoc._id = options.insertedId;                                                                        // 778
-    insertedId = self.insert(newDoc);                                                                         // 779
-    updateCount = 1;                                                                                          // 780
-  }                                                                                                           // 781
-                                                                                                              // 782
-  // Return the number of affected documents, or in the upsert case, an object                                // 783
-  // containing the number of affected docs and the id of the doc that was                                    // 784
-  // inserted, if any.                                                                                        // 785
-  var result;                                                                                                 // 786
-  if (options._returnObject) {                                                                                // 787
-    result = {                                                                                                // 788
-      numberAffected: updateCount                                                                             // 789
-    };                                                                                                        // 790
-    if (insertedId !== undefined)                                                                             // 791
-      result.insertedId = insertedId;                                                                         // 792
-  } else {                                                                                                    // 793
-    result = updateCount;                                                                                     // 794
-  }                                                                                                           // 795
-                                                                                                              // 796
-  if (callback)                                                                                               // 797
-    Meteor.defer(function () {                                                                                // 798
-      callback(null, result);                                                                                 // 799
-    });                                                                                                       // 800
-  return result;                                                                                              // 801
-};                                                                                                            // 802
-                                                                                                              // 803
-// A convenience wrapper on update. LocalCollection.upsert(sel, mod) is                                       // 804
-// equivalent to LocalCollection.update(sel, mod, { upsert: true, _returnObject:                              // 805
-// true }).                                                                                                   // 806
-LocalCollection.prototype.upsert = function (selector, mod, options, callback) {                              // 807
-  var self = this;                                                                                            // 808
-  if (! callback && typeof options === "function") {                                                          // 809
-    callback = options;                                                                                       // 810
-    options = {};                                                                                             // 811
-  }                                                                                                           // 812
-  return self.update(selector, mod, _.extend({}, options, {                                                   // 813
-    upsert: true,                                                                                             // 814
-    _returnObject: true                                                                                       // 815
-  }), callback);                                                                                              // 816
-};                                                                                                            // 817
-                                                                                                              // 818
-LocalCollection.prototype._modifyAndNotify = function (                                                       // 819
-    doc, mod, recomputeQids, arrayIndices) {                                                                  // 820
-  var self = this;                                                                                            // 821
+      if (!(query.results instanceof Array)) {                                                                // 720
+        throw new Error("Assertion failed: query.results not an array");                                      // 721
+      }                                                                                                       // 722
+                                                                                                              // 723
+      // Clones a document to be stored in `qidToOriginalResults`                                             // 724
+      // because it may be modified before the new and old result sets                                        // 725
+      // are diffed. But if we know exactly which document IDs we're                                          // 726
+      // going to modify, then we only need to clone those.                                                   // 727
+      var memoizedCloneIfNeeded = function(doc) {                                                             // 728
+        if (docMap.has(doc._id)) {                                                                            // 729
+          return docMap.get(doc._id);                                                                         // 730
+        } else {                                                                                              // 731
+          var docToMemoize;                                                                                   // 732
+                                                                                                              // 733
+          if (idsMatchedBySelector && !_.any(idsMatchedBySelector, function(id) {                             // 734
+            return EJSON.equals(id, doc._id);                                                                 // 735
+          })) {                                                                                               // 736
+            docToMemoize = doc;                                                                               // 737
+          } else {                                                                                            // 738
+            docToMemoize = EJSON.clone(doc);                                                                  // 739
+          }                                                                                                   // 740
+                                                                                                              // 741
+          docMap.set(doc._id, docToMemoize);                                                                  // 742
+          return docToMemoize;                                                                                // 743
+        }                                                                                                     // 744
+      };                                                                                                      // 745
+                                                                                                              // 746
+      qidToOriginalResults[qid] = query.results.map(memoizedCloneIfNeeded);                                   // 747
+    }                                                                                                         // 748
+  });                                                                                                         // 749
+  var recomputeQids = {};                                                                                     // 750
+                                                                                                              // 751
+  var updateCount = 0;                                                                                        // 752
+                                                                                                              // 753
+  self._eachPossiblyMatchingDoc(selector, function (doc, id) {                                                // 754
+    var queryResult = matcher.documentMatches(doc);                                                           // 755
+    if (queryResult.result) {                                                                                 // 756
+      // XXX Should we save the original even if mod ends up being a no-op?                                   // 757
+      self._saveOriginal(id, doc);                                                                            // 758
+      self._modifyAndNotify(doc, mod, recomputeQids, queryResult.arrayIndices);                               // 759
+      ++updateCount;                                                                                          // 760
+      if (!options.multi)                                                                                     // 761
+        return false;  // break                                                                               // 762
+    }                                                                                                         // 763
+    return true;                                                                                              // 764
+  });                                                                                                         // 765
+                                                                                                              // 766
+  _.each(recomputeQids, function (dummy, qid) {                                                               // 767
+    var query = self.queries[qid];                                                                            // 768
+    if (query)                                                                                                // 769
+      self._recomputeResults(query, qidToOriginalResults[qid]);                                               // 770
+  });                                                                                                         // 771
+  self._observeQueue.drain();                                                                                 // 772
+                                                                                                              // 773
+  // If we are doing an upsert, and we didn't modify any documents yet, then                                  // 774
+  // it's time to do an insert. Figure out what document we are inserting, and                                // 775
+  // generate an id for it.                                                                                   // 776
+  var insertedId;                                                                                             // 777
+  if (updateCount === 0 && options.upsert) {                                                                  // 778
+    var newDoc = LocalCollection._removeDollarOperators(selector);                                            // 779
+    LocalCollection._modify(newDoc, mod, {isInsert: true});                                                   // 780
+    if (! newDoc._id && options.insertedId)                                                                   // 781
+      newDoc._id = options.insertedId;                                                                        // 782
+    insertedId = self.insert(newDoc);                                                                         // 783
+    updateCount = 1;                                                                                          // 784
+  }                                                                                                           // 785
+                                                                                                              // 786
+  // Return the number of affected documents, or in the upsert case, an object                                // 787
+  // containing the number of affected docs and the id of the doc that was                                    // 788
+  // inserted, if any.                                                                                        // 789
+  var result;                                                                                                 // 790
+  if (options._returnObject) {                                                                                // 791
+    result = {                                                                                                // 792
+      numberAffected: updateCount                                                                             // 793
+    };                                                                                                        // 794
+    if (insertedId !== undefined)                                                                             // 795
+      result.insertedId = insertedId;                                                                         // 796
+  } else {                                                                                                    // 797
+    result = updateCount;                                                                                     // 798
+  }                                                                                                           // 799
+                                                                                                              // 800
+  if (callback)                                                                                               // 801
+    Meteor.defer(function () {                                                                                // 802
+      callback(null, result);                                                                                 // 803
+    });                                                                                                       // 804
+  return result;                                                                                              // 805
+};                                                                                                            // 806
+                                                                                                              // 807
+// A convenience wrapper on update. LocalCollection.upsert(sel, mod) is                                       // 808
+// equivalent to LocalCollection.update(sel, mod, { upsert: true, _returnObject:                              // 809
+// true }).                                                                                                   // 810
+LocalCollection.prototype.upsert = function (selector, mod, options, callback) {                              // 811
+  var self = this;                                                                                            // 812
+  if (! callback && typeof options === "function") {                                                          // 813
+    callback = options;                                                                                       // 814
+    options = {};                                                                                             // 815
+  }                                                                                                           // 816
+  return self.update(selector, mod, _.extend({}, options, {                                                   // 817
+    upsert: true,                                                                                             // 818
+    _returnObject: true                                                                                       // 819
+  }), callback);                                                                                              // 820
+};                                                                                                            // 821
                                                                                                               // 822
-  var matched_before = {};                                                                                    // 823
-  for (var qid in self.queries) {                                                                             // 824
-    var query = self.queries[qid];                                                                            // 825
-    if (query.ordered) {                                                                                      // 826
-      matched_before[qid] = query.matcher.documentMatches(doc).result;                                        // 827
-    } else {                                                                                                  // 828
-      // Because we don't support skip or limit (yet) in unordered queries, we                                // 829
-      // can just do a direct lookup.                                                                         // 830
-      matched_before[qid] = query.results.has(doc._id);                                                       // 831
-    }                                                                                                         // 832
-  }                                                                                                           // 833
-                                                                                                              // 834
-  var old_doc = EJSON.clone(doc);                                                                             // 835
-                                                                                                              // 836
-  LocalCollection._modify(doc, mod, {arrayIndices: arrayIndices});                                            // 837
-                                                                                                              // 838
-  for (qid in self.queries) {                                                                                 // 839
-    query = self.queries[qid];                                                                                // 840
-    var before = matched_before[qid];                                                                         // 841
-    var afterMatch = query.matcher.documentMatches(doc);                                                      // 842
-    var after = afterMatch.result;                                                                            // 843
-    if (after && query.distances && afterMatch.distance !== undefined)                                        // 844
-      query.distances.set(doc._id, afterMatch.distance);                                                      // 845
-                                                                                                              // 846
-    if (query.cursor.skip || query.cursor.limit) {                                                            // 847
-      // We need to recompute any query where the doc may have been in the                                    // 848
-      // cursor's window either before or after the update. (Note that if skip                                // 849
-      // or limit is set, "before" and "after" being true do not necessarily                                  // 850
-      // mean that the document is in the cursor's output after skip/limit is                                 // 851
-      // applied... but if they are false, then the document definitely is NOT                                // 852
-      // in the output. So it's safe to skip recompute if neither before or                                   // 853
-      // after are true.)                                                                                     // 854
-      if (before || after)                                                                                    // 855
-        recomputeQids[qid] = true;                                                                            // 856
-    } else if (before && !after) {                                                                            // 857
-      LocalCollection._removeFromResults(query, doc);                                                         // 858
-    } else if (!before && after) {                                                                            // 859
-      LocalCollection._insertInResults(query, doc);                                                           // 860
-    } else if (before && after) {                                                                             // 861
-      LocalCollection._updateInResults(query, doc, old_doc);                                                  // 862
-    }                                                                                                         // 863
-  }                                                                                                           // 864
-};                                                                                                            // 865
-                                                                                                              // 866
-// XXX the sorted-query logic below is laughably inefficient. we'll                                           // 867
-// need to come up with a better datastructure for this.                                                      // 868
-//                                                                                                            // 869
-// XXX the logic for observing with a skip or a limit is even more                                            // 870
-// laughably inefficient. we recompute the whole results every time!                                          // 871
-                                                                                                              // 872
-LocalCollection._insertInResults = function (query, doc) {                                                    // 873
-  var fields = EJSON.clone(doc);                                                                              // 874
-  delete fields._id;                                                                                          // 875
-  if (query.ordered) {                                                                                        // 876
-    if (!query.sorter) {                                                                                      // 877
-      query.addedBefore(doc._id, query.projectionFn(fields), null);                                           // 878
-      query.results.push(doc);                                                                                // 879
-    } else {                                                                                                  // 880
-      var i = LocalCollection._insertInSortedList(                                                            // 881
-        query.sorter.getComparator({distances: query.distances}),                                             // 882
-        query.results, doc);                                                                                  // 883
-      var next = query.results[i+1];                                                                          // 884
-      if (next)                                                                                               // 885
-        next = next._id;                                                                                      // 886
-      else                                                                                                    // 887
-        next = null;                                                                                          // 888
-      query.addedBefore(doc._id, query.projectionFn(fields), next);                                           // 889
-    }                                                                                                         // 890
-    query.added(doc._id, query.projectionFn(fields));                                                         // 891
-  } else {                                                                                                    // 892
-    query.added(doc._id, query.projectionFn(fields));                                                         // 893
-    query.results.set(doc._id, doc);                                                                          // 894
-  }                                                                                                           // 895
-};                                                                                                            // 896
-                                                                                                              // 897
-LocalCollection._removeFromResults = function (query, doc) {                                                  // 898
-  if (query.ordered) {                                                                                        // 899
-    var i = LocalCollection._findInOrderedResults(query, doc);                                                // 900
-    query.removed(doc._id);                                                                                   // 901
-    query.results.splice(i, 1);                                                                               // 902
-  } else {                                                                                                    // 903
-    var id = doc._id;  // in case callback mutates doc                                                        // 904
-    query.removed(doc._id);                                                                                   // 905
-    query.results.remove(id);                                                                                 // 906
-  }                                                                                                           // 907
-};                                                                                                            // 908
-                                                                                                              // 909
-LocalCollection._updateInResults = function (query, doc, old_doc) {                                           // 910
-  if (!EJSON.equals(doc._id, old_doc._id))                                                                    // 911
-    throw new Error("Can't change a doc's _id while updating");                                               // 912
-  var projectionFn = query.projectionFn;                                                                      // 913
-  var changedFields = DiffSequence.makeChangedFields(                                                         // 914
-    projectionFn(doc), projectionFn(old_doc));                                                                // 915
-                                                                                                              // 916
-  if (!query.ordered) {                                                                                       // 917
-    if (!_.isEmpty(changedFields)) {                                                                          // 918
-      query.changed(doc._id, changedFields);                                                                  // 919
-      query.results.set(doc._id, doc);                                                                        // 920
-    }                                                                                                         // 921
-    return;                                                                                                   // 922
-  }                                                                                                           // 923
+LocalCollection.prototype._modifyAndNotify = function (                                                       // 823
+    doc, mod, recomputeQids, arrayIndices) {                                                                  // 824
+  var self = this;                                                                                            // 825
+                                                                                                              // 826
+  var matched_before = {};                                                                                    // 827
+  for (var qid in self.queries) {                                                                             // 828
+    var query = self.queries[qid];                                                                            // 829
+    if (query.dirty) continue;                                                                                // 830
+                                                                                                              // 831
+    if (query.ordered) {                                                                                      // 832
+      matched_before[qid] = query.matcher.documentMatches(doc).result;                                        // 833
+    } else {                                                                                                  // 834
+      // Because we don't support skip or limit (yet) in unordered queries, we                                // 835
+      // can just do a direct lookup.                                                                         // 836
+      matched_before[qid] = query.results.has(doc._id);                                                       // 837
+    }                                                                                                         // 838
+  }                                                                                                           // 839
+                                                                                                              // 840
+  var old_doc = EJSON.clone(doc);                                                                             // 841
+                                                                                                              // 842
+  LocalCollection._modify(doc, mod, {arrayIndices: arrayIndices});                                            // 843
+                                                                                                              // 844
+  for (qid in self.queries) {                                                                                 // 845
+    query = self.queries[qid];                                                                                // 846
+    if (query.dirty) continue;                                                                                // 847
+                                                                                                              // 848
+    var before = matched_before[qid];                                                                         // 849
+    var afterMatch = query.matcher.documentMatches(doc);                                                      // 850
+    var after = afterMatch.result;                                                                            // 851
+    if (after && query.distances && afterMatch.distance !== undefined)                                        // 852
+      query.distances.set(doc._id, afterMatch.distance);                                                      // 853
+                                                                                                              // 854
+    if (query.cursor.skip || query.cursor.limit) {                                                            // 855
+      // We need to recompute any query where the doc may have been in the                                    // 856
+      // cursor's window either before or after the update. (Note that if skip                                // 857
+      // or limit is set, "before" and "after" being true do not necessarily                                  // 858
+      // mean that the document is in the cursor's output after skip/limit is                                 // 859
+      // applied... but if they are false, then the document definitely is NOT                                // 860
+      // in the output. So it's safe to skip recompute if neither before or                                   // 861
+      // after are true.)                                                                                     // 862
+      if (before || after)                                                                                    // 863
+        recomputeQids[qid] = true;                                                                            // 864
+    } else if (before && !after) {                                                                            // 865
+      LocalCollection._removeFromResults(query, doc);                                                         // 866
+    } else if (!before && after) {                                                                            // 867
+      LocalCollection._insertInResults(query, doc);                                                           // 868
+    } else if (before && after) {                                                                             // 869
+      LocalCollection._updateInResults(query, doc, old_doc);                                                  // 870
+    }                                                                                                         // 871
+  }                                                                                                           // 872
+};                                                                                                            // 873
+                                                                                                              // 874
+// XXX the sorted-query logic below is laughably inefficient. we'll                                           // 875
+// need to come up with a better datastructure for this.                                                      // 876
+//                                                                                                            // 877
+// XXX the logic for observing with a skip or a limit is even more                                            // 878
+// laughably inefficient. we recompute the whole results every time!                                          // 879
+                                                                                                              // 880
+LocalCollection._insertInResults = function (query, doc) {                                                    // 881
+  var fields = EJSON.clone(doc);                                                                              // 882
+  delete fields._id;                                                                                          // 883
+  if (query.ordered) {                                                                                        // 884
+    if (!query.sorter) {                                                                                      // 885
+      query.addedBefore(doc._id, query.projectionFn(fields), null);                                           // 886
+      query.results.push(doc);                                                                                // 887
+    } else {                                                                                                  // 888
+      var i = LocalCollection._insertInSortedList(                                                            // 889
+        query.sorter.getComparator({distances: query.distances}),                                             // 890
+        query.results, doc);                                                                                  // 891
+      var next = query.results[i+1];                                                                          // 892
+      if (next)                                                                                               // 893
+        next = next._id;                                                                                      // 894
+      else                                                                                                    // 895
+        next = null;                                                                                          // 896
+      query.addedBefore(doc._id, query.projectionFn(fields), next);                                           // 897
+    }                                                                                                         // 898
+    query.added(doc._id, query.projectionFn(fields));                                                         // 899
+  } else {                                                                                                    // 900
+    query.added(doc._id, query.projectionFn(fields));                                                         // 901
+    query.results.set(doc._id, doc);                                                                          // 902
+  }                                                                                                           // 903
+};                                                                                                            // 904
+                                                                                                              // 905
+LocalCollection._removeFromResults = function (query, doc) {                                                  // 906
+  if (query.ordered) {                                                                                        // 907
+    var i = LocalCollection._findInOrderedResults(query, doc);                                                // 908
+    query.removed(doc._id);                                                                                   // 909
+    query.results.splice(i, 1);                                                                               // 910
+  } else {                                                                                                    // 911
+    var id = doc._id;  // in case callback mutates doc                                                        // 912
+    query.removed(doc._id);                                                                                   // 913
+    query.results.remove(id);                                                                                 // 914
+  }                                                                                                           // 915
+};                                                                                                            // 916
+                                                                                                              // 917
+LocalCollection._updateInResults = function (query, doc, old_doc) {                                           // 918
+  if (!EJSON.equals(doc._id, old_doc._id))                                                                    // 919
+    throw new Error("Can't change a doc's _id while updating");                                               // 920
+  var projectionFn = query.projectionFn;                                                                      // 921
+  var changedFields = DiffSequence.makeChangedFields(                                                         // 922
+    projectionFn(doc), projectionFn(old_doc));                                                                // 923
                                                                                                               // 924
-  var orig_idx = LocalCollection._findInOrderedResults(query, doc);                                           // 925
-                                                                                                              // 926
-  if (!_.isEmpty(changedFields))                                                                              // 927
-    query.changed(doc._id, changedFields);                                                                    // 928
-  if (!query.sorter)                                                                                          // 929
+  if (!query.ordered) {                                                                                       // 925
+    if (!_.isEmpty(changedFields)) {                                                                          // 926
+      query.changed(doc._id, changedFields);                                                                  // 927
+      query.results.set(doc._id, doc);                                                                        // 928
+    }                                                                                                         // 929
     return;                                                                                                   // 930
-                                                                                                              // 931
-  // just take it out and put it back in again, and see if the index                                          // 932
-  // changes                                                                                                  // 933
-  query.results.splice(orig_idx, 1);                                                                          // 934
-  var new_idx = LocalCollection._insertInSortedList(                                                          // 935
-    query.sorter.getComparator({distances: query.distances}),                                                 // 936
-    query.results, doc);                                                                                      // 937
-  if (orig_idx !== new_idx) {                                                                                 // 938
-    var next = query.results[new_idx+1];                                                                      // 939
-    if (next)                                                                                                 // 940
-      next = next._id;                                                                                        // 941
-    else                                                                                                      // 942
-      next = null;                                                                                            // 943
-    query.movedBefore && query.movedBefore(doc._id, next);                                                    // 944
-  }                                                                                                           // 945
-};                                                                                                            // 946
-                                                                                                              // 947
-// Recomputes the results of a query and runs observe callbacks for the                                       // 948
-// difference between the previous results and the current results (unless                                    // 949
-// paused). Used for skip/limit queries.                                                                      // 950
-//                                                                                                            // 951
-// When this is used by insert or remove, it can just use query.results for the                               // 952
-// old results (and there's no need to pass in oldResults), because these                                     // 953
-// operations don't mutate the documents in the collection. Update needs to pass                              // 954
-// in an oldResults which was deep-copied before the modifier was applied.                                    // 955
-//                                                                                                            // 956
-// oldResults is guaranteed to be ignored if the query is not paused.                                         // 957
-LocalCollection.prototype._recomputeResults = function (query, oldResults) {                                  // 958
-  var self = this;                                                                                            // 959
-  if (! self.paused && ! oldResults)                                                                          // 960
-    oldResults = query.results;                                                                               // 961
-  if (query.distances)                                                                                        // 962
-    query.distances.clear();                                                                                  // 963
-  query.results = query.cursor._getRawObjects({                                                               // 964
-    ordered: query.ordered, distances: query.distances});                                                     // 965
-                                                                                                              // 966
-  if (! self.paused) {                                                                                        // 967
-    LocalCollection._diffQueryChanges(                                                                        // 968
-      query.ordered, oldResults, query.results, query,                                                        // 969
-      { projectionFn: query.projectionFn });                                                                  // 970
-  }                                                                                                           // 971
-};                                                                                                            // 972
-                                                                                                              // 973
-                                                                                                              // 974
-LocalCollection._findInOrderedResults = function (query, doc) {                                               // 975
-  if (!query.ordered)                                                                                         // 976
-    throw new Error("Can't call _findInOrderedResults on unordered query");                                   // 977
-  for (var i = 0; i < query.results.length; i++)                                                              // 978
-    if (query.results[i] === doc)                                                                             // 979
-      return i;                                                                                               // 980
-  throw Error("object missing from query");                                                                   // 981
-};                                                                                                            // 982
-                                                                                                              // 983
-// This binary search puts a value between any equal values, and the first                                    // 984
-// lesser value.                                                                                              // 985
-LocalCollection._binarySearch = function (cmp, array, value) {                                                // 986
-  var first = 0, rangeLength = array.length;                                                                  // 987
-                                                                                                              // 988
-  while (rangeLength > 0) {                                                                                   // 989
-    var halfRange = Math.floor(rangeLength/2);                                                                // 990
-    if (cmp(value, array[first + halfRange]) >= 0) {                                                          // 991
-      first += halfRange + 1;                                                                                 // 992
-      rangeLength -= halfRange + 1;                                                                           // 993
-    } else {                                                                                                  // 994
-      rangeLength = halfRange;                                                                                // 995
-    }                                                                                                         // 996
-  }                                                                                                           // 997
-  return first;                                                                                               // 998
-};                                                                                                            // 999
-                                                                                                              // 1000
-LocalCollection._insertInSortedList = function (cmp, array, value) {                                          // 1001
-  if (array.length === 0) {                                                                                   // 1002
-    array.push(value);                                                                                        // 1003
-    return 0;                                                                                                 // 1004
-  }                                                                                                           // 1005
-                                                                                                              // 1006
-  var idx = LocalCollection._binarySearch(cmp, array, value);                                                 // 1007
-  array.splice(idx, 0, value);                                                                                // 1008
-  return idx;                                                                                                 // 1009
-};                                                                                                            // 1010
-                                                                                                              // 1011
-// To track what documents are affected by a piece of code, call saveOriginals()                              // 1012
-// before it and retrieveOriginals() after it. retrieveOriginals returns an                                   // 1013
-// object whose keys are the ids of the documents that were affected since the                                // 1014
-// call to saveOriginals(), and the values are equal to the document's contents                               // 1015
-// at the time of saveOriginals. (In the case of an inserted document, undefined                              // 1016
-// is the value.) You must alternate between calls to saveOriginals() and                                     // 1017
-// retrieveOriginals().                                                                                       // 1018
-LocalCollection.prototype.saveOriginals = function () {                                                       // 1019
-  var self = this;                                                                                            // 1020
-  if (self._savedOriginals)                                                                                   // 1021
-    throw new Error("Called saveOriginals twice without retrieveOriginals");                                  // 1022
-  self._savedOriginals = new LocalCollection._IdMap;                                                          // 1023
-};                                                                                                            // 1024
-LocalCollection.prototype.retrieveOriginals = function () {                                                   // 1025
-  var self = this;                                                                                            // 1026
-  if (!self._savedOriginals)                                                                                  // 1027
-    throw new Error("Called retrieveOriginals without saveOriginals");                                        // 1028
-                                                                                                              // 1029
-  var originals = self._savedOriginals;                                                                       // 1030
-  self._savedOriginals = null;                                                                                // 1031
-  return originals;                                                                                           // 1032
-};                                                                                                            // 1033
-                                                                                                              // 1034
-LocalCollection.prototype._saveOriginal = function (id, doc) {                                                // 1035
+  }                                                                                                           // 931
+                                                                                                              // 932
+  var orig_idx = LocalCollection._findInOrderedResults(query, doc);                                           // 933
+                                                                                                              // 934
+  if (!_.isEmpty(changedFields))                                                                              // 935
+    query.changed(doc._id, changedFields);                                                                    // 936
+  if (!query.sorter)                                                                                          // 937
+    return;                                                                                                   // 938
+                                                                                                              // 939
+  // just take it out and put it back in again, and see if the index                                          // 940
+  // changes                                                                                                  // 941
+  query.results.splice(orig_idx, 1);                                                                          // 942
+  var new_idx = LocalCollection._insertInSortedList(                                                          // 943
+    query.sorter.getComparator({distances: query.distances}),                                                 // 944
+    query.results, doc);                                                                                      // 945
+  if (orig_idx !== new_idx) {                                                                                 // 946
+    var next = query.results[new_idx+1];                                                                      // 947
+    if (next)                                                                                                 // 948
+      next = next._id;                                                                                        // 949
+    else                                                                                                      // 950
+      next = null;                                                                                            // 951
+    query.movedBefore && query.movedBefore(doc._id, next);                                                    // 952
+  }                                                                                                           // 953
+};                                                                                                            // 954
+                                                                                                              // 955
+// Recomputes the results of a query and runs observe callbacks for the                                       // 956
+// difference between the previous results and the current results (unless                                    // 957
+// paused). Used for skip/limit queries.                                                                      // 958
+//                                                                                                            // 959
+// When this is used by insert or remove, it can just use query.results for the                               // 960
+// old results (and there's no need to pass in oldResults), because these                                     // 961
+// operations don't mutate the documents in the collection. Update needs to pass                              // 962
+// in an oldResults which was deep-copied before the modifier was applied.                                    // 963
+//                                                                                                            // 964
+// oldResults is guaranteed to be ignored if the query is not paused.                                         // 965
+LocalCollection.prototype._recomputeResults = function (query, oldResults) {                                  // 966
+  var self = this;                                                                                            // 967
+  if (self.paused) {                                                                                          // 968
+    // There's no reason to recompute the results now as we're still paused.                                  // 969
+    // By flagging the query as "dirty", the recompute will be performed                                      // 970
+    // when resumeObservers is called.                                                                        // 971
+    query.dirty = true;                                                                                       // 972
+    return;                                                                                                   // 973
+  }                                                                                                           // 974
+                                                                                                              // 975
+  if (! self.paused && ! oldResults)                                                                          // 976
+    oldResults = query.results;                                                                               // 977
+  if (query.distances)                                                                                        // 978
+    query.distances.clear();                                                                                  // 979
+  query.results = query.cursor._getRawObjects({                                                               // 980
+    ordered: query.ordered, distances: query.distances});                                                     // 981
+                                                                                                              // 982
+  if (! self.paused) {                                                                                        // 983
+    LocalCollection._diffQueryChanges(                                                                        // 984
+      query.ordered, oldResults, query.results, query,                                                        // 985
+      { projectionFn: query.projectionFn });                                                                  // 986
+  }                                                                                                           // 987
+};                                                                                                            // 988
+                                                                                                              // 989
+                                                                                                              // 990
+LocalCollection._findInOrderedResults = function (query, doc) {                                               // 991
+  if (!query.ordered)                                                                                         // 992
+    throw new Error("Can't call _findInOrderedResults on unordered query");                                   // 993
+  for (var i = 0; i < query.results.length; i++)                                                              // 994
+    if (query.results[i] === doc)                                                                             // 995
+      return i;                                                                                               // 996
+  throw Error("object missing from query");                                                                   // 997
+};                                                                                                            // 998
+                                                                                                              // 999
+// This binary search puts a value between any equal values, and the first                                    // 1000
+// lesser value.                                                                                              // 1001
+LocalCollection._binarySearch = function (cmp, array, value) {                                                // 1002
+  var first = 0, rangeLength = array.length;                                                                  // 1003
+                                                                                                              // 1004
+  while (rangeLength > 0) {                                                                                   // 1005
+    var halfRange = Math.floor(rangeLength/2);                                                                // 1006
+    if (cmp(value, array[first + halfRange]) >= 0) {                                                          // 1007
+      first += halfRange + 1;                                                                                 // 1008
+      rangeLength -= halfRange + 1;                                                                           // 1009
+    } else {                                                                                                  // 1010
+      rangeLength = halfRange;                                                                                // 1011
+    }                                                                                                         // 1012
+  }                                                                                                           // 1013
+  return first;                                                                                               // 1014
+};                                                                                                            // 1015
+                                                                                                              // 1016
+LocalCollection._insertInSortedList = function (cmp, array, value) {                                          // 1017
+  if (array.length === 0) {                                                                                   // 1018
+    array.push(value);                                                                                        // 1019
+    return 0;                                                                                                 // 1020
+  }                                                                                                           // 1021
+                                                                                                              // 1022
+  var idx = LocalCollection._binarySearch(cmp, array, value);                                                 // 1023
+  array.splice(idx, 0, value);                                                                                // 1024
+  return idx;                                                                                                 // 1025
+};                                                                                                            // 1026
+                                                                                                              // 1027
+// To track what documents are affected by a piece of code, call saveOriginals()                              // 1028
+// before it and retrieveOriginals() after it. retrieveOriginals returns an                                   // 1029
+// object whose keys are the ids of the documents that were affected since the                                // 1030
+// call to saveOriginals(), and the values are equal to the document's contents                               // 1031
+// at the time of saveOriginals. (In the case of an inserted document, undefined                              // 1032
+// is the value.) You must alternate between calls to saveOriginals() and                                     // 1033
+// retrieveOriginals().                                                                                       // 1034
+LocalCollection.prototype.saveOriginals = function () {                                                       // 1035
   var self = this;                                                                                            // 1036
-  // Are we even trying to save originals?                                                                    // 1037
-  if (!self._savedOriginals)                                                                                  // 1038
-    return;                                                                                                   // 1039
-  // Have we previously mutated the original (and so 'doc' is not actually                                    // 1040
-  // original)?  (Note the 'has' check rather than truth: we store undefined                                  // 1041
-  // here for inserted docs!)                                                                                 // 1042
-  if (self._savedOriginals.has(id))                                                                           // 1043
-    return;                                                                                                   // 1044
-  self._savedOriginals.set(id, EJSON.clone(doc));                                                             // 1045
-};                                                                                                            // 1046
-                                                                                                              // 1047
-// Pause the observers. No callbacks from observers will fire until                                           // 1048
-// 'resumeObservers' is called.                                                                               // 1049
-LocalCollection.prototype.pauseObservers = function () {                                                      // 1050
-  // No-op if already paused.                                                                                 // 1051
-  if (this.paused)                                                                                            // 1052
-    return;                                                                                                   // 1053
-                                                                                                              // 1054
-  // Set the 'paused' flag such that new observer messages don't fire.                                        // 1055
-  this.paused = true;                                                                                         // 1056
-                                                                                                              // 1057
-  // Take a snapshot of the query results for each query.                                                     // 1058
-  for (var qid in this.queries) {                                                                             // 1059
-    var query = this.queries[qid];                                                                            // 1060
-                                                                                                              // 1061
-    query.resultsSnapshot = EJSON.clone(query.results);                                                       // 1062
-  }                                                                                                           // 1063
-};                                                                                                            // 1064
-                                                                                                              // 1065
-// Resume the observers. Observers immediately receive change                                                 // 1066
-// notifications to bring them to the current state of the                                                    // 1067
-// database. Note that this is not just replaying all the changes that                                        // 1068
-// happened during the pause, it is a smarter 'coalesced' diff.                                               // 1069
-LocalCollection.prototype.resumeObservers = function () {                                                     // 1070
-  var self = this;                                                                                            // 1071
-  // No-op if not paused.                                                                                     // 1072
-  if (!this.paused)                                                                                           // 1073
-    return;                                                                                                   // 1074
-                                                                                                              // 1075
-  // Unset the 'paused' flag. Make sure to do this first, otherwise                                           // 1076
-  // observer methods won't actually fire when we trigger them.                                               // 1077
-  this.paused = false;                                                                                        // 1078
-                                                                                                              // 1079
-  for (var qid in this.queries) {                                                                             // 1080
-    var query = self.queries[qid];                                                                            // 1081
-    // Diff the current results against the snapshot and send to observers.                                   // 1082
-    // pass the query object for its observer callbacks.                                                      // 1083
-    LocalCollection._diffQueryChanges(                                                                        // 1084
-      query.ordered, query.resultsSnapshot, query.results, query,                                             // 1085
-      { projectionFn: query.projectionFn });                                                                  // 1086
-    query.resultsSnapshot = null;                                                                             // 1087
-  }                                                                                                           // 1088
-  self._observeQueue.drain();                                                                                 // 1089
-};                                                                                                            // 1090
+  if (self._savedOriginals)                                                                                   // 1037
+    throw new Error("Called saveOriginals twice without retrieveOriginals");                                  // 1038
+  self._savedOriginals = new LocalCollection._IdMap;                                                          // 1039
+};                                                                                                            // 1040
+LocalCollection.prototype.retrieveOriginals = function () {                                                   // 1041
+  var self = this;                                                                                            // 1042
+  if (!self._savedOriginals)                                                                                  // 1043
+    throw new Error("Called retrieveOriginals without saveOriginals");                                        // 1044
+                                                                                                              // 1045
+  var originals = self._savedOriginals;                                                                       // 1046
+  self._savedOriginals = null;                                                                                // 1047
+  return originals;                                                                                           // 1048
+};                                                                                                            // 1049
+                                                                                                              // 1050
+LocalCollection.prototype._saveOriginal = function (id, doc) {                                                // 1051
+  var self = this;                                                                                            // 1052
+  // Are we even trying to save originals?                                                                    // 1053
+  if (!self._savedOriginals)                                                                                  // 1054
+    return;                                                                                                   // 1055
+  // Have we previously mutated the original (and so 'doc' is not actually                                    // 1056
+  // original)?  (Note the 'has' check rather than truth: we store undefined                                  // 1057
+  // here for inserted docs!)                                                                                 // 1058
+  if (self._savedOriginals.has(id))                                                                           // 1059
+    return;                                                                                                   // 1060
+  self._savedOriginals.set(id, EJSON.clone(doc));                                                             // 1061
+};                                                                                                            // 1062
+                                                                                                              // 1063
+// Pause the observers. No callbacks from observers will fire until                                           // 1064
+// 'resumeObservers' is called.                                                                               // 1065
+LocalCollection.prototype.pauseObservers = function () {                                                      // 1066
+  // No-op if already paused.                                                                                 // 1067
+  if (this.paused)                                                                                            // 1068
+    return;                                                                                                   // 1069
+                                                                                                              // 1070
+  // Set the 'paused' flag such that new observer messages don't fire.                                        // 1071
+  this.paused = true;                                                                                         // 1072
+                                                                                                              // 1073
+  // Take a snapshot of the query results for each query.                                                     // 1074
+  for (var qid in this.queries) {                                                                             // 1075
+    var query = this.queries[qid];                                                                            // 1076
+                                                                                                              // 1077
+    query.resultsSnapshot = EJSON.clone(query.results);                                                       // 1078
+  }                                                                                                           // 1079
+};                                                                                                            // 1080
+                                                                                                              // 1081
+// Resume the observers. Observers immediately receive change                                                 // 1082
+// notifications to bring them to the current state of the                                                    // 1083
+// database. Note that this is not just replaying all the changes that                                        // 1084
+// happened during the pause, it is a smarter 'coalesced' diff.                                               // 1085
+LocalCollection.prototype.resumeObservers = function () {                                                     // 1086
+  var self = this;                                                                                            // 1087
+  // No-op if not paused.                                                                                     // 1088
+  if (!this.paused)                                                                                           // 1089
+    return;                                                                                                   // 1090
                                                                                                               // 1091
-                                                                                                              // 1092
+  // Unset the 'paused' flag. Make sure to do this first, otherwise                                           // 1092
+  // observer methods won't actually fire when we trigger them.                                               // 1093
+  this.paused = false;                                                                                        // 1094
+                                                                                                              // 1095
+  for (var qid in this.queries) {                                                                             // 1096
+    var query = self.queries[qid];                                                                            // 1097
+    if (query.dirty) {                                                                                        // 1098
+      query.dirty = false;                                                                                    // 1099
+      // re-compute results will perform `LocalCollection._diffQueryChanges` automatically.                   // 1100
+      self._recomputeResults(query, query.resultsSnapshot);                                                   // 1101
+    } else {                                                                                                  // 1102
+      // Diff the current results against the snapshot and send to observers.                                 // 1103
+      // pass the query object for its observer callbacks.                                                    // 1104
+      LocalCollection._diffQueryChanges(                                                                      // 1105
+        query.ordered, query.resultsSnapshot, query.results, query,                                           // 1106
+        {projectionFn: query.projectionFn});                                                                  // 1107
+    }                                                                                                         // 1108
+    query.resultsSnapshot = null;                                                                             // 1109
+  }                                                                                                           // 1110
+  self._observeQueue.drain();                                                                                 // 1111
+};                                                                                                            // 1112
+                                                                                                              // 1113
+                                                                                                              // 1114
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 }).call(this);
@@ -1529,891 +1551,893 @@ var operatorBranchedMatcher = function (valueSelector, matcher, isRoot) {       
                                                                                                               // 255
   var operatorMatchers = [];                                                                                  // 256
   _.each(valueSelector, function (operand, operator) {                                                        // 257
-    // XXX we should actually implement $eq, which is new in 2.6                                              // 258
-    var simpleRange = _.contains(['$lt', '$lte', '$gt', '$gte'], operator) &&                                 // 259
-      _.isNumber(operand);                                                                                    // 260
-    var simpleInequality = operator === '$ne' && !_.isObject(operand);                                        // 261
-    var simpleInclusion = _.contains(['$in', '$nin'], operator) &&                                            // 262
-      _.isArray(operand) && !_.any(operand, _.isObject);                                                      // 263
-                                                                                                              // 264
-    if (! (operator === '$eq' || simpleRange ||                                                               // 265
-           simpleInclusion || simpleInequality)) {                                                            // 266
-      matcher._isSimple = false;                                                                              // 267
-    }                                                                                                         // 268
-                                                                                                              // 269
-    if (_.has(VALUE_OPERATORS, operator)) {                                                                   // 270
-      operatorMatchers.push(                                                                                  // 271
-        VALUE_OPERATORS[operator](operand, valueSelector, matcher, isRoot));                                  // 272
-    } else if (_.has(ELEMENT_OPERATORS, operator)) {                                                          // 273
-      var options = ELEMENT_OPERATORS[operator];                                                              // 274
-      operatorMatchers.push(                                                                                  // 275
-        convertElementMatcherToBranchedMatcher(                                                               // 276
-          options.compileElementSelector(                                                                     // 277
-            operand, valueSelector, matcher),                                                                 // 278
-          options));                                                                                          // 279
-    } else {                                                                                                  // 280
-      throw new Error("Unrecognized operator: " + operator);                                                  // 281
-    }                                                                                                         // 282
-  });                                                                                                         // 283
-                                                                                                              // 284
-  return andBranchedMatchers(operatorMatchers);                                                               // 285
-};                                                                                                            // 286
-                                                                                                              // 287
-var compileArrayOfDocumentSelectors = function (                                                              // 288
-    selectors, matcher, inElemMatch) {                                                                        // 289
-  if (!isArray(selectors) || _.isEmpty(selectors))                                                            // 290
-    throw Error("$and/$or/$nor must be nonempty array");                                                      // 291
-  return _.map(selectors, function (subSelector) {                                                            // 292
-    if (!isPlainObject(subSelector))                                                                          // 293
-      throw Error("$or/$and/$nor entries need to be full objects");                                           // 294
-    return compileDocumentSelector(                                                                           // 295
-      subSelector, matcher, {inElemMatch: inElemMatch});                                                      // 296
-  });                                                                                                         // 297
-};                                                                                                            // 298
-                                                                                                              // 299
-// Operators that appear at the top level of a document selector.                                             // 300
-var LOGICAL_OPERATORS = {                                                                                     // 301
-  $and: function (subSelector, matcher, inElemMatch) {                                                        // 302
-    var matchers = compileArrayOfDocumentSelectors(                                                           // 303
-      subSelector, matcher, inElemMatch);                                                                     // 304
-    return andDocumentMatchers(matchers);                                                                     // 305
-  },                                                                                                          // 306
-                                                                                                              // 307
-  $or: function (subSelector, matcher, inElemMatch) {                                                         // 308
-    var matchers = compileArrayOfDocumentSelectors(                                                           // 309
-      subSelector, matcher, inElemMatch);                                                                     // 310
-                                                                                                              // 311
-    // Special case: if there is only one matcher, use it directly, *preserving*                              // 312
-    // any arrayIndices it returns.                                                                           // 313
-    if (matchers.length === 1)                                                                                // 314
-      return matchers[0];                                                                                     // 315
-                                                                                                              // 316
-    return function (doc) {                                                                                   // 317
-      var result = _.any(matchers, function (f) {                                                             // 318
-        return f(doc).result;                                                                                 // 319
-      });                                                                                                     // 320
-      // $or does NOT set arrayIndices when it has multiple                                                   // 321
-      // sub-expressions. (Tested against MongoDB.)                                                           // 322
-      return {result: result};                                                                                // 323
-    };                                                                                                        // 324
-  },                                                                                                          // 325
-                                                                                                              // 326
-  $nor: function (subSelector, matcher, inElemMatch) {                                                        // 327
-    var matchers = compileArrayOfDocumentSelectors(                                                           // 328
-      subSelector, matcher, inElemMatch);                                                                     // 329
-    return function (doc) {                                                                                   // 330
-      var result = _.all(matchers, function (f) {                                                             // 331
-        return !f(doc).result;                                                                                // 332
-      });                                                                                                     // 333
-      // Never set arrayIndices, because we only match if nothing in particular                               // 334
-      // "matched" (and because this is consistent with MongoDB).                                             // 335
-      return {result: result};                                                                                // 336
-    };                                                                                                        // 337
-  },                                                                                                          // 338
-                                                                                                              // 339
-  $where: function (selectorValue, matcher) {                                                                 // 340
-    // Record that *any* path may be used.                                                                    // 341
-    matcher._recordPathUsed('');                                                                              // 342
-    matcher._hasWhere = true;                                                                                 // 343
-    if (!(selectorValue instanceof Function)) {                                                               // 344
-      // XXX MongoDB seems to have more complex logic to decide where or or not                               // 345
-      // to add "return"; not sure exactly what it is.                                                        // 346
-      selectorValue = Function("obj", "return " + selectorValue);                                             // 347
-    }                                                                                                         // 348
-    return function (doc) {                                                                                   // 349
-      // We make the document available as both `this` and `obj`.                                             // 350
-      // XXX not sure what we should do if this throws                                                        // 351
-      return {result: selectorValue.call(doc, doc)};                                                          // 352
-    };                                                                                                        // 353
-  },                                                                                                          // 354
-                                                                                                              // 355
-  // This is just used as a comment in the query (in MongoDB, it also ends up in                              // 356
-  // query logs); it has no effect on the actual selection.                                                   // 357
-  $comment: function () {                                                                                     // 358
-    return function () {                                                                                      // 359
-      return {result: true};                                                                                  // 360
-    };                                                                                                        // 361
-  }                                                                                                           // 362
-};                                                                                                            // 363
-                                                                                                              // 364
-// Returns a branched matcher that matches iff the given matcher does not.                                    // 365
-// Note that this implicitly "deMorganizes" the wrapped function.  ie, it                                     // 366
-// means that ALL branch values need to fail to match innerBranchedMatcher.                                   // 367
-var invertBranchedMatcher = function (branchedMatcher) {                                                      // 368
-  return function (branchValues) {                                                                            // 369
-    var invertMe = branchedMatcher(branchValues);                                                             // 370
-    // We explicitly choose to strip arrayIndices here: it doesn't make sense to                              // 371
-    // say "update the array element that does not match something", at least                                 // 372
-    // in mongo-land.                                                                                         // 373
-    return {result: !invertMe.result};                                                                        // 374
-  };                                                                                                          // 375
-};                                                                                                            // 376
-                                                                                                              // 377
-// Operators that (unlike LOGICAL_OPERATORS) pertain to individual paths in a                                 // 378
-// document, but (unlike ELEMENT_OPERATORS) do not have a simple definition as                                // 379
-// "match each branched value independently and combine with                                                  // 380
-// convertElementMatcherToBranchedMatcher".                                                                   // 381
-var VALUE_OPERATORS = {                                                                                       // 382
-  $not: function (operand, valueSelector, matcher) {                                                          // 383
-    return invertBranchedMatcher(compileValueSelector(operand, matcher));                                     // 384
-  },                                                                                                          // 385
-  $ne: function (operand) {                                                                                   // 386
-    return invertBranchedMatcher(convertElementMatcherToBranchedMatcher(                                      // 387
-      equalityElementMatcher(operand)));                                                                      // 388
-  },                                                                                                          // 389
-  $nin: function (operand) {                                                                                  // 390
-    return invertBranchedMatcher(convertElementMatcherToBranchedMatcher(                                      // 391
-      ELEMENT_OPERATORS.$in.compileElementSelector(operand)));                                                // 392
-  },                                                                                                          // 393
-  $exists: function (operand) {                                                                               // 394
-    var exists = convertElementMatcherToBranchedMatcher(function (value) {                                    // 395
-      return value !== undefined;                                                                             // 396
-    });                                                                                                       // 397
-    return operand ? exists : invertBranchedMatcher(exists);                                                  // 398
-  },                                                                                                          // 399
-  // $options just provides options for $regex; its logic is inside $regex                                    // 400
-  $options: function (operand, valueSelector) {                                                               // 401
-    if (!_.has(valueSelector, '$regex'))                                                                      // 402
-      throw Error("$options needs a $regex");                                                                 // 403
-    return everythingMatcher;                                                                                 // 404
-  },                                                                                                          // 405
-  // $maxDistance is basically an argument to $near                                                           // 406
-  $maxDistance: function (operand, valueSelector) {                                                           // 407
-    if (!valueSelector.$near)                                                                                 // 408
-      throw Error("$maxDistance needs a $near");                                                              // 409
-    return everythingMatcher;                                                                                 // 410
-  },                                                                                                          // 411
-  $all: function (operand, valueSelector, matcher) {                                                          // 412
-    if (!isArray(operand))                                                                                    // 413
-      throw Error("$all requires array");                                                                     // 414
-    // Not sure why, but this seems to be what MongoDB does.                                                  // 415
-    if (_.isEmpty(operand))                                                                                   // 416
-      return nothingMatcher;                                                                                  // 417
-                                                                                                              // 418
-    var branchedMatchers = [];                                                                                // 419
-    _.each(operand, function (criterion) {                                                                    // 420
-      // XXX handle $all/$elemMatch combination                                                               // 421
-      if (isOperatorObject(criterion))                                                                        // 422
-        throw Error("no $ expressions in $all");                                                              // 423
-      // This is always a regexp or equality selector.                                                        // 424
-      branchedMatchers.push(compileValueSelector(criterion, matcher));                                        // 425
-    });                                                                                                       // 426
-    // andBranchedMatchers does NOT require all selectors to return true on the                               // 427
-    // SAME branch.                                                                                           // 428
-    return andBranchedMatchers(branchedMatchers);                                                             // 429
-  },                                                                                                          // 430
-  $near: function (operand, valueSelector, matcher, isRoot) {                                                 // 431
-    if (!isRoot)                                                                                              // 432
-      throw Error("$near can't be inside another $ operator");                                                // 433
-    matcher._hasGeoQuery = true;                                                                              // 434
-                                                                                                              // 435
-    // There are two kinds of geodata in MongoDB: coordinate pairs and                                        // 436
-    // GeoJSON. They use different distance metrics, too. GeoJSON queries are                                 // 437
-    // marked with a $geometry property.                                                                      // 438
-                                                                                                              // 439
-    var maxDistance, point, distance;                                                                         // 440
-    if (isPlainObject(operand) && _.has(operand, '$geometry')) {                                              // 441
-      // GeoJSON "2dsphere" mode.                                                                             // 442
-      maxDistance = operand.$maxDistance;                                                                     // 443
-      point = operand.$geometry;                                                                              // 444
-      distance = function (value) {                                                                           // 445
-        // XXX: for now, we don't calculate the actual distance between, say,                                 // 446
-        // polygon and circle. If people care about this use-case it will get                                 // 447
-        // a priority.                                                                                        // 448
-        if (!value || !value.type)                                                                            // 449
-          return null;                                                                                        // 450
-        if (value.type === "Point") {                                                                         // 451
-          return GeoJSON.pointDistance(point, value);                                                         // 452
-        } else {                                                                                              // 453
-          return GeoJSON.geometryWithinRadius(value, point, maxDistance)                                      // 454
-            ? 0 : maxDistance + 1;                                                                            // 455
-        }                                                                                                     // 456
-      };                                                                                                      // 457
-    } else {                                                                                                  // 458
-      maxDistance = valueSelector.$maxDistance;                                                               // 459
-      if (!isArray(operand) && !isPlainObject(operand))                                                       // 460
-        throw Error("$near argument must be coordinate pair or GeoJSON");                                     // 461
-      point = pointToArray(operand);                                                                          // 462
-      distance = function (value) {                                                                           // 463
-        if (!isArray(value) && !isPlainObject(value))                                                         // 464
-          return null;                                                                                        // 465
-        return distanceCoordinatePairs(point, value);                                                         // 466
-      };                                                                                                      // 467
-    }                                                                                                         // 468
-                                                                                                              // 469
-    return function (branchedValues) {                                                                        // 470
-      // There might be multiple points in the document that match the given                                  // 471
-      // field. Only one of them needs to be within $maxDistance, but we need to                              // 472
-      // evaluate all of them and use the nearest one for the implicit sort                                   // 473
-      // specifier. (That's why we can't just use ELEMENT_OPERATORS here.)                                    // 474
-      //                                                                                                      // 475
-      // Note: This differs from MongoDB's implementation, where a document will                              // 476
-      // actually show up *multiple times* in the result set, with one entry for                              // 477
-      // each within-$maxDistance branching point.                                                            // 478
-      branchedValues = expandArraysInBranches(branchedValues);                                                // 479
-      var result = {result: false};                                                                           // 480
-      _.each(branchedValues, function (branch) {                                                              // 481
-        var curDistance = distance(branch.value);                                                             // 482
-        // Skip branches that aren't real points or are too far away.                                         // 483
-        if (curDistance === null || curDistance > maxDistance)                                                // 484
-          return;                                                                                             // 485
-        // Skip anything that's a tie.                                                                        // 486
-        if (result.distance !== undefined && result.distance <= curDistance)                                  // 487
-          return;                                                                                             // 488
-        result.result = true;                                                                                 // 489
-        result.distance = curDistance;                                                                        // 490
-        if (!branch.arrayIndices)                                                                             // 491
-          delete result.arrayIndices;                                                                         // 492
-        else                                                                                                  // 493
-          result.arrayIndices = branch.arrayIndices;                                                          // 494
-      });                                                                                                     // 495
-      return result;                                                                                          // 496
-    };                                                                                                        // 497
-  }                                                                                                           // 498
-};                                                                                                            // 499
-                                                                                                              // 500
-// Helpers for $near.                                                                                         // 501
-var distanceCoordinatePairs = function (a, b) {                                                               // 502
-  a = pointToArray(a);                                                                                        // 503
-  b = pointToArray(b);                                                                                        // 504
-  var x = a[0] - b[0];                                                                                        // 505
-  var y = a[1] - b[1];                                                                                        // 506
-  if (_.isNaN(x) || _.isNaN(y))                                                                               // 507
-    return null;                                                                                              // 508
-  return Math.sqrt(x * x + y * y);                                                                            // 509
-};                                                                                                            // 510
-// Makes sure we get 2 elements array and assume the first one to be x and                                    // 511
-// the second one to y no matter what user passes.                                                            // 512
-// In case user passes { lon: x, lat: y } returns [x, y]                                                      // 513
-var pointToArray = function (point) {                                                                         // 514
-  return _.map(point, _.identity);                                                                            // 515
-};                                                                                                            // 516
-                                                                                                              // 517
-// Helper for $lt/$gt/$lte/$gte.                                                                              // 518
-var makeInequality = function (cmpValueComparator) {                                                          // 519
-  return {                                                                                                    // 520
-    compileElementSelector: function (operand) {                                                              // 521
-      // Arrays never compare false with non-arrays for any inequality.                                       // 522
-      // XXX This was behavior we observed in pre-release MongoDB 2.5, but                                    // 523
-      //     it seems to have been reverted.                                                                  // 524
-      //     See https://jira.mongodb.org/browse/SERVER-11444                                                 // 525
-      if (isArray(operand)) {                                                                                 // 526
-        return function () {                                                                                  // 527
-          return false;                                                                                       // 528
-        };                                                                                                    // 529
-      }                                                                                                       // 530
-                                                                                                              // 531
-      // Special case: consider undefined and null the same (so true with                                     // 532
-      // $gte/$lte).                                                                                          // 533
-      if (operand === undefined)                                                                              // 534
-        operand = null;                                                                                       // 535
-                                                                                                              // 536
-      var operandType = LocalCollection._f._type(operand);                                                    // 537
+    var simpleRange = _.contains(['$lt', '$lte', '$gt', '$gte'], operator) &&                                 // 258
+      _.isNumber(operand);                                                                                    // 259
+    var simpleEquality = _.contains(['$ne', '$eq'], operator) && !_.isObject(operand);                        // 260
+    var simpleInclusion = _.contains(['$in', '$nin'], operator) &&                                            // 261
+      _.isArray(operand) && !_.any(operand, _.isObject);                                                      // 262
+                                                                                                              // 263
+    if (! (simpleRange || simpleInclusion || simpleEquality)) {                                               // 264
+      matcher._isSimple = false;                                                                              // 265
+    }                                                                                                         // 266
+                                                                                                              // 267
+    if (_.has(VALUE_OPERATORS, operator)) {                                                                   // 268
+      operatorMatchers.push(                                                                                  // 269
+        VALUE_OPERATORS[operator](operand, valueSelector, matcher, isRoot));                                  // 270
+    } else if (_.has(ELEMENT_OPERATORS, operator)) {                                                          // 271
+      var options = ELEMENT_OPERATORS[operator];                                                              // 272
+      operatorMatchers.push(                                                                                  // 273
+        convertElementMatcherToBranchedMatcher(                                                               // 274
+          options.compileElementSelector(                                                                     // 275
+            operand, valueSelector, matcher),                                                                 // 276
+          options));                                                                                          // 277
+    } else {                                                                                                  // 278
+      throw new Error("Unrecognized operator: " + operator);                                                  // 279
+    }                                                                                                         // 280
+  });                                                                                                         // 281
+                                                                                                              // 282
+  return andBranchedMatchers(operatorMatchers);                                                               // 283
+};                                                                                                            // 284
+                                                                                                              // 285
+var compileArrayOfDocumentSelectors = function (                                                              // 286
+    selectors, matcher, inElemMatch) {                                                                        // 287
+  if (!isArray(selectors) || _.isEmpty(selectors))                                                            // 288
+    throw Error("$and/$or/$nor must be nonempty array");                                                      // 289
+  return _.map(selectors, function (subSelector) {                                                            // 290
+    if (!isPlainObject(subSelector))                                                                          // 291
+      throw Error("$or/$and/$nor entries need to be full objects");                                           // 292
+    return compileDocumentSelector(                                                                           // 293
+      subSelector, matcher, {inElemMatch: inElemMatch});                                                      // 294
+  });                                                                                                         // 295
+};                                                                                                            // 296
+                                                                                                              // 297
+// Operators that appear at the top level of a document selector.                                             // 298
+var LOGICAL_OPERATORS = {                                                                                     // 299
+  $and: function (subSelector, matcher, inElemMatch) {                                                        // 300
+    var matchers = compileArrayOfDocumentSelectors(                                                           // 301
+      subSelector, matcher, inElemMatch);                                                                     // 302
+    return andDocumentMatchers(matchers);                                                                     // 303
+  },                                                                                                          // 304
+                                                                                                              // 305
+  $or: function (subSelector, matcher, inElemMatch) {                                                         // 306
+    var matchers = compileArrayOfDocumentSelectors(                                                           // 307
+      subSelector, matcher, inElemMatch);                                                                     // 308
+                                                                                                              // 309
+    // Special case: if there is only one matcher, use it directly, *preserving*                              // 310
+    // any arrayIndices it returns.                                                                           // 311
+    if (matchers.length === 1)                                                                                // 312
+      return matchers[0];                                                                                     // 313
+                                                                                                              // 314
+    return function (doc) {                                                                                   // 315
+      var result = _.any(matchers, function (f) {                                                             // 316
+        return f(doc).result;                                                                                 // 317
+      });                                                                                                     // 318
+      // $or does NOT set arrayIndices when it has multiple                                                   // 319
+      // sub-expressions. (Tested against MongoDB.)                                                           // 320
+      return {result: result};                                                                                // 321
+    };                                                                                                        // 322
+  },                                                                                                          // 323
+                                                                                                              // 324
+  $nor: function (subSelector, matcher, inElemMatch) {                                                        // 325
+    var matchers = compileArrayOfDocumentSelectors(                                                           // 326
+      subSelector, matcher, inElemMatch);                                                                     // 327
+    return function (doc) {                                                                                   // 328
+      var result = _.all(matchers, function (f) {                                                             // 329
+        return !f(doc).result;                                                                                // 330
+      });                                                                                                     // 331
+      // Never set arrayIndices, because we only match if nothing in particular                               // 332
+      // "matched" (and because this is consistent with MongoDB).                                             // 333
+      return {result: result};                                                                                // 334
+    };                                                                                                        // 335
+  },                                                                                                          // 336
+                                                                                                              // 337
+  $where: function (selectorValue, matcher) {                                                                 // 338
+    // Record that *any* path may be used.                                                                    // 339
+    matcher._recordPathUsed('');                                                                              // 340
+    matcher._hasWhere = true;                                                                                 // 341
+    if (!(selectorValue instanceof Function)) {                                                               // 342
+      // XXX MongoDB seems to have more complex logic to decide where or or not                               // 343
+      // to add "return"; not sure exactly what it is.                                                        // 344
+      selectorValue = Function("obj", "return " + selectorValue);                                             // 345
+    }                                                                                                         // 346
+    return function (doc) {                                                                                   // 347
+      // We make the document available as both `this` and `obj`.                                             // 348
+      // XXX not sure what we should do if this throws                                                        // 349
+      return {result: selectorValue.call(doc, doc)};                                                          // 350
+    };                                                                                                        // 351
+  },                                                                                                          // 352
+                                                                                                              // 353
+  // This is just used as a comment in the query (in MongoDB, it also ends up in                              // 354
+  // query logs); it has no effect on the actual selection.                                                   // 355
+  $comment: function () {                                                                                     // 356
+    return function () {                                                                                      // 357
+      return {result: true};                                                                                  // 358
+    };                                                                                                        // 359
+  }                                                                                                           // 360
+};                                                                                                            // 361
+                                                                                                              // 362
+// Returns a branched matcher that matches iff the given matcher does not.                                    // 363
+// Note that this implicitly "deMorganizes" the wrapped function.  ie, it                                     // 364
+// means that ALL branch values need to fail to match innerBranchedMatcher.                                   // 365
+var invertBranchedMatcher = function (branchedMatcher) {                                                      // 366
+  return function (branchValues) {                                                                            // 367
+    var invertMe = branchedMatcher(branchValues);                                                             // 368
+    // We explicitly choose to strip arrayIndices here: it doesn't make sense to                              // 369
+    // say "update the array element that does not match something", at least                                 // 370
+    // in mongo-land.                                                                                         // 371
+    return {result: !invertMe.result};                                                                        // 372
+  };                                                                                                          // 373
+};                                                                                                            // 374
+                                                                                                              // 375
+// Operators that (unlike LOGICAL_OPERATORS) pertain to individual paths in a                                 // 376
+// document, but (unlike ELEMENT_OPERATORS) do not have a simple definition as                                // 377
+// "match each branched value independently and combine with                                                  // 378
+// convertElementMatcherToBranchedMatcher".                                                                   // 379
+var VALUE_OPERATORS = {                                                                                       // 380
+  $eq: function (operand) {                                                                                   // 381
+    return convertElementMatcherToBranchedMatcher(                                                            // 382
+      equalityElementMatcher(operand));                                                                       // 383
+  },                                                                                                          // 384
+  $not: function (operand, valueSelector, matcher) {                                                          // 385
+    return invertBranchedMatcher(compileValueSelector(operand, matcher));                                     // 386
+  },                                                                                                          // 387
+  $ne: function (operand) {                                                                                   // 388
+    return invertBranchedMatcher(convertElementMatcherToBranchedMatcher(                                      // 389
+      equalityElementMatcher(operand)));                                                                      // 390
+  },                                                                                                          // 391
+  $nin: function (operand) {                                                                                  // 392
+    return invertBranchedMatcher(convertElementMatcherToBranchedMatcher(                                      // 393
+      ELEMENT_OPERATORS.$in.compileElementSelector(operand)));                                                // 394
+  },                                                                                                          // 395
+  $exists: function (operand) {                                                                               // 396
+    var exists = convertElementMatcherToBranchedMatcher(function (value) {                                    // 397
+      return value !== undefined;                                                                             // 398
+    });                                                                                                       // 399
+    return operand ? exists : invertBranchedMatcher(exists);                                                  // 400
+  },                                                                                                          // 401
+  // $options just provides options for $regex; its logic is inside $regex                                    // 402
+  $options: function (operand, valueSelector) {                                                               // 403
+    if (!_.has(valueSelector, '$regex'))                                                                      // 404
+      throw Error("$options needs a $regex");                                                                 // 405
+    return everythingMatcher;                                                                                 // 406
+  },                                                                                                          // 407
+  // $maxDistance is basically an argument to $near                                                           // 408
+  $maxDistance: function (operand, valueSelector) {                                                           // 409
+    if (!valueSelector.$near)                                                                                 // 410
+      throw Error("$maxDistance needs a $near");                                                              // 411
+    return everythingMatcher;                                                                                 // 412
+  },                                                                                                          // 413
+  $all: function (operand, valueSelector, matcher) {                                                          // 414
+    if (!isArray(operand))                                                                                    // 415
+      throw Error("$all requires array");                                                                     // 416
+    // Not sure why, but this seems to be what MongoDB does.                                                  // 417
+    if (_.isEmpty(operand))                                                                                   // 418
+      return nothingMatcher;                                                                                  // 419
+                                                                                                              // 420
+    var branchedMatchers = [];                                                                                // 421
+    _.each(operand, function (criterion) {                                                                    // 422
+      // XXX handle $all/$elemMatch combination                                                               // 423
+      if (isOperatorObject(criterion))                                                                        // 424
+        throw Error("no $ expressions in $all");                                                              // 425
+      // This is always a regexp or equality selector.                                                        // 426
+      branchedMatchers.push(compileValueSelector(criterion, matcher));                                        // 427
+    });                                                                                                       // 428
+    // andBranchedMatchers does NOT require all selectors to return true on the                               // 429
+    // SAME branch.                                                                                           // 430
+    return andBranchedMatchers(branchedMatchers);                                                             // 431
+  },                                                                                                          // 432
+  $near: function (operand, valueSelector, matcher, isRoot) {                                                 // 433
+    if (!isRoot)                                                                                              // 434
+      throw Error("$near can't be inside another $ operator");                                                // 435
+    matcher._hasGeoQuery = true;                                                                              // 436
+                                                                                                              // 437
+    // There are two kinds of geodata in MongoDB: coordinate pairs and                                        // 438
+    // GeoJSON. They use different distance metrics, too. GeoJSON queries are                                 // 439
+    // marked with a $geometry property.                                                                      // 440
+                                                                                                              // 441
+    var maxDistance, point, distance;                                                                         // 442
+    if (isPlainObject(operand) && _.has(operand, '$geometry')) {                                              // 443
+      // GeoJSON "2dsphere" mode.                                                                             // 444
+      maxDistance = operand.$maxDistance;                                                                     // 445
+      point = operand.$geometry;                                                                              // 446
+      distance = function (value) {                                                                           // 447
+        // XXX: for now, we don't calculate the actual distance between, say,                                 // 448
+        // polygon and circle. If people care about this use-case it will get                                 // 449
+        // a priority.                                                                                        // 450
+        if (!value || !value.type)                                                                            // 451
+          return null;                                                                                        // 452
+        if (value.type === "Point") {                                                                         // 453
+          return GeoJSON.pointDistance(point, value);                                                         // 454
+        } else {                                                                                              // 455
+          return GeoJSON.geometryWithinRadius(value, point, maxDistance)                                      // 456
+            ? 0 : maxDistance + 1;                                                                            // 457
+        }                                                                                                     // 458
+      };                                                                                                      // 459
+    } else {                                                                                                  // 460
+      maxDistance = valueSelector.$maxDistance;                                                               // 461
+      if (!isArray(operand) && !isPlainObject(operand))                                                       // 462
+        throw Error("$near argument must be coordinate pair or GeoJSON");                                     // 463
+      point = pointToArray(operand);                                                                          // 464
+      distance = function (value) {                                                                           // 465
+        if (!isArray(value) && !isPlainObject(value))                                                         // 466
+          return null;                                                                                        // 467
+        return distanceCoordinatePairs(point, value);                                                         // 468
+      };                                                                                                      // 469
+    }                                                                                                         // 470
+                                                                                                              // 471
+    return function (branchedValues) {                                                                        // 472
+      // There might be multiple points in the document that match the given                                  // 473
+      // field. Only one of them needs to be within $maxDistance, but we need to                              // 474
+      // evaluate all of them and use the nearest one for the implicit sort                                   // 475
+      // specifier. (That's why we can't just use ELEMENT_OPERATORS here.)                                    // 476
+      //                                                                                                      // 477
+      // Note: This differs from MongoDB's implementation, where a document will                              // 478
+      // actually show up *multiple times* in the result set, with one entry for                              // 479
+      // each within-$maxDistance branching point.                                                            // 480
+      branchedValues = expandArraysInBranches(branchedValues);                                                // 481
+      var result = {result: false};                                                                           // 482
+      _.each(branchedValues, function (branch) {                                                              // 483
+        var curDistance = distance(branch.value);                                                             // 484
+        // Skip branches that aren't real points or are too far away.                                         // 485
+        if (curDistance === null || curDistance > maxDistance)                                                // 486
+          return;                                                                                             // 487
+        // Skip anything that's a tie.                                                                        // 488
+        if (result.distance !== undefined && result.distance <= curDistance)                                  // 489
+          return;                                                                                             // 490
+        result.result = true;                                                                                 // 491
+        result.distance = curDistance;                                                                        // 492
+        if (!branch.arrayIndices)                                                                             // 493
+          delete result.arrayIndices;                                                                         // 494
+        else                                                                                                  // 495
+          result.arrayIndices = branch.arrayIndices;                                                          // 496
+      });                                                                                                     // 497
+      return result;                                                                                          // 498
+    };                                                                                                        // 499
+  }                                                                                                           // 500
+};                                                                                                            // 501
+                                                                                                              // 502
+// Helpers for $near.                                                                                         // 503
+var distanceCoordinatePairs = function (a, b) {                                                               // 504
+  a = pointToArray(a);                                                                                        // 505
+  b = pointToArray(b);                                                                                        // 506
+  var x = a[0] - b[0];                                                                                        // 507
+  var y = a[1] - b[1];                                                                                        // 508
+  if (_.isNaN(x) || _.isNaN(y))                                                                               // 509
+    return null;                                                                                              // 510
+  return Math.sqrt(x * x + y * y);                                                                            // 511
+};                                                                                                            // 512
+// Makes sure we get 2 elements array and assume the first one to be x and                                    // 513
+// the second one to y no matter what user passes.                                                            // 514
+// In case user passes { lon: x, lat: y } returns [x, y]                                                      // 515
+var pointToArray = function (point) {                                                                         // 516
+  return _.map(point, _.identity);                                                                            // 517
+};                                                                                                            // 518
+                                                                                                              // 519
+// Helper for $lt/$gt/$lte/$gte.                                                                              // 520
+var makeInequality = function (cmpValueComparator) {                                                          // 521
+  return {                                                                                                    // 522
+    compileElementSelector: function (operand) {                                                              // 523
+      // Arrays never compare false with non-arrays for any inequality.                                       // 524
+      // XXX This was behavior we observed in pre-release MongoDB 2.5, but                                    // 525
+      //     it seems to have been reverted.                                                                  // 526
+      //     See https://jira.mongodb.org/browse/SERVER-11444                                                 // 527
+      if (isArray(operand)) {                                                                                 // 528
+        return function () {                                                                                  // 529
+          return false;                                                                                       // 530
+        };                                                                                                    // 531
+      }                                                                                                       // 532
+                                                                                                              // 533
+      // Special case: consider undefined and null the same (so true with                                     // 534
+      // $gte/$lte).                                                                                          // 535
+      if (operand === undefined)                                                                              // 536
+        operand = null;                                                                                       // 537
                                                                                                               // 538
-      return function (value) {                                                                               // 539
-        if (value === undefined)                                                                              // 540
-          value = null;                                                                                       // 541
-        // Comparisons are never true among things of different type (except                                  // 542
-        // null vs undefined).                                                                                // 543
-        if (LocalCollection._f._type(value) !== operandType)                                                  // 544
-          return false;                                                                                       // 545
-        return cmpValueComparator(LocalCollection._f._cmp(value, operand));                                   // 546
-      };                                                                                                      // 547
-    }                                                                                                         // 548
-  };                                                                                                          // 549
-};                                                                                                            // 550
-                                                                                                              // 551
-// Each element selector contains:                                                                            // 552
-//  - compileElementSelector, a function with args:                                                           // 553
-//    - operand - the "right hand side" of the operator                                                       // 554
-//    - valueSelector - the "context" for the operator (so that $regex can find                               // 555
-//      $options)                                                                                             // 556
-//    - matcher - the Matcher this is going into (so that $elemMatch can compile                              // 557
-//      more things)                                                                                          // 558
-//    returning a function mapping a single value to bool.                                                    // 559
-//  - dontExpandLeafArrays, a bool which prevents expandArraysInBranches from                                 // 560
-//    being called                                                                                            // 561
-//  - dontIncludeLeafArrays, a bool which causes an argument to be passed to                                  // 562
-//    expandArraysInBranches if it is called                                                                  // 563
-ELEMENT_OPERATORS = {                                                                                         // 564
-  $lt: makeInequality(function (cmpValue) {                                                                   // 565
-    return cmpValue < 0;                                                                                      // 566
-  }),                                                                                                         // 567
-  $gt: makeInequality(function (cmpValue) {                                                                   // 568
-    return cmpValue > 0;                                                                                      // 569
-  }),                                                                                                         // 570
-  $lte: makeInequality(function (cmpValue) {                                                                  // 571
-    return cmpValue <= 0;                                                                                     // 572
-  }),                                                                                                         // 573
-  $gte: makeInequality(function (cmpValue) {                                                                  // 574
-    return cmpValue >= 0;                                                                                     // 575
-  }),                                                                                                         // 576
-  $mod: {                                                                                                     // 577
-    compileElementSelector: function (operand) {                                                              // 578
-      if (!(isArray(operand) && operand.length === 2                                                          // 579
-            && typeof(operand[0]) === 'number'                                                                // 580
-            && typeof(operand[1]) === 'number')) {                                                            // 581
-        throw Error("argument to $mod must be an array of two numbers");                                      // 582
-      }                                                                                                       // 583
-      // XXX could require to be ints or round or something                                                   // 584
-      var divisor = operand[0];                                                                               // 585
-      var remainder = operand[1];                                                                             // 586
-      return function (value) {                                                                               // 587
-        return typeof value === 'number' && value % divisor === remainder;                                    // 588
-      };                                                                                                      // 589
-    }                                                                                                         // 590
-  },                                                                                                          // 591
-  $in: {                                                                                                      // 592
-    compileElementSelector: function (operand) {                                                              // 593
-      if (!isArray(operand))                                                                                  // 594
-        throw Error("$in needs an array");                                                                    // 595
-                                                                                                              // 596
-      var elementMatchers = [];                                                                               // 597
-      _.each(operand, function (option) {                                                                     // 598
-        if (option instanceof RegExp)                                                                         // 599
-          elementMatchers.push(regexpElementMatcher(option));                                                 // 600
-        else if (isOperatorObject(option))                                                                    // 601
-          throw Error("cannot nest $ under $in");                                                             // 602
-        else                                                                                                  // 603
-          elementMatchers.push(equalityElementMatcher(option));                                               // 604
-      });                                                                                                     // 605
-                                                                                                              // 606
-      return function (value) {                                                                               // 607
-        // Allow {a: {$in: [null]}} to match when 'a' does not exist.                                         // 608
-        if (value === undefined)                                                                              // 609
-          value = null;                                                                                       // 610
-        return _.any(elementMatchers, function (e) {                                                          // 611
-          return e(value);                                                                                    // 612
-        });                                                                                                   // 613
-      };                                                                                                      // 614
-    }                                                                                                         // 615
-  },                                                                                                          // 616
-  $size: {                                                                                                    // 617
-    // {a: [[5, 5]]} must match {a: {$size: 1}} but not {a: {$size: 2}}, so we                                // 618
-    // don't want to consider the element [5,5] in the leaf array [[5,5]] as a                                // 619
-    // possible value.                                                                                        // 620
-    dontExpandLeafArrays: true,                                                                               // 621
-    compileElementSelector: function (operand) {                                                              // 622
-      if (typeof operand === 'string') {                                                                      // 623
-        // Don't ask me why, but by experimentation, this seems to be what Mongo                              // 624
-        // does.                                                                                              // 625
-        operand = 0;                                                                                          // 626
-      } else if (typeof operand !== 'number') {                                                               // 627
-        throw Error("$size needs a number");                                                                  // 628
-      }                                                                                                       // 629
-      return function (value) {                                                                               // 630
-        return isArray(value) && value.length === operand;                                                    // 631
-      };                                                                                                      // 632
-    }                                                                                                         // 633
-  },                                                                                                          // 634
-  $type: {                                                                                                    // 635
-    // {a: [5]} must not match {a: {$type: 4}} (4 means array), but it should                                 // 636
-    // match {a: {$type: 1}} (1 means number), and {a: [[5]]} must match {$a:                                 // 637
-    // {$type: 4}}. Thus, when we see a leaf array, we *should* expand it but                                 // 638
-    // should *not* include it itself.                                                                        // 639
-    dontIncludeLeafArrays: true,                                                                              // 640
-    compileElementSelector: function (operand) {                                                              // 641
-      if (typeof operand !== 'number')                                                                        // 642
-        throw Error("$type needs a number");                                                                  // 643
-      return function (value) {                                                                               // 644
-        return value !== undefined                                                                            // 645
-          && LocalCollection._f._type(value) === operand;                                                     // 646
-      };                                                                                                      // 647
-    }                                                                                                         // 648
-  },                                                                                                          // 649
-  $regex: {                                                                                                   // 650
-    compileElementSelector: function (operand, valueSelector) {                                               // 651
-      if (!(typeof operand === 'string' || operand instanceof RegExp))                                        // 652
-        throw Error("$regex has to be a string or RegExp");                                                   // 653
-                                                                                                              // 654
-      var regexp;                                                                                             // 655
-      if (valueSelector.$options !== undefined) {                                                             // 656
-        // Options passed in $options (even the empty string) always overrides                                // 657
-        // options in the RegExp object itself. (See also                                                     // 658
-        // Mongo.Collection._rewriteSelector.)                                                                // 659
-                                                                                                              // 660
-        // Be clear that we only support the JS-supported options, not extended                               // 661
-        // ones (eg, Mongo supports x and s). Ideally we would implement x and s                              // 662
-        // by transforming the regexp, but not today...                                                       // 663
-        if (/[^gim]/.test(valueSelector.$options))                                                            // 664
-          throw new Error("Only the i, m, and g regexp options are supported");                               // 665
-                                                                                                              // 666
-        var regexSource = operand instanceof RegExp ? operand.source : operand;                               // 667
-        regexp = new RegExp(regexSource, valueSelector.$options);                                             // 668
-      } else if (operand instanceof RegExp) {                                                                 // 669
-        regexp = operand;                                                                                     // 670
-      } else {                                                                                                // 671
-        regexp = new RegExp(operand);                                                                         // 672
-      }                                                                                                       // 673
-      return regexpElementMatcher(regexp);                                                                    // 674
-    }                                                                                                         // 675
-  },                                                                                                          // 676
-  $elemMatch: {                                                                                               // 677
-    dontExpandLeafArrays: true,                                                                               // 678
-    compileElementSelector: function (operand, valueSelector, matcher) {                                      // 679
-      if (!isPlainObject(operand))                                                                            // 680
-        throw Error("$elemMatch need an object");                                                             // 681
-                                                                                                              // 682
-      var subMatcher, isDocMatcher;                                                                           // 683
-      if (isOperatorObject(_.omit(operand, _.keys(LOGICAL_OPERATORS)), true)) {                               // 684
-        subMatcher = compileValueSelector(operand, matcher);                                                  // 685
-        isDocMatcher = false;                                                                                 // 686
-      } else {                                                                                                // 687
-        // This is NOT the same as compileValueSelector(operand), and not just                                // 688
-        // because of the slightly different calling convention.                                              // 689
-        // {$elemMatch: {x: 3}} means "an element has a field x:3", not                                       // 690
-        // "consists only of a field x:3". Also, regexps and sub-$ are allowed.                               // 691
-        subMatcher = compileDocumentSelector(operand, matcher,                                                // 692
-                                             {inElemMatch: true});                                            // 693
-        isDocMatcher = true;                                                                                  // 694
-      }                                                                                                       // 695
-                                                                                                              // 696
-      return function (value) {                                                                               // 697
-        if (!isArray(value))                                                                                  // 698
-          return false;                                                                                       // 699
-        for (var i = 0; i < value.length; ++i) {                                                              // 700
-          var arrayElement = value[i];                                                                        // 701
-          var arg;                                                                                            // 702
-          if (isDocMatcher) {                                                                                 // 703
-            // We can only match {$elemMatch: {b: 3}} against objects.                                        // 704
-            // (We can also match against arrays, if there's numeric indices,                                 // 705
-            // eg {$elemMatch: {'0.b': 3}} or {$elemMatch: {0: 3}}.)                                          // 706
-            if (!isPlainObject(arrayElement) && !isArray(arrayElement))                                       // 707
-              return false;                                                                                   // 708
-            arg = arrayElement;                                                                               // 709
-          } else {                                                                                            // 710
-            // dontIterate ensures that {a: {$elemMatch: {$gt: 5}}} matches                                   // 711
-            // {a: [8]} but not {a: [[8]]}                                                                    // 712
-            arg = [{value: arrayElement, dontIterate: true}];                                                 // 713
-          }                                                                                                   // 714
-          // XXX support $near in $elemMatch by propagating $distance?                                        // 715
-          if (subMatcher(arg).result)                                                                         // 716
-            return i;   // specially understood to mean "use as arrayIndices"                                 // 717
-        }                                                                                                     // 718
-        return false;                                                                                         // 719
-      };                                                                                                      // 720
-    }                                                                                                         // 721
-  }                                                                                                           // 722
-};                                                                                                            // 723
-                                                                                                              // 724
-// makeLookupFunction(key) returns a lookup function.                                                         // 725
-//                                                                                                            // 726
-// A lookup function takes in a document and returns an array of matching                                     // 727
-// branches.  If no arrays are found while looking up the key, this array will                                // 728
-// have exactly one branches (possibly 'undefined', if some segment of the key                                // 729
-// was not found).                                                                                            // 730
-//                                                                                                            // 731
-// If arrays are found in the middle, this can have more than one element, since                              // 732
-// we "branch". When we "branch", if there are more key segments to look up,                                  // 733
-// then we only pursue branches that are plain objects (not arrays or scalars).                               // 734
-// This means we can actually end up with no branches!                                                        // 735
-//                                                                                                            // 736
-// We do *NOT* branch on arrays that are found at the end (ie, at the last                                    // 737
-// dotted member of the key). We just return that array; if you want to                                       // 738
-// effectively "branch" over the array's values, post-process the lookup                                      // 739
-// function with expandArraysInBranches.                                                                      // 740
-//                                                                                                            // 741
-// Each branch is an object with keys:                                                                        // 742
-//  - value: the value at the branch                                                                          // 743
-//  - dontIterate: an optional bool; if true, it means that 'value' is an array                               // 744
-//    that expandArraysInBranches should NOT expand. This specifically happens                                // 745
-//    when there is a numeric index in the key, and ensures the                                               // 746
-//    perhaps-surprising MongoDB behavior where {'a.0': 5} does NOT                                           // 747
-//    match {a: [[5]]}.                                                                                       // 748
-//  - arrayIndices: if any array indexing was done during lookup (either due to                               // 749
-//    explicit numeric indices or implicit branching), this will be an array of                               // 750
-//    the array indices used, from outermost to innermost; it is falsey or                                    // 751
-//    absent if no array index is used. If an explicit numeric index is used,                                 // 752
-//    the index will be followed in arrayIndices by the string 'x'.                                           // 753
-//                                                                                                            // 754
-//    Note: arrayIndices is used for two purposes. First, it is used to                                       // 755
-//    implement the '$' modifier feature, which only ever looks at its first                                  // 756
-//    element.                                                                                                // 757
-//                                                                                                            // 758
-//    Second, it is used for sort key generation, which needs to be able to tell                              // 759
-//    the difference between different paths. Moreover, it needs to                                           // 760
-//    differentiate between explicit and implicit branching, which is why                                     // 761
-//    there's the somewhat hacky 'x' entry: this means that explicit and                                      // 762
-//    implicit array lookups will have different full arrayIndices paths. (That                               // 763
-//    code only requires that different paths have different arrayIndices; it                                 // 764
-//    doesn't actually "parse" arrayIndices. As an alternative, arrayIndices                                  // 765
-//    could contain objects with flags like "implicit", but I think that only                                 // 766
-//    makes the code surrounding them more complex.)                                                          // 767
-//                                                                                                            // 768
-//    (By the way, this field ends up getting passed around a lot without                                     // 769
-//    cloning, so never mutate any arrayIndices field/var in this package!)                                   // 770
-//                                                                                                            // 771
-//                                                                                                            // 772
-// At the top level, you may only pass in a plain object or array.                                            // 773
+      var operandType = LocalCollection._f._type(operand);                                                    // 539
+                                                                                                              // 540
+      return function (value) {                                                                               // 541
+        if (value === undefined)                                                                              // 542
+          value = null;                                                                                       // 543
+        // Comparisons are never true among things of different type (except                                  // 544
+        // null vs undefined).                                                                                // 545
+        if (LocalCollection._f._type(value) !== operandType)                                                  // 546
+          return false;                                                                                       // 547
+        return cmpValueComparator(LocalCollection._f._cmp(value, operand));                                   // 548
+      };                                                                                                      // 549
+    }                                                                                                         // 550
+  };                                                                                                          // 551
+};                                                                                                            // 552
+                                                                                                              // 553
+// Each element selector contains:                                                                            // 554
+//  - compileElementSelector, a function with args:                                                           // 555
+//    - operand - the "right hand side" of the operator                                                       // 556
+//    - valueSelector - the "context" for the operator (so that $regex can find                               // 557
+//      $options)                                                                                             // 558
+//    - matcher - the Matcher this is going into (so that $elemMatch can compile                              // 559
+//      more things)                                                                                          // 560
+//    returning a function mapping a single value to bool.                                                    // 561
+//  - dontExpandLeafArrays, a bool which prevents expandArraysInBranches from                                 // 562
+//    being called                                                                                            // 563
+//  - dontIncludeLeafArrays, a bool which causes an argument to be passed to                                  // 564
+//    expandArraysInBranches if it is called                                                                  // 565
+ELEMENT_OPERATORS = {                                                                                         // 566
+  $lt: makeInequality(function (cmpValue) {                                                                   // 567
+    return cmpValue < 0;                                                                                      // 568
+  }),                                                                                                         // 569
+  $gt: makeInequality(function (cmpValue) {                                                                   // 570
+    return cmpValue > 0;                                                                                      // 571
+  }),                                                                                                         // 572
+  $lte: makeInequality(function (cmpValue) {                                                                  // 573
+    return cmpValue <= 0;                                                                                     // 574
+  }),                                                                                                         // 575
+  $gte: makeInequality(function (cmpValue) {                                                                  // 576
+    return cmpValue >= 0;                                                                                     // 577
+  }),                                                                                                         // 578
+  $mod: {                                                                                                     // 579
+    compileElementSelector: function (operand) {                                                              // 580
+      if (!(isArray(operand) && operand.length === 2                                                          // 581
+            && typeof(operand[0]) === 'number'                                                                // 582
+            && typeof(operand[1]) === 'number')) {                                                            // 583
+        throw Error("argument to $mod must be an array of two numbers");                                      // 584
+      }                                                                                                       // 585
+      // XXX could require to be ints or round or something                                                   // 586
+      var divisor = operand[0];                                                                               // 587
+      var remainder = operand[1];                                                                             // 588
+      return function (value) {                                                                               // 589
+        return typeof value === 'number' && value % divisor === remainder;                                    // 590
+      };                                                                                                      // 591
+    }                                                                                                         // 592
+  },                                                                                                          // 593
+  $in: {                                                                                                      // 594
+    compileElementSelector: function (operand) {                                                              // 595
+      if (!isArray(operand))                                                                                  // 596
+        throw Error("$in needs an array");                                                                    // 597
+                                                                                                              // 598
+      var elementMatchers = [];                                                                               // 599
+      _.each(operand, function (option) {                                                                     // 600
+        if (option instanceof RegExp)                                                                         // 601
+          elementMatchers.push(regexpElementMatcher(option));                                                 // 602
+        else if (isOperatorObject(option))                                                                    // 603
+          throw Error("cannot nest $ under $in");                                                             // 604
+        else                                                                                                  // 605
+          elementMatchers.push(equalityElementMatcher(option));                                               // 606
+      });                                                                                                     // 607
+                                                                                                              // 608
+      return function (value) {                                                                               // 609
+        // Allow {a: {$in: [null]}} to match when 'a' does not exist.                                         // 610
+        if (value === undefined)                                                                              // 611
+          value = null;                                                                                       // 612
+        return _.any(elementMatchers, function (e) {                                                          // 613
+          return e(value);                                                                                    // 614
+        });                                                                                                   // 615
+      };                                                                                                      // 616
+    }                                                                                                         // 617
+  },                                                                                                          // 618
+  $size: {                                                                                                    // 619
+    // {a: [[5, 5]]} must match {a: {$size: 1}} but not {a: {$size: 2}}, so we                                // 620
+    // don't want to consider the element [5,5] in the leaf array [[5,5]] as a                                // 621
+    // possible value.                                                                                        // 622
+    dontExpandLeafArrays: true,                                                                               // 623
+    compileElementSelector: function (operand) {                                                              // 624
+      if (typeof operand === 'string') {                                                                      // 625
+        // Don't ask me why, but by experimentation, this seems to be what Mongo                              // 626
+        // does.                                                                                              // 627
+        operand = 0;                                                                                          // 628
+      } else if (typeof operand !== 'number') {                                                               // 629
+        throw Error("$size needs a number");                                                                  // 630
+      }                                                                                                       // 631
+      return function (value) {                                                                               // 632
+        return isArray(value) && value.length === operand;                                                    // 633
+      };                                                                                                      // 634
+    }                                                                                                         // 635
+  },                                                                                                          // 636
+  $type: {                                                                                                    // 637
+    // {a: [5]} must not match {a: {$type: 4}} (4 means array), but it should                                 // 638
+    // match {a: {$type: 1}} (1 means number), and {a: [[5]]} must match {$a:                                 // 639
+    // {$type: 4}}. Thus, when we see a leaf array, we *should* expand it but                                 // 640
+    // should *not* include it itself.                                                                        // 641
+    dontIncludeLeafArrays: true,                                                                              // 642
+    compileElementSelector: function (operand) {                                                              // 643
+      if (typeof operand !== 'number')                                                                        // 644
+        throw Error("$type needs a number");                                                                  // 645
+      return function (value) {                                                                               // 646
+        return value !== undefined                                                                            // 647
+          && LocalCollection._f._type(value) === operand;                                                     // 648
+      };                                                                                                      // 649
+    }                                                                                                         // 650
+  },                                                                                                          // 651
+  $regex: {                                                                                                   // 652
+    compileElementSelector: function (operand, valueSelector) {                                               // 653
+      if (!(typeof operand === 'string' || operand instanceof RegExp))                                        // 654
+        throw Error("$regex has to be a string or RegExp");                                                   // 655
+                                                                                                              // 656
+      var regexp;                                                                                             // 657
+      if (valueSelector.$options !== undefined) {                                                             // 658
+        // Options passed in $options (even the empty string) always overrides                                // 659
+        // options in the RegExp object itself. (See also                                                     // 660
+        // Mongo.Collection._rewriteSelector.)                                                                // 661
+                                                                                                              // 662
+        // Be clear that we only support the JS-supported options, not extended                               // 663
+        // ones (eg, Mongo supports x and s). Ideally we would implement x and s                              // 664
+        // by transforming the regexp, but not today...                                                       // 665
+        if (/[^gim]/.test(valueSelector.$options))                                                            // 666
+          throw new Error("Only the i, m, and g regexp options are supported");                               // 667
+                                                                                                              // 668
+        var regexSource = operand instanceof RegExp ? operand.source : operand;                               // 669
+        regexp = new RegExp(regexSource, valueSelector.$options);                                             // 670
+      } else if (operand instanceof RegExp) {                                                                 // 671
+        regexp = operand;                                                                                     // 672
+      } else {                                                                                                // 673
+        regexp = new RegExp(operand);                                                                         // 674
+      }                                                                                                       // 675
+      return regexpElementMatcher(regexp);                                                                    // 676
+    }                                                                                                         // 677
+  },                                                                                                          // 678
+  $elemMatch: {                                                                                               // 679
+    dontExpandLeafArrays: true,                                                                               // 680
+    compileElementSelector: function (operand, valueSelector, matcher) {                                      // 681
+      if (!isPlainObject(operand))                                                                            // 682
+        throw Error("$elemMatch need an object");                                                             // 683
+                                                                                                              // 684
+      var subMatcher, isDocMatcher;                                                                           // 685
+      if (isOperatorObject(_.omit(operand, _.keys(LOGICAL_OPERATORS)), true)) {                               // 686
+        subMatcher = compileValueSelector(operand, matcher);                                                  // 687
+        isDocMatcher = false;                                                                                 // 688
+      } else {                                                                                                // 689
+        // This is NOT the same as compileValueSelector(operand), and not just                                // 690
+        // because of the slightly different calling convention.                                              // 691
+        // {$elemMatch: {x: 3}} means "an element has a field x:3", not                                       // 692
+        // "consists only of a field x:3". Also, regexps and sub-$ are allowed.                               // 693
+        subMatcher = compileDocumentSelector(operand, matcher,                                                // 694
+                                             {inElemMatch: true});                                            // 695
+        isDocMatcher = true;                                                                                  // 696
+      }                                                                                                       // 697
+                                                                                                              // 698
+      return function (value) {                                                                               // 699
+        if (!isArray(value))                                                                                  // 700
+          return false;                                                                                       // 701
+        for (var i = 0; i < value.length; ++i) {                                                              // 702
+          var arrayElement = value[i];                                                                        // 703
+          var arg;                                                                                            // 704
+          if (isDocMatcher) {                                                                                 // 705
+            // We can only match {$elemMatch: {b: 3}} against objects.                                        // 706
+            // (We can also match against arrays, if there's numeric indices,                                 // 707
+            // eg {$elemMatch: {'0.b': 3}} or {$elemMatch: {0: 3}}.)                                          // 708
+            if (!isPlainObject(arrayElement) && !isArray(arrayElement))                                       // 709
+              return false;                                                                                   // 710
+            arg = arrayElement;                                                                               // 711
+          } else {                                                                                            // 712
+            // dontIterate ensures that {a: {$elemMatch: {$gt: 5}}} matches                                   // 713
+            // {a: [8]} but not {a: [[8]]}                                                                    // 714
+            arg = [{value: arrayElement, dontIterate: true}];                                                 // 715
+          }                                                                                                   // 716
+          // XXX support $near in $elemMatch by propagating $distance?                                        // 717
+          if (subMatcher(arg).result)                                                                         // 718
+            return i;   // specially understood to mean "use as arrayIndices"                                 // 719
+        }                                                                                                     // 720
+        return false;                                                                                         // 721
+      };                                                                                                      // 722
+    }                                                                                                         // 723
+  }                                                                                                           // 724
+};                                                                                                            // 725
+                                                                                                              // 726
+// makeLookupFunction(key) returns a lookup function.                                                         // 727
+//                                                                                                            // 728
+// A lookup function takes in a document and returns an array of matching                                     // 729
+// branches.  If no arrays are found while looking up the key, this array will                                // 730
+// have exactly one branches (possibly 'undefined', if some segment of the key                                // 731
+// was not found).                                                                                            // 732
+//                                                                                                            // 733
+// If arrays are found in the middle, this can have more than one element, since                              // 734
+// we "branch". When we "branch", if there are more key segments to look up,                                  // 735
+// then we only pursue branches that are plain objects (not arrays or scalars).                               // 736
+// This means we can actually end up with no branches!                                                        // 737
+//                                                                                                            // 738
+// We do *NOT* branch on arrays that are found at the end (ie, at the last                                    // 739
+// dotted member of the key). We just return that array; if you want to                                       // 740
+// effectively "branch" over the array's values, post-process the lookup                                      // 741
+// function with expandArraysInBranches.                                                                      // 742
+//                                                                                                            // 743
+// Each branch is an object with keys:                                                                        // 744
+//  - value: the value at the branch                                                                          // 745
+//  - dontIterate: an optional bool; if true, it means that 'value' is an array                               // 746
+//    that expandArraysInBranches should NOT expand. This specifically happens                                // 747
+//    when there is a numeric index in the key, and ensures the                                               // 748
+//    perhaps-surprising MongoDB behavior where {'a.0': 5} does NOT                                           // 749
+//    match {a: [[5]]}.                                                                                       // 750
+//  - arrayIndices: if any array indexing was done during lookup (either due to                               // 751
+//    explicit numeric indices or implicit branching), this will be an array of                               // 752
+//    the array indices used, from outermost to innermost; it is falsey or                                    // 753
+//    absent if no array index is used. If an explicit numeric index is used,                                 // 754
+//    the index will be followed in arrayIndices by the string 'x'.                                           // 755
+//                                                                                                            // 756
+//    Note: arrayIndices is used for two purposes. First, it is used to                                       // 757
+//    implement the '$' modifier feature, which only ever looks at its first                                  // 758
+//    element.                                                                                                // 759
+//                                                                                                            // 760
+//    Second, it is used for sort key generation, which needs to be able to tell                              // 761
+//    the difference between different paths. Moreover, it needs to                                           // 762
+//    differentiate between explicit and implicit branching, which is why                                     // 763
+//    there's the somewhat hacky 'x' entry: this means that explicit and                                      // 764
+//    implicit array lookups will have different full arrayIndices paths. (That                               // 765
+//    code only requires that different paths have different arrayIndices; it                                 // 766
+//    doesn't actually "parse" arrayIndices. As an alternative, arrayIndices                                  // 767
+//    could contain objects with flags like "implicit", but I think that only                                 // 768
+//    makes the code surrounding them more complex.)                                                          // 769
+//                                                                                                            // 770
+//    (By the way, this field ends up getting passed around a lot without                                     // 771
+//    cloning, so never mutate any arrayIndices field/var in this package!)                                   // 772
+//                                                                                                            // 773
 //                                                                                                            // 774
-// See the test 'minimongo - lookup' for some examples of what lookup functions                               // 775
-// return.                                                                                                    // 776
-makeLookupFunction = function (key, options) {                                                                // 777
-  options = options || {};                                                                                    // 778
-  var parts = key.split('.');                                                                                 // 779
-  var firstPart = parts.length ? parts[0] : '';                                                               // 780
-  var firstPartIsNumeric = isNumericKey(firstPart);                                                           // 781
-  var nextPartIsNumeric = parts.length >= 2 && isNumericKey(parts[1]);                                        // 782
-  var lookupRest;                                                                                             // 783
-  if (parts.length > 1) {                                                                                     // 784
-    lookupRest = makeLookupFunction(parts.slice(1).join('.'));                                                // 785
-  }                                                                                                           // 786
-                                                                                                              // 787
-  var omitUnnecessaryFields = function (retVal) {                                                             // 788
-    if (!retVal.dontIterate)                                                                                  // 789
-      delete retVal.dontIterate;                                                                              // 790
-    if (retVal.arrayIndices && !retVal.arrayIndices.length)                                                   // 791
-      delete retVal.arrayIndices;                                                                             // 792
-    return retVal;                                                                                            // 793
-  };                                                                                                          // 794
-                                                                                                              // 795
-  // Doc will always be a plain object or an array.                                                           // 796
-  // apply an explicit numeric index, an array.                                                               // 797
-  return function (doc, arrayIndices) {                                                                       // 798
-    if (!arrayIndices)                                                                                        // 799
-      arrayIndices = [];                                                                                      // 800
-                                                                                                              // 801
-    if (isArray(doc)) {                                                                                       // 802
-      // If we're being asked to do an invalid lookup into an array (non-integer                              // 803
-      // or out-of-bounds), return no results (which is different from returning                              // 804
-      // a single undefined result, in that `null` equality checks won't match).                              // 805
-      if (!(firstPartIsNumeric && firstPart < doc.length))                                                    // 806
-        return [];                                                                                            // 807
-                                                                                                              // 808
-      // Remember that we used this array index. Include an 'x' to indicate that                              // 809
-      // the previous index came from being considered as an explicit array                                   // 810
-      // index (not branching).                                                                               // 811
-      arrayIndices = arrayIndices.concat(+firstPart, 'x');                                                    // 812
-    }                                                                                                         // 813
-                                                                                                              // 814
-    // Do our first lookup.                                                                                   // 815
-    var firstLevel = doc[firstPart];                                                                          // 816
-                                                                                                              // 817
-    // If there is no deeper to dig, return what we found.                                                    // 818
-    //                                                                                                        // 819
-    // If what we found is an array, most value selectors will choose to treat                                // 820
-    // the elements of the array as matchable values in their own right, but                                  // 821
-    // that's done outside of the lookup function. (Exceptions to this are $size                              // 822
-    // and stuff relating to $elemMatch.  eg, {a: {$size: 2}} does not match {a:                              // 823
-    // [[1, 2]]}.)                                                                                            // 824
-    //                                                                                                        // 825
-    // That said, if we just did an *explicit* array lookup (on doc) to find                                  // 826
-    // firstLevel, and firstLevel is an array too, we do NOT want value                                       // 827
-    // selectors to iterate over it.  eg, {'a.0': 5} does not match {a: [[5]]}.                               // 828
-    // So in that case, we mark the return value as "don't iterate".                                          // 829
-    if (!lookupRest) {                                                                                        // 830
-      return [omitUnnecessaryFields({                                                                         // 831
-        value: firstLevel,                                                                                    // 832
-        dontIterate: isArray(doc) && isArray(firstLevel),                                                     // 833
-        arrayIndices: arrayIndices})];                                                                        // 834
-    }                                                                                                         // 835
-                                                                                                              // 836
-    // We need to dig deeper.  But if we can't, because what we've found is not                               // 837
-    // an array or plain object, we're done. If we just did a numeric index into                              // 838
-    // an array, we return nothing here (this is a change in Mongo 2.5 from                                   // 839
-    // Mongo 2.4, where {'a.0.b': null} stopped matching {a: [5]}). Otherwise,                                // 840
-    // return a single `undefined` (which can, for example, match via equality                                // 841
-    // with `null`).                                                                                          // 842
-    if (!isIndexable(firstLevel)) {                                                                           // 843
-      if (isArray(doc))                                                                                       // 844
-        return [];                                                                                            // 845
-      return [omitUnnecessaryFields({value: undefined,                                                        // 846
-                                      arrayIndices: arrayIndices})];                                          // 847
-    }                                                                                                         // 848
-                                                                                                              // 849
-    var result = [];                                                                                          // 850
-    var appendToResult = function (more) {                                                                    // 851
-      Array.prototype.push.apply(result, more);                                                               // 852
-    };                                                                                                        // 853
-                                                                                                              // 854
-    // Dig deeper: look up the rest of the parts on whatever we've found.                                     // 855
-    // (lookupRest is smart enough to not try to do invalid lookups into                                      // 856
-    // firstLevel if it's an array.)                                                                          // 857
-    appendToResult(lookupRest(firstLevel, arrayIndices));                                                     // 858
-                                                                                                              // 859
-    // If we found an array, then in *addition* to potentially treating the next                              // 860
-    // part as a literal integer lookup, we should also "branch": try to look up                              // 861
-    // the rest of the parts on each array element in parallel.                                               // 862
-    //                                                                                                        // 863
-    // In this case, we *only* dig deeper into array elements that are plain                                  // 864
-    // objects. (Recall that we only got this far if we have further to dig.)                                 // 865
-    // This makes sense: we certainly don't dig deeper into non-indexable                                     // 866
-    // objects. And it would be weird to dig into an array: it's simpler to have                              // 867
-    // a rule that explicit integer indexes only apply to an outer array, not to                              // 868
-    // an array you find after a branching search.                                                            // 869
-    //                                                                                                        // 870
-    // In the special case of a numeric part in a *sort selector* (not a query                                // 871
-    // selector), we skip the branching: we ONLY allow the numeric part to mean                               // 872
-    // "look up this index" in that case, not "also look up this index in all                                 // 873
-    // the elements of the array".                                                                            // 874
-    if (isArray(firstLevel) && !(nextPartIsNumeric && options.forSort)) {                                     // 875
-      _.each(firstLevel, function (branch, arrayIndex) {                                                      // 876
-        if (isPlainObject(branch)) {                                                                          // 877
-          appendToResult(lookupRest(                                                                          // 878
-            branch,                                                                                           // 879
-            arrayIndices.concat(arrayIndex)));                                                                // 880
-        }                                                                                                     // 881
-      });                                                                                                     // 882
-    }                                                                                                         // 883
-                                                                                                              // 884
-    return result;                                                                                            // 885
-  };                                                                                                          // 886
-};                                                                                                            // 887
-MinimongoTest.makeLookupFunction = makeLookupFunction;                                                        // 888
-                                                                                                              // 889
-expandArraysInBranches = function (branches, skipTheArrays) {                                                 // 890
-  var branchesOut = [];                                                                                       // 891
-  _.each(branches, function (branch) {                                                                        // 892
-    var thisIsArray = isArray(branch.value);                                                                  // 893
-    // We include the branch itself, *UNLESS* we it's an array that we're going                               // 894
-    // to iterate and we're told to skip arrays.  (That's right, we include some                              // 895
-    // arrays even skipTheArrays is true: these are arrays that were found via                                // 896
-    // explicit numerical indices.)                                                                           // 897
-    if (!(skipTheArrays && thisIsArray && !branch.dontIterate)) {                                             // 898
-      branchesOut.push({                                                                                      // 899
-        value: branch.value,                                                                                  // 900
-        arrayIndices: branch.arrayIndices                                                                     // 901
-      });                                                                                                     // 902
-    }                                                                                                         // 903
-    if (thisIsArray && !branch.dontIterate) {                                                                 // 904
-      _.each(branch.value, function (leaf, i) {                                                               // 905
-        branchesOut.push({                                                                                    // 906
-          value: leaf,                                                                                        // 907
-          arrayIndices: (branch.arrayIndices || []).concat(i)                                                 // 908
-        });                                                                                                   // 909
-      });                                                                                                     // 910
-    }                                                                                                         // 911
-  });                                                                                                         // 912
-  return branchesOut;                                                                                         // 913
-};                                                                                                            // 914
-                                                                                                              // 915
-var nothingMatcher = function (docOrBranchedValues) {                                                         // 916
-  return {result: false};                                                                                     // 917
-};                                                                                                            // 918
-                                                                                                              // 919
-var everythingMatcher = function (docOrBranchedValues) {                                                      // 920
-  return {result: true};                                                                                      // 921
-};                                                                                                            // 922
-                                                                                                              // 923
-                                                                                                              // 924
-// NB: We are cheating and using this function to implement "AND" for both                                    // 925
-// "document matchers" and "branched matchers". They both return result objects                               // 926
-// but the argument is different: for the former it's a whole doc, whereas for                                // 927
-// the latter it's an array of "branched values".                                                             // 928
-var andSomeMatchers = function (subMatchers) {                                                                // 929
-  if (subMatchers.length === 0)                                                                               // 930
-    return everythingMatcher;                                                                                 // 931
-  if (subMatchers.length === 1)                                                                               // 932
-    return subMatchers[0];                                                                                    // 933
-                                                                                                              // 934
-  return function (docOrBranches) {                                                                           // 935
-    var ret = {};                                                                                             // 936
-    ret.result = _.all(subMatchers, function (f) {                                                            // 937
-      var subResult = f(docOrBranches);                                                                       // 938
-      // Copy a 'distance' number out of the first sub-matcher that has                                       // 939
-      // one. Yes, this means that if there are multiple $near fields in a                                    // 940
-      // query, something arbitrary happens; this appears to be consistent with                               // 941
-      // Mongo.                                                                                               // 942
-      if (subResult.result && subResult.distance !== undefined                                                // 943
-          && ret.distance === undefined) {                                                                    // 944
-        ret.distance = subResult.distance;                                                                    // 945
-      }                                                                                                       // 946
-      // Similarly, propagate arrayIndices from sub-matchers... but to match                                  // 947
-      // MongoDB behavior, this time the *last* sub-matcher with arrayIndices                                 // 948
-      // wins.                                                                                                // 949
-      if (subResult.result && subResult.arrayIndices) {                                                       // 950
-        ret.arrayIndices = subResult.arrayIndices;                                                            // 951
-      }                                                                                                       // 952
-      return subResult.result;                                                                                // 953
-    });                                                                                                       // 954
-                                                                                                              // 955
-    // If we didn't actually match, forget any extra metadata we came up with.                                // 956
-    if (!ret.result) {                                                                                        // 957
-      delete ret.distance;                                                                                    // 958
-      delete ret.arrayIndices;                                                                                // 959
-    }                                                                                                         // 960
-    return ret;                                                                                               // 961
-  };                                                                                                          // 962
-};                                                                                                            // 963
-                                                                                                              // 964
-var andDocumentMatchers = andSomeMatchers;                                                                    // 965
-var andBranchedMatchers = andSomeMatchers;                                                                    // 966
-                                                                                                              // 967
-                                                                                                              // 968
-// helpers used by compiled selector code                                                                     // 969
-LocalCollection._f = {                                                                                        // 970
-  // XXX for _all and _in, consider building 'inquery' at compile time..                                      // 971
-                                                                                                              // 972
-  _type: function (v) {                                                                                       // 973
-    if (typeof v === "number")                                                                                // 974
-      return 1;                                                                                               // 975
-    if (typeof v === "string")                                                                                // 976
-      return 2;                                                                                               // 977
-    if (typeof v === "boolean")                                                                               // 978
-      return 8;                                                                                               // 979
-    if (isArray(v))                                                                                           // 980
-      return 4;                                                                                               // 981
-    if (v === null)                                                                                           // 982
-      return 10;                                                                                              // 983
-    if (v instanceof RegExp)                                                                                  // 984
-      // note that typeof(/x/) === "object"                                                                   // 985
-      return 11;                                                                                              // 986
-    if (typeof v === "function")                                                                              // 987
-      return 13;                                                                                              // 988
-    if (v instanceof Date)                                                                                    // 989
-      return 9;                                                                                               // 990
-    if (EJSON.isBinary(v))                                                                                    // 991
-      return 5;                                                                                               // 992
-    if (v instanceof MongoID.ObjectID)                                                                        // 993
-      return 7;                                                                                               // 994
-    return 3; // object                                                                                       // 995
-                                                                                                              // 996
-    // XXX support some/all of these:                                                                         // 997
-    // 14, symbol                                                                                             // 998
-    // 15, javascript code with scope                                                                         // 999
-    // 16, 18: 32-bit/64-bit integer                                                                          // 1000
-    // 17, timestamp                                                                                          // 1001
-    // 255, minkey                                                                                            // 1002
-    // 127, maxkey                                                                                            // 1003
-  },                                                                                                          // 1004
-                                                                                                              // 1005
-  // deep equality test: use for literal document and array matches                                           // 1006
-  _equal: function (a, b) {                                                                                   // 1007
-    return EJSON.equals(a, b, {keyOrderSensitive: true});                                                     // 1008
-  },                                                                                                          // 1009
-                                                                                                              // 1010
-  // maps a type code to a value that can be used to sort values of                                           // 1011
-  // different types                                                                                          // 1012
-  _typeorder: function (t) {                                                                                  // 1013
-    // http://www.mongodb.org/display/DOCS/What+is+the+Compare+Order+for+BSON+Types                           // 1014
-    // XXX what is the correct sort position for Javascript code?                                             // 1015
-    // ('100' in the matrix below)                                                                            // 1016
-    // XXX minkey/maxkey                                                                                      // 1017
-    return [-1,  // (not a type)                                                                              // 1018
-            1,   // number                                                                                    // 1019
-            2,   // string                                                                                    // 1020
-            3,   // object                                                                                    // 1021
-            4,   // array                                                                                     // 1022
-            5,   // binary                                                                                    // 1023
-            -1,  // deprecated                                                                                // 1024
-            6,   // ObjectID                                                                                  // 1025
-            7,   // bool                                                                                      // 1026
-            8,   // Date                                                                                      // 1027
-            0,   // null                                                                                      // 1028
-            9,   // RegExp                                                                                    // 1029
-            -1,  // deprecated                                                                                // 1030
-            100, // JS code                                                                                   // 1031
-            2,   // deprecated (symbol)                                                                       // 1032
+// At the top level, you may only pass in a plain object or array.                                            // 775
+//                                                                                                            // 776
+// See the test 'minimongo - lookup' for some examples of what lookup functions                               // 777
+// return.                                                                                                    // 778
+makeLookupFunction = function (key, options) {                                                                // 779
+  options = options || {};                                                                                    // 780
+  var parts = key.split('.');                                                                                 // 781
+  var firstPart = parts.length ? parts[0] : '';                                                               // 782
+  var firstPartIsNumeric = isNumericKey(firstPart);                                                           // 783
+  var nextPartIsNumeric = parts.length >= 2 && isNumericKey(parts[1]);                                        // 784
+  var lookupRest;                                                                                             // 785
+  if (parts.length > 1) {                                                                                     // 786
+    lookupRest = makeLookupFunction(parts.slice(1).join('.'));                                                // 787
+  }                                                                                                           // 788
+                                                                                                              // 789
+  var omitUnnecessaryFields = function (retVal) {                                                             // 790
+    if (!retVal.dontIterate)                                                                                  // 791
+      delete retVal.dontIterate;                                                                              // 792
+    if (retVal.arrayIndices && !retVal.arrayIndices.length)                                                   // 793
+      delete retVal.arrayIndices;                                                                             // 794
+    return retVal;                                                                                            // 795
+  };                                                                                                          // 796
+                                                                                                              // 797
+  // Doc will always be a plain object or an array.                                                           // 798
+  // apply an explicit numeric index, an array.                                                               // 799
+  return function (doc, arrayIndices) {                                                                       // 800
+    if (!arrayIndices)                                                                                        // 801
+      arrayIndices = [];                                                                                      // 802
+                                                                                                              // 803
+    if (isArray(doc)) {                                                                                       // 804
+      // If we're being asked to do an invalid lookup into an array (non-integer                              // 805
+      // or out-of-bounds), return no results (which is different from returning                              // 806
+      // a single undefined result, in that `null` equality checks won't match).                              // 807
+      if (!(firstPartIsNumeric && firstPart < doc.length))                                                    // 808
+        return [];                                                                                            // 809
+                                                                                                              // 810
+      // Remember that we used this array index. Include an 'x' to indicate that                              // 811
+      // the previous index came from being considered as an explicit array                                   // 812
+      // index (not branching).                                                                               // 813
+      arrayIndices = arrayIndices.concat(+firstPart, 'x');                                                    // 814
+    }                                                                                                         // 815
+                                                                                                              // 816
+    // Do our first lookup.                                                                                   // 817
+    var firstLevel = doc[firstPart];                                                                          // 818
+                                                                                                              // 819
+    // If there is no deeper to dig, return what we found.                                                    // 820
+    //                                                                                                        // 821
+    // If what we found is an array, most value selectors will choose to treat                                // 822
+    // the elements of the array as matchable values in their own right, but                                  // 823
+    // that's done outside of the lookup function. (Exceptions to this are $size                              // 824
+    // and stuff relating to $elemMatch.  eg, {a: {$size: 2}} does not match {a:                              // 825
+    // [[1, 2]]}.)                                                                                            // 826
+    //                                                                                                        // 827
+    // That said, if we just did an *explicit* array lookup (on doc) to find                                  // 828
+    // firstLevel, and firstLevel is an array too, we do NOT want value                                       // 829
+    // selectors to iterate over it.  eg, {'a.0': 5} does not match {a: [[5]]}.                               // 830
+    // So in that case, we mark the return value as "don't iterate".                                          // 831
+    if (!lookupRest) {                                                                                        // 832
+      return [omitUnnecessaryFields({                                                                         // 833
+        value: firstLevel,                                                                                    // 834
+        dontIterate: isArray(doc) && isArray(firstLevel),                                                     // 835
+        arrayIndices: arrayIndices})];                                                                        // 836
+    }                                                                                                         // 837
+                                                                                                              // 838
+    // We need to dig deeper.  But if we can't, because what we've found is not                               // 839
+    // an array or plain object, we're done. If we just did a numeric index into                              // 840
+    // an array, we return nothing here (this is a change in Mongo 2.5 from                                   // 841
+    // Mongo 2.4, where {'a.0.b': null} stopped matching {a: [5]}). Otherwise,                                // 842
+    // return a single `undefined` (which can, for example, match via equality                                // 843
+    // with `null`).                                                                                          // 844
+    if (!isIndexable(firstLevel)) {                                                                           // 845
+      if (isArray(doc))                                                                                       // 846
+        return [];                                                                                            // 847
+      return [omitUnnecessaryFields({value: undefined,                                                        // 848
+                                      arrayIndices: arrayIndices})];                                          // 849
+    }                                                                                                         // 850
+                                                                                                              // 851
+    var result = [];                                                                                          // 852
+    var appendToResult = function (more) {                                                                    // 853
+      Array.prototype.push.apply(result, more);                                                               // 854
+    };                                                                                                        // 855
+                                                                                                              // 856
+    // Dig deeper: look up the rest of the parts on whatever we've found.                                     // 857
+    // (lookupRest is smart enough to not try to do invalid lookups into                                      // 858
+    // firstLevel if it's an array.)                                                                          // 859
+    appendToResult(lookupRest(firstLevel, arrayIndices));                                                     // 860
+                                                                                                              // 861
+    // If we found an array, then in *addition* to potentially treating the next                              // 862
+    // part as a literal integer lookup, we should also "branch": try to look up                              // 863
+    // the rest of the parts on each array element in parallel.                                               // 864
+    //                                                                                                        // 865
+    // In this case, we *only* dig deeper into array elements that are plain                                  // 866
+    // objects. (Recall that we only got this far if we have further to dig.)                                 // 867
+    // This makes sense: we certainly don't dig deeper into non-indexable                                     // 868
+    // objects. And it would be weird to dig into an array: it's simpler to have                              // 869
+    // a rule that explicit integer indexes only apply to an outer array, not to                              // 870
+    // an array you find after a branching search.                                                            // 871
+    //                                                                                                        // 872
+    // In the special case of a numeric part in a *sort selector* (not a query                                // 873
+    // selector), we skip the branching: we ONLY allow the numeric part to mean                               // 874
+    // "look up this index" in that case, not "also look up this index in all                                 // 875
+    // the elements of the array".                                                                            // 876
+    if (isArray(firstLevel) && !(nextPartIsNumeric && options.forSort)) {                                     // 877
+      _.each(firstLevel, function (branch, arrayIndex) {                                                      // 878
+        if (isPlainObject(branch)) {                                                                          // 879
+          appendToResult(lookupRest(                                                                          // 880
+            branch,                                                                                           // 881
+            arrayIndices.concat(arrayIndex)));                                                                // 882
+        }                                                                                                     // 883
+      });                                                                                                     // 884
+    }                                                                                                         // 885
+                                                                                                              // 886
+    return result;                                                                                            // 887
+  };                                                                                                          // 888
+};                                                                                                            // 889
+MinimongoTest.makeLookupFunction = makeLookupFunction;                                                        // 890
+                                                                                                              // 891
+expandArraysInBranches = function (branches, skipTheArrays) {                                                 // 892
+  var branchesOut = [];                                                                                       // 893
+  _.each(branches, function (branch) {                                                                        // 894
+    var thisIsArray = isArray(branch.value);                                                                  // 895
+    // We include the branch itself, *UNLESS* we it's an array that we're going                               // 896
+    // to iterate and we're told to skip arrays.  (That's right, we include some                              // 897
+    // arrays even skipTheArrays is true: these are arrays that were found via                                // 898
+    // explicit numerical indices.)                                                                           // 899
+    if (!(skipTheArrays && thisIsArray && !branch.dontIterate)) {                                             // 900
+      branchesOut.push({                                                                                      // 901
+        value: branch.value,                                                                                  // 902
+        arrayIndices: branch.arrayIndices                                                                     // 903
+      });                                                                                                     // 904
+    }                                                                                                         // 905
+    if (thisIsArray && !branch.dontIterate) {                                                                 // 906
+      _.each(branch.value, function (leaf, i) {                                                               // 907
+        branchesOut.push({                                                                                    // 908
+          value: leaf,                                                                                        // 909
+          arrayIndices: (branch.arrayIndices || []).concat(i)                                                 // 910
+        });                                                                                                   // 911
+      });                                                                                                     // 912
+    }                                                                                                         // 913
+  });                                                                                                         // 914
+  return branchesOut;                                                                                         // 915
+};                                                                                                            // 916
+                                                                                                              // 917
+var nothingMatcher = function (docOrBranchedValues) {                                                         // 918
+  return {result: false};                                                                                     // 919
+};                                                                                                            // 920
+                                                                                                              // 921
+var everythingMatcher = function (docOrBranchedValues) {                                                      // 922
+  return {result: true};                                                                                      // 923
+};                                                                                                            // 924
+                                                                                                              // 925
+                                                                                                              // 926
+// NB: We are cheating and using this function to implement "AND" for both                                    // 927
+// "document matchers" and "branched matchers". They both return result objects                               // 928
+// but the argument is different: for the former it's a whole doc, whereas for                                // 929
+// the latter it's an array of "branched values".                                                             // 930
+var andSomeMatchers = function (subMatchers) {                                                                // 931
+  if (subMatchers.length === 0)                                                                               // 932
+    return everythingMatcher;                                                                                 // 933
+  if (subMatchers.length === 1)                                                                               // 934
+    return subMatchers[0];                                                                                    // 935
+                                                                                                              // 936
+  return function (docOrBranches) {                                                                           // 937
+    var ret = {};                                                                                             // 938
+    ret.result = _.all(subMatchers, function (f) {                                                            // 939
+      var subResult = f(docOrBranches);                                                                       // 940
+      // Copy a 'distance' number out of the first sub-matcher that has                                       // 941
+      // one. Yes, this means that if there are multiple $near fields in a                                    // 942
+      // query, something arbitrary happens; this appears to be consistent with                               // 943
+      // Mongo.                                                                                               // 944
+      if (subResult.result && subResult.distance !== undefined                                                // 945
+          && ret.distance === undefined) {                                                                    // 946
+        ret.distance = subResult.distance;                                                                    // 947
+      }                                                                                                       // 948
+      // Similarly, propagate arrayIndices from sub-matchers... but to match                                  // 949
+      // MongoDB behavior, this time the *last* sub-matcher with arrayIndices                                 // 950
+      // wins.                                                                                                // 951
+      if (subResult.result && subResult.arrayIndices) {                                                       // 952
+        ret.arrayIndices = subResult.arrayIndices;                                                            // 953
+      }                                                                                                       // 954
+      return subResult.result;                                                                                // 955
+    });                                                                                                       // 956
+                                                                                                              // 957
+    // If we didn't actually match, forget any extra metadata we came up with.                                // 958
+    if (!ret.result) {                                                                                        // 959
+      delete ret.distance;                                                                                    // 960
+      delete ret.arrayIndices;                                                                                // 961
+    }                                                                                                         // 962
+    return ret;                                                                                               // 963
+  };                                                                                                          // 964
+};                                                                                                            // 965
+                                                                                                              // 966
+var andDocumentMatchers = andSomeMatchers;                                                                    // 967
+var andBranchedMatchers = andSomeMatchers;                                                                    // 968
+                                                                                                              // 969
+                                                                                                              // 970
+// helpers used by compiled selector code                                                                     // 971
+LocalCollection._f = {                                                                                        // 972
+  // XXX for _all and _in, consider building 'inquery' at compile time..                                      // 973
+                                                                                                              // 974
+  _type: function (v) {                                                                                       // 975
+    if (typeof v === "number")                                                                                // 976
+      return 1;                                                                                               // 977
+    if (typeof v === "string")                                                                                // 978
+      return 2;                                                                                               // 979
+    if (typeof v === "boolean")                                                                               // 980
+      return 8;                                                                                               // 981
+    if (isArray(v))                                                                                           // 982
+      return 4;                                                                                               // 983
+    if (v === null)                                                                                           // 984
+      return 10;                                                                                              // 985
+    if (v instanceof RegExp)                                                                                  // 986
+      // note that typeof(/x/) === "object"                                                                   // 987
+      return 11;                                                                                              // 988
+    if (typeof v === "function")                                                                              // 989
+      return 13;                                                                                              // 990
+    if (v instanceof Date)                                                                                    // 991
+      return 9;                                                                                               // 992
+    if (EJSON.isBinary(v))                                                                                    // 993
+      return 5;                                                                                               // 994
+    if (v instanceof MongoID.ObjectID)                                                                        // 995
+      return 7;                                                                                               // 996
+    return 3; // object                                                                                       // 997
+                                                                                                              // 998
+    // XXX support some/all of these:                                                                         // 999
+    // 14, symbol                                                                                             // 1000
+    // 15, javascript code with scope                                                                         // 1001
+    // 16, 18: 32-bit/64-bit integer                                                                          // 1002
+    // 17, timestamp                                                                                          // 1003
+    // 255, minkey                                                                                            // 1004
+    // 127, maxkey                                                                                            // 1005
+  },                                                                                                          // 1006
+                                                                                                              // 1007
+  // deep equality test: use for literal document and array matches                                           // 1008
+  _equal: function (a, b) {                                                                                   // 1009
+    return EJSON.equals(a, b, {keyOrderSensitive: true});                                                     // 1010
+  },                                                                                                          // 1011
+                                                                                                              // 1012
+  // maps a type code to a value that can be used to sort values of                                           // 1013
+  // different types                                                                                          // 1014
+  _typeorder: function (t) {                                                                                  // 1015
+    // http://www.mongodb.org/display/DOCS/What+is+the+Compare+Order+for+BSON+Types                           // 1016
+    // XXX what is the correct sort position for Javascript code?                                             // 1017
+    // ('100' in the matrix below)                                                                            // 1018
+    // XXX minkey/maxkey                                                                                      // 1019
+    return [-1,  // (not a type)                                                                              // 1020
+            1,   // number                                                                                    // 1021
+            2,   // string                                                                                    // 1022
+            3,   // object                                                                                    // 1023
+            4,   // array                                                                                     // 1024
+            5,   // binary                                                                                    // 1025
+            -1,  // deprecated                                                                                // 1026
+            6,   // ObjectID                                                                                  // 1027
+            7,   // bool                                                                                      // 1028
+            8,   // Date                                                                                      // 1029
+            0,   // null                                                                                      // 1030
+            9,   // RegExp                                                                                    // 1031
+            -1,  // deprecated                                                                                // 1032
             100, // JS code                                                                                   // 1033
-            1,   // 32-bit int                                                                                // 1034
-            8,   // Mongo timestamp                                                                           // 1035
-            1    // 64-bit int                                                                                // 1036
-           ][t];                                                                                              // 1037
-  },                                                                                                          // 1038
-                                                                                                              // 1039
-  // compare two values of unknown type according to BSON ordering                                            // 1040
-  // semantics. (as an extension, consider 'undefined' to be less than                                        // 1041
-  // any other value.) return negative if a is less, positive if b is                                         // 1042
-  // less, or 0 if equal                                                                                      // 1043
-  _cmp: function (a, b) {                                                                                     // 1044
-    if (a === undefined)                                                                                      // 1045
-      return b === undefined ? 0 : -1;                                                                        // 1046
-    if (b === undefined)                                                                                      // 1047
-      return 1;                                                                                               // 1048
-    var ta = LocalCollection._f._type(a);                                                                     // 1049
-    var tb = LocalCollection._f._type(b);                                                                     // 1050
-    var oa = LocalCollection._f._typeorder(ta);                                                               // 1051
-    var ob = LocalCollection._f._typeorder(tb);                                                               // 1052
-    if (oa !== ob)                                                                                            // 1053
-      return oa < ob ? -1 : 1;                                                                                // 1054
-    if (ta !== tb)                                                                                            // 1055
-      // XXX need to implement this if we implement Symbol or integers, or                                    // 1056
-      // Timestamp                                                                                            // 1057
-      throw Error("Missing type coercion logic in _cmp");                                                     // 1058
-    if (ta === 7) { // ObjectID                                                                               // 1059
-      // Convert to string.                                                                                   // 1060
-      ta = tb = 2;                                                                                            // 1061
-      a = a.toHexString();                                                                                    // 1062
-      b = b.toHexString();                                                                                    // 1063
-    }                                                                                                         // 1064
-    if (ta === 9) { // Date                                                                                   // 1065
-      // Convert to millis.                                                                                   // 1066
-      ta = tb = 1;                                                                                            // 1067
-      a = a.getTime();                                                                                        // 1068
-      b = b.getTime();                                                                                        // 1069
-    }                                                                                                         // 1070
-                                                                                                              // 1071
-    if (ta === 1) // double                                                                                   // 1072
-      return a - b;                                                                                           // 1073
-    if (tb === 2) // string                                                                                   // 1074
-      return a < b ? -1 : (a === b ? 0 : 1);                                                                  // 1075
-    if (ta === 3) { // Object                                                                                 // 1076
-      // this could be much more efficient in the expected case ...                                           // 1077
-      var to_array = function (obj) {                                                                         // 1078
-        var ret = [];                                                                                         // 1079
-        for (var key in obj) {                                                                                // 1080
-          ret.push(key);                                                                                      // 1081
-          ret.push(obj[key]);                                                                                 // 1082
-        }                                                                                                     // 1083
-        return ret;                                                                                           // 1084
-      };                                                                                                      // 1085
-      return LocalCollection._f._cmp(to_array(a), to_array(b));                                               // 1086
-    }                                                                                                         // 1087
-    if (ta === 4) { // Array                                                                                  // 1088
-      for (var i = 0; ; i++) {                                                                                // 1089
-        if (i === a.length)                                                                                   // 1090
-          return (i === b.length) ? 0 : -1;                                                                   // 1091
-        if (i === b.length)                                                                                   // 1092
-          return 1;                                                                                           // 1093
-        var s = LocalCollection._f._cmp(a[i], b[i]);                                                          // 1094
-        if (s !== 0)                                                                                          // 1095
-          return s;                                                                                           // 1096
-      }                                                                                                       // 1097
-    }                                                                                                         // 1098
-    if (ta === 5) { // binary                                                                                 // 1099
-      // Surprisingly, a small binary blob is always less than a large one in                                 // 1100
-      // Mongo.                                                                                               // 1101
-      if (a.length !== b.length)                                                                              // 1102
-        return a.length - b.length;                                                                           // 1103
-      for (i = 0; i < a.length; i++) {                                                                        // 1104
-        if (a[i] < b[i])                                                                                      // 1105
-          return -1;                                                                                          // 1106
-        if (a[i] > b[i])                                                                                      // 1107
-          return 1;                                                                                           // 1108
-      }                                                                                                       // 1109
-      return 0;                                                                                               // 1110
-    }                                                                                                         // 1111
-    if (ta === 8) { // boolean                                                                                // 1112
-      if (a) return b ? 0 : 1;                                                                                // 1113
-      return b ? -1 : 0;                                                                                      // 1114
-    }                                                                                                         // 1115
-    if (ta === 10) // null                                                                                    // 1116
-      return 0;                                                                                               // 1117
-    if (ta === 11) // regexp                                                                                  // 1118
-      throw Error("Sorting not supported on regular expression"); // XXX                                      // 1119
-    // 13: javascript code                                                                                    // 1120
-    // 14: symbol                                                                                             // 1121
-    // 15: javascript code with scope                                                                         // 1122
-    // 16: 32-bit integer                                                                                     // 1123
-    // 17: timestamp                                                                                          // 1124
-    // 18: 64-bit integer                                                                                     // 1125
-    // 255: minkey                                                                                            // 1126
-    // 127: maxkey                                                                                            // 1127
-    if (ta === 13) // javascript code                                                                         // 1128
-      throw Error("Sorting not supported on Javascript code"); // XXX                                         // 1129
-    throw Error("Unknown type to sort");                                                                      // 1130
-  }                                                                                                           // 1131
-};                                                                                                            // 1132
-                                                                                                              // 1133
-// Oddball function used by upsert.                                                                           // 1134
-LocalCollection._removeDollarOperators = function (selector) {                                                // 1135
-  var selectorDoc = {};                                                                                       // 1136
-  for (var k in selector)                                                                                     // 1137
-    if (k.substr(0, 1) !== '$')                                                                               // 1138
-      selectorDoc[k] = selector[k];                                                                           // 1139
-  return selectorDoc;                                                                                         // 1140
-};                                                                                                            // 1141
-                                                                                                              // 1142
+            2,   // deprecated (symbol)                                                                       // 1034
+            100, // JS code                                                                                   // 1035
+            1,   // 32-bit int                                                                                // 1036
+            8,   // Mongo timestamp                                                                           // 1037
+            1    // 64-bit int                                                                                // 1038
+           ][t];                                                                                              // 1039
+  },                                                                                                          // 1040
+                                                                                                              // 1041
+  // compare two values of unknown type according to BSON ordering                                            // 1042
+  // semantics. (as an extension, consider 'undefined' to be less than                                        // 1043
+  // any other value.) return negative if a is less, positive if b is                                         // 1044
+  // less, or 0 if equal                                                                                      // 1045
+  _cmp: function (a, b) {                                                                                     // 1046
+    if (a === undefined)                                                                                      // 1047
+      return b === undefined ? 0 : -1;                                                                        // 1048
+    if (b === undefined)                                                                                      // 1049
+      return 1;                                                                                               // 1050
+    var ta = LocalCollection._f._type(a);                                                                     // 1051
+    var tb = LocalCollection._f._type(b);                                                                     // 1052
+    var oa = LocalCollection._f._typeorder(ta);                                                               // 1053
+    var ob = LocalCollection._f._typeorder(tb);                                                               // 1054
+    if (oa !== ob)                                                                                            // 1055
+      return oa < ob ? -1 : 1;                                                                                // 1056
+    if (ta !== tb)                                                                                            // 1057
+      // XXX need to implement this if we implement Symbol or integers, or                                    // 1058
+      // Timestamp                                                                                            // 1059
+      throw Error("Missing type coercion logic in _cmp");                                                     // 1060
+    if (ta === 7) { // ObjectID                                                                               // 1061
+      // Convert to string.                                                                                   // 1062
+      ta = tb = 2;                                                                                            // 1063
+      a = a.toHexString();                                                                                    // 1064
+      b = b.toHexString();                                                                                    // 1065
+    }                                                                                                         // 1066
+    if (ta === 9) { // Date                                                                                   // 1067
+      // Convert to millis.                                                                                   // 1068
+      ta = tb = 1;                                                                                            // 1069
+      a = a.getTime();                                                                                        // 1070
+      b = b.getTime();                                                                                        // 1071
+    }                                                                                                         // 1072
+                                                                                                              // 1073
+    if (ta === 1) // double                                                                                   // 1074
+      return a - b;                                                                                           // 1075
+    if (tb === 2) // string                                                                                   // 1076
+      return a < b ? -1 : (a === b ? 0 : 1);                                                                  // 1077
+    if (ta === 3) { // Object                                                                                 // 1078
+      // this could be much more efficient in the expected case ...                                           // 1079
+      var to_array = function (obj) {                                                                         // 1080
+        var ret = [];                                                                                         // 1081
+        for (var key in obj) {                                                                                // 1082
+          ret.push(key);                                                                                      // 1083
+          ret.push(obj[key]);                                                                                 // 1084
+        }                                                                                                     // 1085
+        return ret;                                                                                           // 1086
+      };                                                                                                      // 1087
+      return LocalCollection._f._cmp(to_array(a), to_array(b));                                               // 1088
+    }                                                                                                         // 1089
+    if (ta === 4) { // Array                                                                                  // 1090
+      for (var i = 0; ; i++) {                                                                                // 1091
+        if (i === a.length)                                                                                   // 1092
+          return (i === b.length) ? 0 : -1;                                                                   // 1093
+        if (i === b.length)                                                                                   // 1094
+          return 1;                                                                                           // 1095
+        var s = LocalCollection._f._cmp(a[i], b[i]);                                                          // 1096
+        if (s !== 0)                                                                                          // 1097
+          return s;                                                                                           // 1098
+      }                                                                                                       // 1099
+    }                                                                                                         // 1100
+    if (ta === 5) { // binary                                                                                 // 1101
+      // Surprisingly, a small binary blob is always less than a large one in                                 // 1102
+      // Mongo.                                                                                               // 1103
+      if (a.length !== b.length)                                                                              // 1104
+        return a.length - b.length;                                                                           // 1105
+      for (i = 0; i < a.length; i++) {                                                                        // 1106
+        if (a[i] < b[i])                                                                                      // 1107
+          return -1;                                                                                          // 1108
+        if (a[i] > b[i])                                                                                      // 1109
+          return 1;                                                                                           // 1110
+      }                                                                                                       // 1111
+      return 0;                                                                                               // 1112
+    }                                                                                                         // 1113
+    if (ta === 8) { // boolean                                                                                // 1114
+      if (a) return b ? 0 : 1;                                                                                // 1115
+      return b ? -1 : 0;                                                                                      // 1116
+    }                                                                                                         // 1117
+    if (ta === 10) // null                                                                                    // 1118
+      return 0;                                                                                               // 1119
+    if (ta === 11) // regexp                                                                                  // 1120
+      throw Error("Sorting not supported on regular expression"); // XXX                                      // 1121
+    // 13: javascript code                                                                                    // 1122
+    // 14: symbol                                                                                             // 1123
+    // 15: javascript code with scope                                                                         // 1124
+    // 16: 32-bit integer                                                                                     // 1125
+    // 17: timestamp                                                                                          // 1126
+    // 18: 64-bit integer                                                                                     // 1127
+    // 255: minkey                                                                                            // 1128
+    // 127: maxkey                                                                                            // 1129
+    if (ta === 13) // javascript code                                                                         // 1130
+      throw Error("Sorting not supported on Javascript code"); // XXX                                         // 1131
+    throw Error("Unknown type to sort");                                                                      // 1132
+  }                                                                                                           // 1133
+};                                                                                                            // 1134
+                                                                                                              // 1135
+// Oddball function used by upsert.                                                                           // 1136
+LocalCollection._removeDollarOperators = function (selector) {                                                // 1137
+  var selectorDoc = {};                                                                                       // 1138
+  for (var k in selector)                                                                                     // 1139
+    if (k.substr(0, 1) !== '$')                                                                               // 1140
+      selectorDoc[k] = selector[k];                                                                           // 1141
+  return selectorDoc;                                                                                         // 1142
+};                                                                                                            // 1143
+                                                                                                              // 1144
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 }).call(this);
@@ -3109,7 +3133,7 @@ LocalCollection._modify = function (doc, mod, options) {                        
           throw MinimongoError("An empty update path is not valid.");                                         // 49
         }                                                                                                     // 50
                                                                                                               // 51
-        if (keypath === '_id') {                                                                              // 52
+        if (keypath === '_id' && op !== '$setOnInsert') {                                                     // 52
           throw MinimongoError("Mod on _id not allowed");                                                     // 53
         }                                                                                                     // 54
                                                                                                               // 55

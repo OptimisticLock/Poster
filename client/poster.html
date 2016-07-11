@@ -7,8 +7,9 @@
 
 <body>
     <div class="container">
-        {{> header }}
-        {{> posts }}
+        {{>map }}
+        {{>header}}
+        {{>posts}}
     </div>
 </body>
 
@@ -46,4 +47,13 @@
 <template name="mySummerNote">
     <div id="summernote"></div>
     <button id="post" type="button" class="btn btn-info">Post</button>
+</template>
+
+<template name="map">
+    <div id="map">
+        Map goes here!
+        <div class="map-container">
+            {{> googleMap name="exampleMap" options=exampleMapOptions}}
+        </div>
+    </div>
 </template>

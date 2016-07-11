@@ -39,8 +39,8 @@ function greet(welcomeMsg) {                                                    
   return function (user, url) {                                                                                        // 2
     var greeting = user.profile && user.profile.name ? "Hello " + user.profile.name + "," : "Hello,";                  // 3
     return greeting + "\n\n" + welcomeMsg + ", simply click the link below.\n\n" + url + "\n\nThanks.\n";              // 5
-  };                                                                                                                   //
-}                                                                                                                      //
+  };                                                                                                                   // 13
+}                                                                                                                      // 14
                                                                                                                        //
 /**                                                                                                                    //
  * @summary Options to customize emails sent from the Accounts system.                                                 //
@@ -52,43 +52,27 @@ Accounts.emailTemplates = {                                                     
   siteName: Meteor.absoluteUrl().replace(/^https?:\/\//, '').replace(/\/$/, ''),                                       // 23
                                                                                                                        //
   resetPassword: {                                                                                                     // 25
-    subject: function () {                                                                                             // 26
-      function subject(user) {                                                                                         // 26
-        return "How to reset your password on " + Accounts.emailTemplates.siteName;                                    // 27
-      }                                                                                                                //
-                                                                                                                       //
-      return subject;                                                                                                  //
-    }(),                                                                                                               //
-    text: function () {                                                                                                // 29
-      function text(user, url) {                                                                                       // 29
-        var greeting = user.profile && user.profile.name ? "Hello " + user.profile.name + "," : "Hello,";              // 30
-        return greeting + "\n\nTo reset your password, simply click the link below.\n\n" + url + "\n\nThanks.\n";      // 32
-      }                                                                                                                //
-                                                                                                                       //
-      return text;                                                                                                     //
-    }()                                                                                                                //
-  },                                                                                                                   //
+    subject: function subject(user) {                                                                                  // 26
+      return "How to reset your password on " + Accounts.emailTemplates.siteName;                                      // 27
+    },                                                                                                                 // 28
+    text: function text(user, url) {                                                                                   // 29
+      var greeting = user.profile && user.profile.name ? "Hello " + user.profile.name + "," : "Hello,";                // 30
+      return greeting + "\n\nTo reset your password, simply click the link below.\n\n" + url + "\n\nThanks.\n";        // 32
+    }                                                                                                                  // 40
+  },                                                                                                                   // 25
   verifyEmail: {                                                                                                       // 42
-    subject: function () {                                                                                             // 43
-      function subject(user) {                                                                                         // 43
-        return "How to verify email address on " + Accounts.emailTemplates.siteName;                                   // 44
-      }                                                                                                                //
-                                                                                                                       //
-      return subject;                                                                                                  //
-    }(),                                                                                                               //
+    subject: function subject(user) {                                                                                  // 43
+      return "How to verify email address on " + Accounts.emailTemplates.siteName;                                     // 44
+    },                                                                                                                 // 45
     text: greet("To verify your account email")                                                                        // 46
-  },                                                                                                                   //
+  },                                                                                                                   // 42
   enrollAccount: {                                                                                                     // 48
-    subject: function () {                                                                                             // 49
-      function subject(user) {                                                                                         // 49
-        return "An account has been created for you on " + Accounts.emailTemplates.siteName;                           // 50
-      }                                                                                                                //
-                                                                                                                       //
-      return subject;                                                                                                  //
-    }(),                                                                                                               //
+    subject: function subject(user) {                                                                                  // 49
+      return "An account has been created for you on " + Accounts.emailTemplates.siteName;                             // 50
+    },                                                                                                                 // 51
     text: greet("To start using the service")                                                                          // 52
-  }                                                                                                                    //
-};                                                                                                                     //
+  }                                                                                                                    // 48
+};                                                                                                                     // 21
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 },"password_server.js":["babel-runtime/helpers/typeof",function(require){
@@ -138,15 +122,15 @@ Accounts._bcryptRounds = 10;                                                    
 var getPasswordString = function getPasswordString(password) {                                                         // 32
   if (typeof password === "string") {                                                                                  // 33
     password = SHA256(password);                                                                                       // 34
-  } else {                                                                                                             //
+  } else {                                                                                                             // 35
     // 'password' is an object                                                                                         //
     if (password.algorithm !== "sha-256") {                                                                            // 36
       throw new Error("Invalid password hash algorithm. " + "Only 'sha-256' is allowed.");                             // 37
-    }                                                                                                                  //
+    }                                                                                                                  // 39
     password = password.digest;                                                                                        // 40
-  }                                                                                                                    //
+  }                                                                                                                    // 41
   return password;                                                                                                     // 42
-};                                                                                                                     //
+};                                                                                                                     // 43
                                                                                                                        //
 // Use bcrypt to hash the password for storage in the database.                                                        //
 // `password` can be a string (in which case it will be run through                                                    //
@@ -156,7 +140,7 @@ var getPasswordString = function getPasswordString(password) {                  
 var hashPassword = function hashPassword(password) {                                                                   // 50
   password = getPasswordString(password);                                                                              // 51
   return bcryptHash(password, Accounts._bcryptRounds);                                                                 // 52
-};                                                                                                                     //
+};                                                                                                                     // 53
                                                                                                                        //
 // Check whether the provided password matches the bcrypt'ed password in                                               //
 // the database user record. `password` can be a string (in which case                                                 //
@@ -167,16 +151,16 @@ var hashPassword = function hashPassword(password) {                            
 Accounts._checkPassword = function (user, password) {                                                                  // 61
   var result = {                                                                                                       // 62
     userId: user._id                                                                                                   // 63
-  };                                                                                                                   //
+  };                                                                                                                   // 62
                                                                                                                        //
   password = getPasswordString(password);                                                                              // 66
                                                                                                                        //
   if (!bcryptCompare(password, user.services.password.bcrypt)) {                                                       // 68
     result.error = new Meteor.Error(403, "Incorrect password");                                                        // 69
-  }                                                                                                                    //
+  }                                                                                                                    // 70
                                                                                                                        //
   return result;                                                                                                       // 72
-};                                                                                                                     //
+};                                                                                                                     // 73
 var checkPassword = Accounts._checkPassword;                                                                           // 74
                                                                                                                        //
 ///                                                                                                                    //
@@ -188,34 +172,34 @@ Accounts._findUserByQuery = function (query) {                                  
                                                                                                                        //
   if (query.id) {                                                                                                      // 83
     user = Meteor.users.findOne({ _id: query.id });                                                                    // 84
-  } else {                                                                                                             //
+  } else {                                                                                                             // 85
     var fieldName;                                                                                                     // 86
     var fieldValue;                                                                                                    // 87
     if (query.username) {                                                                                              // 88
       fieldName = 'username';                                                                                          // 89
       fieldValue = query.username;                                                                                     // 90
-    } else if (query.email) {                                                                                          //
+    } else if (query.email) {                                                                                          // 91
       fieldName = 'emails.address';                                                                                    // 92
       fieldValue = query.email;                                                                                        // 93
-    } else {                                                                                                           //
+    } else {                                                                                                           // 94
       throw new Error("shouldn't happen (validation missed something)");                                               // 95
-    }                                                                                                                  //
+    }                                                                                                                  // 96
     var selector = {};                                                                                                 // 97
     selector[fieldName] = fieldValue;                                                                                  // 98
     user = Meteor.users.findOne(selector);                                                                             // 99
     // If user is not found, try a case insensitive lookup                                                             //
-    if (!user) {                                                                                                       // 85
+    if (!user) {                                                                                                       // 101
       selector = selectorForFastCaseInsensitiveLookup(fieldName, fieldValue);                                          // 102
       var candidateUsers = Meteor.users.find(selector).fetch();                                                        // 103
       // No match if multiple candidates are found                                                                     //
-      if (candidateUsers.length === 1) {                                                                               // 101
+      if (candidateUsers.length === 1) {                                                                               // 105
         user = candidateUsers[0];                                                                                      // 106
-      }                                                                                                                //
-    }                                                                                                                  //
-  }                                                                                                                    //
+      }                                                                                                                // 107
+    }                                                                                                                  // 108
+  }                                                                                                                    // 109
                                                                                                                        //
   return user;                                                                                                         // 111
-};                                                                                                                     //
+};                                                                                                                     // 112
                                                                                                                        //
 /**                                                                                                                    //
  * @summary Finds the user with the specified username.                                                                //
@@ -230,8 +214,8 @@ Accounts._findUserByQuery = function (query) {                                  
 Accounts.findUserByUsername = function (username) {                                                                    // 124
   return Accounts._findUserByQuery({                                                                                   // 125
     username: username                                                                                                 // 126
-  });                                                                                                                  //
-};                                                                                                                     //
+  });                                                                                                                  // 125
+};                                                                                                                     // 128
                                                                                                                        //
 /**                                                                                                                    //
  * @summary Finds the user with the specified email.                                                                   //
@@ -246,8 +230,8 @@ Accounts.findUserByUsername = function (username) {                             
 Accounts.findUserByEmail = function (email) {                                                                          // 140
   return Accounts._findUserByQuery({                                                                                   // 141
     email: email                                                                                                       // 142
-  });                                                                                                                  //
-};                                                                                                                     //
+  });                                                                                                                  // 141
+};                                                                                                                     // 144
                                                                                                                        //
 // Generates a MongoDB selector that can be used to perform a fast case                                                //
 // insensitive lookup for the given fieldName and string. Since MongoDB does                                           //
@@ -265,11 +249,11 @@ var selectorForFastCaseInsensitiveLookup = function selectorForFastCaseInsensiti
     var selector = {};                                                                                                 // 160
     selector[fieldName] = new RegExp('^' + Meteor._escapeRegExp(prefixPermutation));                                   // 161
     return selector;                                                                                                   // 163
-  });                                                                                                                  //
+  });                                                                                                                  // 164
   var caseInsensitiveClause = {};                                                                                      // 165
   caseInsensitiveClause[fieldName] = new RegExp('^' + Meteor._escapeRegExp(string) + '$', 'i');                        // 166
   return { $and: [{ $or: orClause }, caseInsensitiveClause] };                                                         // 168
-};                                                                                                                     //
+};                                                                                                                     // 169
                                                                                                                        //
 // Generates permutations of all case variations of a given string.                                                    //
 var generateCasePermutationsForString = function generateCasePermutationsForString(string) {                           // 172
@@ -280,15 +264,15 @@ var generateCasePermutationsForString = function generateCasePermutationsForStri
       var lowerCaseChar = ch.toLowerCase();                                                                            // 177
       var upperCaseChar = ch.toUpperCase();                                                                            // 178
       // Don't add unneccesary permutations when ch is not a letter                                                    //
-      if (lowerCaseChar === upperCaseChar) {                                                                           // 176
+      if (lowerCaseChar === upperCaseChar) {                                                                           // 180
         return [prefix + ch];                                                                                          // 181
-      } else {                                                                                                         //
+      } else {                                                                                                         // 182
         return [prefix + lowerCaseChar, prefix + upperCaseChar];                                                       // 183
-      }                                                                                                                //
-    }));                                                                                                               //
-  }                                                                                                                    //
+      }                                                                                                                // 184
+    }));                                                                                                               // 185
+  }                                                                                                                    // 186
   return permutations;                                                                                                 // 187
-};                                                                                                                     //
+};                                                                                                                     // 188
                                                                                                                        //
 var checkForCaseInsensitiveDuplicates = function checkForCaseInsensitiveDuplicates(fieldName, displayName, fieldValue, ownUserId) {
   // Some tests need the ability to add users with the same case insensitive                                           //
@@ -305,25 +289,25 @@ var checkForCaseInsensitiveDuplicates = function checkForCaseInsensitiveDuplicat
     // that is not us                                                                                                  //
     matchedUsers.length > 1 || matchedUsers[0]._id !== ownUserId)) {                                                   // 204
       throw new Meteor.Error(403, displayName + " already exists.");                                                   // 205
-    }                                                                                                                  //
-  }                                                                                                                    //
-};                                                                                                                     //
+    }                                                                                                                  // 206
+  }                                                                                                                    // 207
+};                                                                                                                     // 208
                                                                                                                        //
 // XXX maybe this belongs in the check package                                                                         //
 var NonEmptyString = Match.Where(function (x) {                                                                        // 211
   check(x, String);                                                                                                    // 212
   return x.length > 0;                                                                                                 // 213
-});                                                                                                                    //
+});                                                                                                                    // 214
                                                                                                                        //
 var userQueryValidator = Match.Where(function (user) {                                                                 // 216
   check(user, {                                                                                                        // 217
     id: Match.Optional(NonEmptyString),                                                                                // 218
     username: Match.Optional(NonEmptyString),                                                                          // 219
     email: Match.Optional(NonEmptyString)                                                                              // 220
-  });                                                                                                                  //
+  });                                                                                                                  // 217
   if (_.keys(user).length !== 1) throw new Match.Error("User property must have exactly one field");                   // 222
   return true;                                                                                                         // 224
-});                                                                                                                    //
+});                                                                                                                    // 225
                                                                                                                        //
 var passwordValidator = Match.OneOf(String, { digest: String, algorithm: String });                                    // 227
                                                                                                                        //
@@ -344,10 +328,10 @@ var passwordValidator = Match.OneOf(String, { digest: String, algorithm: String 
 Accounts.registerLoginHandler("password", function (options) {                                                         // 246
   if (!options.password || options.srp) return undefined; // don't handle                                              // 247
                                                                                                                        //
-  check(options, {                                                                                                     // 246
+  check(options, {                                                                                                     // 250
     user: userQueryValidator,                                                                                          // 251
     password: passwordValidator                                                                                        // 252
-  });                                                                                                                  //
+  });                                                                                                                  // 250
                                                                                                                        //
   var user = Accounts._findUserByQuery(options.user);                                                                  // 256
   if (!user) throw new Meteor.Error(403, "User not found");                                                            // 257
@@ -368,21 +352,21 @@ Accounts.registerLoginHandler("password", function (options) {                  
         return {                                                                                                       // 275
           userId: user._id,                                                                                            // 276
           error: new Meteor.Error(403, "Incorrect password")                                                           // 277
-        };                                                                                                             //
-      }                                                                                                                //
+        };                                                                                                             // 275
+      }                                                                                                                // 279
                                                                                                                        //
       return { userId: user._id };                                                                                     // 281
-    } else {                                                                                                           //
+    } else {                                                                                                           // 282
       // Tell the client to use the SRP upgrade process.                                                               //
       throw new Meteor.Error(400, "old password format", EJSON.stringify({                                             // 284
         format: 'srp',                                                                                                 // 285
         identity: user.services.password.srp.identity                                                                  // 286
-      }));                                                                                                             //
-    }                                                                                                                  //
-  }                                                                                                                    //
+      }));                                                                                                             // 284
+    }                                                                                                                  // 288
+  }                                                                                                                    // 289
                                                                                                                        //
   return checkPassword(user, options.password);                                                                        // 291
-});                                                                                                                    //
+});                                                                                                                    // 295
                                                                                                                        //
 // Handler to login using the SRP upgrade path. To use this login                                                      //
 // handler, the client must provide:                                                                                   //
@@ -402,11 +386,11 @@ Accounts.registerLoginHandler("password", function (options) {                  
 Accounts.registerLoginHandler("password", function (options) {                                                         // 312
   if (!options.srp || !options.password) return undefined; // don't handle                                             // 313
                                                                                                                        //
-  check(options, {                                                                                                     // 312
+  check(options, {                                                                                                     // 316
     user: userQueryValidator,                                                                                          // 317
     srp: String,                                                                                                       // 318
     password: passwordValidator                                                                                        // 319
-  });                                                                                                                  //
+  });                                                                                                                  // 316
                                                                                                                        //
   var user = Accounts._findUserByQuery(options.user);                                                                  // 322
   if (!user) throw new Meteor.Error(403, "User not found");                                                            // 323
@@ -421,21 +405,21 @@ Accounts.registerLoginHandler("password", function (options) {                  
   var v2 = SRP.generateVerifier(null, {                                                                                // 335
     hashedIdentityAndPassword: options.srp,                                                                            // 338
     salt: user.services.password.srp.salt                                                                              // 339
-  }).verifier;                                                                                                         //
+  }).verifier;                                                                                                         // 337
   if (v1 !== v2) return {                                                                                              // 342
     userId: user._id,                                                                                                  // 344
     error: new Meteor.Error(403, "Incorrect password")                                                                 // 345
-  };                                                                                                                   //
+  };                                                                                                                   // 343
                                                                                                                        //
   // Upgrade to bcrypt on successful login.                                                                            //
-  var salted = hashPassword(options.password);                                                                         // 312
+  var salted = hashPassword(options.password);                                                                         // 349
   Meteor.users.update(user._id, {                                                                                      // 350
     $unset: { 'services.password.srp': 1 },                                                                            // 353
     $set: { 'services.password.bcrypt': salted }                                                                       // 354
-  });                                                                                                                  //
+  });                                                                                                                  // 352
                                                                                                                        //
   return { userId: user._id };                                                                                         // 358
-});                                                                                                                    //
+});                                                                                                                    // 359
                                                                                                                        //
 ///                                                                                                                    //
 /// CHANGING                                                                                                           //
@@ -459,21 +443,21 @@ Accounts.setUsername = function (userId, newUsername) {                         
                                                                                                                        //
   var oldUsername = user.username;                                                                                     // 383
                                                                                                                        //
-  // Perform a case insensitive check fro duplicates before update                                                     //
-  checkForCaseInsensitiveDuplicates('username', 'Username', newUsername, user._id);                                    // 375
+  // Perform a case insensitive check for duplicates before update                                                     //
+  checkForCaseInsensitiveDuplicates('username', 'Username', newUsername, user._id);                                    // 386
                                                                                                                        //
   Meteor.users.update({ _id: user._id }, { $set: { username: newUsername } });                                         // 388
                                                                                                                        //
   // Perform another check after update, in case a matching user has been                                              //
   // inserted in the meantime                                                                                          //
-  try {                                                                                                                // 375
+  try {                                                                                                                // 392
     checkForCaseInsensitiveDuplicates('username', 'Username', newUsername, user._id);                                  // 393
-  } catch (ex) {                                                                                                       //
+  } catch (ex) {                                                                                                       // 394
     // Undo update if the check fails                                                                                  //
     Meteor.users.update({ _id: user._id }, { $set: { username: oldUsername } });                                       // 396
     throw ex;                                                                                                          // 397
-  }                                                                                                                    //
-};                                                                                                                     //
+  }                                                                                                                    // 398
+};                                                                                                                     // 399
                                                                                                                        //
 // Let the user change their own password if they know the old                                                         //
 // password. `oldPassword` and `newPassword` should be objects with keys                                               //
@@ -490,48 +474,44 @@ Accounts.setUsername = function (userId, newUsername) {                         
 // method directly will need to be updated anyway because we no longer                                                 //
 // support the SRP flow that they would have been doing to use this                                                    //
 // method previously.                                                                                                  //
-Meteor.methods({ changePassword: function () {                                                                         // 416
-    function changePassword(oldPassword, newPassword) {                                                                // 416
-      check(oldPassword, passwordValidator);                                                                           // 417
-      check(newPassword, passwordValidator);                                                                           // 418
+Meteor.methods({ changePassword: function changePassword(oldPassword, newPassword) {                                   // 416
+    check(oldPassword, passwordValidator);                                                                             // 417
+    check(newPassword, passwordValidator);                                                                             // 418
                                                                                                                        //
-      if (!this.userId) throw new Meteor.Error(401, "Must be logged in");                                              // 420
+    if (!this.userId) throw new Meteor.Error(401, "Must be logged in");                                                // 420
                                                                                                                        //
-      var user = Meteor.users.findOne(this.userId);                                                                    // 423
-      if (!user) throw new Meteor.Error(403, "User not found");                                                        // 424
+    var user = Meteor.users.findOne(this.userId);                                                                      // 423
+    if (!user) throw new Meteor.Error(403, "User not found");                                                          // 424
                                                                                                                        //
-      if (!user.services || !user.services.password || !user.services.password.bcrypt && !user.services.password.srp) throw new Meteor.Error(403, "User has no password set");
+    if (!user.services || !user.services.password || !user.services.password.bcrypt && !user.services.password.srp) throw new Meteor.Error(403, "User has no password set");
                                                                                                                        //
-      if (!user.services.password.bcrypt) {                                                                            // 431
-        throw new Meteor.Error(400, "old password format", EJSON.stringify({                                           // 432
-          format: 'srp',                                                                                               // 433
-          identity: user.services.password.srp.identity                                                                // 434
-        }));                                                                                                           //
-      }                                                                                                                //
+    if (!user.services.password.bcrypt) {                                                                              // 431
+      throw new Meteor.Error(400, "old password format", EJSON.stringify({                                             // 432
+        format: 'srp',                                                                                                 // 433
+        identity: user.services.password.srp.identity                                                                  // 434
+      }));                                                                                                             // 432
+    }                                                                                                                  // 436
                                                                                                                        //
-      var result = checkPassword(user, oldPassword);                                                                   // 438
-      if (result.error) throw result.error;                                                                            // 439
+    var result = checkPassword(user, oldPassword);                                                                     // 438
+    if (result.error) throw result.error;                                                                              // 439
                                                                                                                        //
-      var hashed = hashPassword(newPassword);                                                                          // 442
+    var hashed = hashPassword(newPassword);                                                                            // 442
                                                                                                                        //
-      // It would be better if this removed ALL existing tokens and replaced                                           //
-      // the token for the current connection with a new one, but that would                                           //
-      // be tricky, so we'll settle for just replacing all tokens other than                                           //
-      // the one for the current connection.                                                                           //
-      var currentToken = Accounts._getLoginToken(this.connection.id);                                                  // 416
-      Meteor.users.update({ _id: this.userId }, {                                                                      // 449
-        $set: { 'services.password.bcrypt': hashed },                                                                  // 452
-        $pull: {                                                                                                       // 453
-          'services.resume.loginTokens': { hashedToken: { $ne: currentToken } }                                        // 454
-        },                                                                                                             //
-        $unset: { 'services.password.reset': 1 }                                                                       // 456
-      });                                                                                                              //
+    // It would be better if this removed ALL existing tokens and replaced                                             //
+    // the token for the current connection with a new one, but that would                                             //
+    // be tricky, so we'll settle for just replacing all tokens other than                                             //
+    // the one for the current connection.                                                                             //
+    var currentToken = Accounts._getLoginToken(this.connection.id);                                                    // 448
+    Meteor.users.update({ _id: this.userId }, {                                                                        // 449
+      $set: { 'services.password.bcrypt': hashed },                                                                    // 452
+      $pull: {                                                                                                         // 453
+        'services.resume.loginTokens': { hashedToken: { $ne: currentToken } }                                          // 454
+      },                                                                                                               // 453
+      $unset: { 'services.password.reset': 1 }                                                                         // 456
+    });                                                                                                                // 451
                                                                                                                        //
-      return { passwordChanged: true };                                                                                // 460
-    }                                                                                                                  //
-                                                                                                                       //
-    return changePassword;                                                                                             //
-  }() });                                                                                                              //
+    return { passwordChanged: true };                                                                                  // 460
+  } });                                                                                                                // 461
                                                                                                                        //
 // Force change the users password.                                                                                    //
                                                                                                                        //
@@ -554,16 +534,16 @@ Accounts.setPassword = function (userId, newPlaintextPassword, options) {       
     $unset: {                                                                                                          // 483
       'services.password.srp': 1, // XXX COMPAT WITH 0.8.1.3                                                           // 484
       'services.password.reset': 1                                                                                     // 485
-    },                                                                                                                 //
+    },                                                                                                                 // 483
     $set: { 'services.password.bcrypt': hashPassword(newPlaintextPassword) }                                           // 487
-  };                                                                                                                   //
+  };                                                                                                                   // 482
                                                                                                                        //
   if (options.logout) {                                                                                                // 490
     update.$unset['services.resume.loginTokens'] = 1;                                                                  // 491
-  }                                                                                                                    //
+  }                                                                                                                    // 492
                                                                                                                        //
   Meteor.users.update({ _id: user._id }, update);                                                                      // 494
-};                                                                                                                     //
+};                                                                                                                     // 495
                                                                                                                        //
 ///                                                                                                                    //
 /// RESETTING VIA EMAIL                                                                                                //
@@ -571,23 +551,19 @@ Accounts.setPassword = function (userId, newPlaintextPassword, options) {       
                                                                                                                        //
 // Method called by a user to request a password reset email. This is                                                  //
 // the start of the reset process.                                                                                     //
-Meteor.methods({ forgotPassword: function () {                                                                         // 504
-    function forgotPassword(options) {                                                                                 // 504
-      check(options, { email: String });                                                                               // 505
+Meteor.methods({ forgotPassword: function forgotPassword(options) {                                                    // 504
+    check(options, { email: String });                                                                                 // 505
                                                                                                                        //
-      var user = Accounts.findUserByEmail(options.email);                                                              // 507
-      if (!user) throw new Meteor.Error(403, "User not found");                                                        // 508
+    var user = Accounts.findUserByEmail(options.email);                                                                // 507
+    if (!user) throw new Meteor.Error(403, "User not found");                                                          // 508
                                                                                                                        //
-      var emails = _.pluck(user.emails || [], 'address');                                                              // 511
-      var caseSensitiveEmail = _.find(emails, function (email) {                                                       // 512
-        return email.toLowerCase() === options.email.toLowerCase();                                                    // 513
-      });                                                                                                              //
+    var emails = _.pluck(user.emails || [], 'address');                                                                // 511
+    var caseSensitiveEmail = _.find(emails, function (email) {                                                         // 512
+      return email.toLowerCase() === options.email.toLowerCase();                                                      // 513
+    });                                                                                                                // 514
                                                                                                                        //
-      Accounts.sendResetPasswordEmail(user._id, caseSensitiveEmail);                                                   // 516
-    }                                                                                                                  //
-                                                                                                                       //
-    return forgotPassword;                                                                                             //
-  }() });                                                                                                              //
+    Accounts.sendResetPasswordEmail(user._id, caseSensitiveEmail);                                                     // 516
+  } });                                                                                                                // 517
                                                                                                                        //
 // send the user an email with a link that when opened allows the user                                                 //
 // to set a new password, without the old password.                                                                    //
@@ -604,7 +580,7 @@ Accounts.sendResetPasswordEmail = function (userId, email) {                    
   var user = Meteor.users.findOne(userId);                                                                             // 531
   if (!user) throw new Error("Can't find user");                                                                       // 532
   // pick the first email if we weren't passed an email.                                                               //
-  if (!email && user.emails && user.emails[0]) email = user.emails[0].address;                                         // 529
+  if (!email && user.emails && user.emails[0]) email = user.emails[0].address;                                         // 535
   // make sure we have a valid email                                                                                   //
   if (!email || !_.contains(_.pluck(user.emails || [], 'address'), email)) throw new Error("No such email for user.");
                                                                                                                        //
@@ -614,12 +590,12 @@ Accounts.sendResetPasswordEmail = function (userId, email) {                    
     token: token,                                                                                                      // 544
     email: email,                                                                                                      // 545
     when: when                                                                                                         // 546
-  };                                                                                                                   //
+  };                                                                                                                   // 543
   Meteor.users.update(userId, { $set: {                                                                                // 548
       "services.password.reset": tokenRecord                                                                           // 549
-    } });                                                                                                              //
+    } });                                                                                                              // 548
   // before passing to template, update user object with new token                                                     //
-  Meteor._ensure(user, 'services', 'password').reset = tokenRecord;                                                    // 529
+  Meteor._ensure(user, 'services', 'password').reset = tokenRecord;                                                    // 552
                                                                                                                        //
   var resetPasswordUrl = Accounts.urls.resetPassword(token);                                                           // 554
                                                                                                                        //
@@ -627,20 +603,20 @@ Accounts.sendResetPasswordEmail = function (userId, email) {                    
     to: email,                                                                                                         // 557
     from: Accounts.emailTemplates.resetPassword.from ? Accounts.emailTemplates.resetPassword.from(user) : Accounts.emailTemplates.from,
     subject: Accounts.emailTemplates.resetPassword.subject(user)                                                       // 561
-  };                                                                                                                   //
+  };                                                                                                                   // 556
                                                                                                                        //
   if (typeof Accounts.emailTemplates.resetPassword.text === 'function') {                                              // 564
     options.text = Accounts.emailTemplates.resetPassword.text(user, resetPasswordUrl);                                 // 565
-  }                                                                                                                    //
+  }                                                                                                                    // 567
                                                                                                                        //
   if (typeof Accounts.emailTemplates.resetPassword.html === 'function') options.html = Accounts.emailTemplates.resetPassword.html(user, resetPasswordUrl);
                                                                                                                        //
   if ((0, _typeof3["default"])(Accounts.emailTemplates.headers) === 'object') {                                        // 573
     options.headers = Accounts.emailTemplates.headers;                                                                 // 574
-  }                                                                                                                    //
+  }                                                                                                                    // 575
                                                                                                                        //
   Email.send(options);                                                                                                 // 577
-};                                                                                                                     //
+};                                                                                                                     // 578
                                                                                                                        //
 // send the user an email informing them that their account was created, with                                          //
 // a link that when opened both marks their email as verified and forces them                                          //
@@ -664,7 +640,7 @@ Accounts.sendEnrollmentEmail = function (userId, email) {                       
   var user = Meteor.users.findOne(userId);                                                                             // 599
   if (!user) throw new Error("Can't find user");                                                                       // 600
   // pick the first email if we weren't passed an email.                                                               //
-  if (!email && user.emails && user.emails[0]) email = user.emails[0].address;                                         // 595
+  if (!email && user.emails && user.emails[0]) email = user.emails[0].address;                                         // 603
   // make sure we have a valid email                                                                                   //
   if (!email || !_.contains(_.pluck(user.emails || [], 'address'), email)) throw new Error("No such email for user.");
                                                                                                                        //
@@ -674,13 +650,13 @@ Accounts.sendEnrollmentEmail = function (userId, email) {                       
     token: token,                                                                                                      // 612
     email: email,                                                                                                      // 613
     when: when                                                                                                         // 614
-  };                                                                                                                   //
+  };                                                                                                                   // 611
   Meteor.users.update(userId, { $set: {                                                                                // 616
       "services.password.reset": tokenRecord                                                                           // 617
-    } });                                                                                                              //
+    } });                                                                                                              // 616
                                                                                                                        //
   // before passing to template, update user object with new token                                                     //
-  Meteor._ensure(user, 'services', 'password').reset = tokenRecord;                                                    // 595
+  Meteor._ensure(user, 'services', 'password').reset = tokenRecord;                                                    // 621
                                                                                                                        //
   var enrollAccountUrl = Accounts.urls.enrollAccount(token);                                                           // 623
                                                                                                                        //
@@ -688,87 +664,79 @@ Accounts.sendEnrollmentEmail = function (userId, email) {                       
     to: email,                                                                                                         // 626
     from: Accounts.emailTemplates.enrollAccount.from ? Accounts.emailTemplates.enrollAccount.from(user) : Accounts.emailTemplates.from,
     subject: Accounts.emailTemplates.enrollAccount.subject(user)                                                       // 630
-  };                                                                                                                   //
+  };                                                                                                                   // 625
                                                                                                                        //
   if (typeof Accounts.emailTemplates.enrollAccount.text === 'function') {                                              // 633
     options.text = Accounts.emailTemplates.enrollAccount.text(user, enrollAccountUrl);                                 // 634
-  }                                                                                                                    //
+  }                                                                                                                    // 636
                                                                                                                        //
   if (typeof Accounts.emailTemplates.enrollAccount.html === 'function') options.html = Accounts.emailTemplates.enrollAccount.html(user, enrollAccountUrl);
                                                                                                                        //
   if ((0, _typeof3["default"])(Accounts.emailTemplates.headers) === 'object') {                                        // 642
     options.headers = Accounts.emailTemplates.headers;                                                                 // 643
-  }                                                                                                                    //
+  }                                                                                                                    // 644
                                                                                                                        //
   Email.send(options);                                                                                                 // 646
-};                                                                                                                     //
+};                                                                                                                     // 647
                                                                                                                        //
 // Take token from sendResetPasswordEmail or sendEnrollmentEmail, change                                               //
 // the users password, and log them in.                                                                                //
-Meteor.methods({ resetPassword: function () {                                                                          // 652
-    function resetPassword(token, newPassword) {                                                                       // 652
-      var self = this;                                                                                                 // 653
-      return Accounts._loginMethod(self, "resetPassword", arguments, "password", function () {                         // 654
-        check(token, String);                                                                                          // 660
-        check(newPassword, passwordValidator);                                                                         // 661
+Meteor.methods({ resetPassword: function resetPassword(token, newPassword) {                                           // 652
+    var self = this;                                                                                                   // 653
+    return Accounts._loginMethod(self, "resetPassword", arguments, "password", function () {                           // 654
+      check(token, String);                                                                                            // 660
+      check(newPassword, passwordValidator);                                                                           // 661
                                                                                                                        //
-        var user = Meteor.users.findOne({                                                                              // 663
-          "services.password.reset.token": token });                                                                   // 664
-        if (!user) throw new Meteor.Error(403, "Token expired");                                                       // 665
-        var email = user.services.password.reset.email;                                                                // 667
-        if (!_.include(_.pluck(user.emails || [], 'address'), email)) return {                                         // 668
-          userId: user._id,                                                                                            // 670
-          error: new Meteor.Error(403, "Token has invalid email address")                                              // 671
-        };                                                                                                             //
+      var user = Meteor.users.findOne({                                                                                // 663
+        "services.password.reset.token": token });                                                                     // 664
+      if (!user) throw new Meteor.Error(403, "Token expired");                                                         // 665
+      var email = user.services.password.reset.email;                                                                  // 667
+      if (!_.include(_.pluck(user.emails || [], 'address'), email)) return {                                           // 668
+        userId: user._id,                                                                                              // 670
+        error: new Meteor.Error(403, "Token has invalid email address")                                                // 671
+      };                                                                                                               // 669
                                                                                                                        //
-        var hashed = hashPassword(newPassword);                                                                        // 674
+      var hashed = hashPassword(newPassword);                                                                          // 674
                                                                                                                        //
-        // NOTE: We're about to invalidate tokens on the user, who we might be                                         //
-        // logged in as. Make sure to avoid logging ourselves out if this                                              //
-        // happens. But also make sure not to leave the connection in a state                                          //
-        // of having a bad token set if things fail.                                                                   //
-        var oldToken = Accounts._getLoginToken(self.connection.id);                                                    // 659
-        Accounts._setLoginToken(user._id, self.connection, null);                                                      // 681
-        var resetToOldToken = function () {                                                                            // 682
-          function resetToOldToken() {                                                                                 // 682
-            Accounts._setLoginToken(user._id, self.connection, oldToken);                                              // 683
-          }                                                                                                            //
+      // NOTE: We're about to invalidate tokens on the user, who we might be                                           //
+      // logged in as. Make sure to avoid logging ourselves out if this                                                //
+      // happens. But also make sure not to leave the connection in a state                                            //
+      // of having a bad token set if things fail.                                                                     //
+      var oldToken = Accounts._getLoginToken(self.connection.id);                                                      // 680
+      Accounts._setLoginToken(user._id, self.connection, null);                                                        // 681
+      var resetToOldToken = function resetToOldToken() {                                                               // 682
+        Accounts._setLoginToken(user._id, self.connection, oldToken);                                                  // 683
+      };                                                                                                               // 684
                                                                                                                        //
-          return resetToOldToken;                                                                                      //
-        }();                                                                                                           //
+      try {                                                                                                            // 686
+        // Update the user record by:                                                                                  //
+        // - Changing the password to the new one                                                                      //
+        // - Forgetting about the reset token that was just used                                                       //
+        // - Verifying their email, since they got the password reset via email.                                       //
+        var affectedRecords = Meteor.users.update({                                                                    // 691
+          _id: user._id,                                                                                               // 693
+          'emails.address': email,                                                                                     // 694
+          'services.password.reset.token': token                                                                       // 695
+        }, { $set: { 'services.password.bcrypt': hashed,                                                               // 692
+            'emails.$.verified': true },                                                                               // 698
+          $unset: { 'services.password.reset': 1,                                                                      // 699
+            'services.password.srp': 1 } });                                                                           // 700
+        if (affectedRecords !== 1) return {                                                                            // 701
+          userId: user._id,                                                                                            // 703
+          error: new Meteor.Error(403, "Invalid email")                                                                // 704
+        };                                                                                                             // 702
+      } catch (err) {                                                                                                  // 706
+        resetToOldToken();                                                                                             // 707
+        throw err;                                                                                                     // 708
+      }                                                                                                                // 709
                                                                                                                        //
-        try {                                                                                                          // 686
-          // Update the user record by:                                                                                //
-          // - Changing the password to the new one                                                                    //
-          // - Forgetting about the reset token that was just used                                                     //
-          // - Verifying their email, since they got the password reset via email.                                     //
-          var affectedRecords = Meteor.users.update({                                                                  // 691
-            _id: user._id,                                                                                             // 693
-            'emails.address': email,                                                                                   // 694
-            'services.password.reset.token': token                                                                     // 695
-          }, { $set: { 'services.password.bcrypt': hashed,                                                             //
-              'emails.$.verified': true },                                                                             // 698
-            $unset: { 'services.password.reset': 1,                                                                    // 699
-              'services.password.srp': 1 } });                                                                         // 700
-          if (affectedRecords !== 1) return {                                                                          // 701
-            userId: user._id,                                                                                          // 703
-            error: new Meteor.Error(403, "Invalid email")                                                              // 704
-          };                                                                                                           //
-        } catch (err) {                                                                                                //
-          resetToOldToken();                                                                                           // 707
-          throw err;                                                                                                   // 708
-        }                                                                                                              //
+      // Replace all valid login tokens with new ones (changing                                                        //
+      // password should invalidate existing sessions).                                                                //
+      Accounts._clearAllLoginTokens(user._id);                                                                         // 713
                                                                                                                        //
-        // Replace all valid login tokens with new ones (changing                                                      //
-        // password should invalidate existing sessions).                                                              //
-        Accounts._clearAllLoginTokens(user._id);                                                                       // 659
-                                                                                                                       //
-        return { userId: user._id };                                                                                   // 715
-      });                                                                                                              //
-    }                                                                                                                  //
-                                                                                                                       //
-    return resetPassword;                                                                                              //
-  }() });                                                                                                              //
+      return { userId: user._id };                                                                                     // 715
+    });                                                                                                                // 716
+  } });                                                                                                                // 718
                                                                                                                        //
 ///                                                                                                                    //
 /// EMAIL VERIFICATION                                                                                                 //
@@ -793,16 +761,16 @@ Accounts.sendVerificationEmail = function (userId, address) {                   
   var user = Meteor.users.findOne(userId);                                                                             // 741
   if (!user) throw new Error("Can't find user");                                                                       // 742
   // pick the first unverified address if we weren't passed an address.                                                //
-  if (!address) {                                                                                                      // 735
+  if (!address) {                                                                                                      // 745
     var email = _.find(user.emails || [], function (e) {                                                               // 746
       return !e.verified;                                                                                              // 747
-    });                                                                                                                //
+    });                                                                                                                // 747
     address = (email || {}).address;                                                                                   // 748
                                                                                                                        //
     if (!address) {                                                                                                    // 750
       throw new Error("That user has no unverified email addresses.");                                                 // 751
-    }                                                                                                                  //
-  }                                                                                                                    //
+    }                                                                                                                  // 752
+  }                                                                                                                    // 753
   // make sure we have a valid address                                                                                 //
   if (!address || !_.contains(_.pluck(user.emails || [], 'address'), address)) throw new Error("No such email address for user.");
                                                                                                                        //
@@ -813,10 +781,10 @@ Accounts.sendVerificationEmail = function (userId, address) {                   
   Meteor.users.update({ _id: userId }, { $push: { 'services.email.verificationTokens': tokenRecord } });               // 763
                                                                                                                        //
   // before passing to template, update user object with new token                                                     //
-  Meteor._ensure(user, 'services', 'email');                                                                           // 735
+  Meteor._ensure(user, 'services', 'email');                                                                           // 768
   if (!user.services.email.verificationTokens) {                                                                       // 769
     user.services.email.verificationTokens = [];                                                                       // 770
-  }                                                                                                                    //
+  }                                                                                                                    // 771
   user.services.email.verificationTokens.push(tokenRecord);                                                            // 772
                                                                                                                        //
   var verifyEmailUrl = Accounts.urls.verifyEmail(tokenRecord.token);                                                   // 774
@@ -825,63 +793,59 @@ Accounts.sendVerificationEmail = function (userId, address) {                   
     to: address,                                                                                                       // 777
     from: Accounts.emailTemplates.verifyEmail.from ? Accounts.emailTemplates.verifyEmail.from(user) : Accounts.emailTemplates.from,
     subject: Accounts.emailTemplates.verifyEmail.subject(user)                                                         // 781
-  };                                                                                                                   //
+  };                                                                                                                   // 776
                                                                                                                        //
   if (typeof Accounts.emailTemplates.verifyEmail.text === 'function') {                                                // 784
     options.text = Accounts.emailTemplates.verifyEmail.text(user, verifyEmailUrl);                                     // 785
-  }                                                                                                                    //
+  }                                                                                                                    // 787
                                                                                                                        //
   if (typeof Accounts.emailTemplates.verifyEmail.html === 'function') options.html = Accounts.emailTemplates.verifyEmail.html(user, verifyEmailUrl);
                                                                                                                        //
   if ((0, _typeof3["default"])(Accounts.emailTemplates.headers) === 'object') {                                        // 793
     options.headers = Accounts.emailTemplates.headers;                                                                 // 794
-  }                                                                                                                    //
+  }                                                                                                                    // 795
                                                                                                                        //
   Email.send(options);                                                                                                 // 797
-};                                                                                                                     //
+};                                                                                                                     // 798
                                                                                                                        //
 // Take token from sendVerificationEmail, mark the email as verified,                                                  //
 // and log them in.                                                                                                    //
-Meteor.methods({ verifyEmail: function () {                                                                            // 802
-    function verifyEmail(token) {                                                                                      // 802
-      var self = this;                                                                                                 // 803
-      return Accounts._loginMethod(self, "verifyEmail", arguments, "password", function () {                           // 804
-        check(token, String);                                                                                          // 810
+Meteor.methods({ verifyEmail: function verifyEmail(token) {                                                            // 802
+    var self = this;                                                                                                   // 803
+    return Accounts._loginMethod(self, "verifyEmail", arguments, "password", function () {                             // 804
+      check(token, String);                                                                                            // 810
                                                                                                                        //
-        var user = Meteor.users.findOne({ 'services.email.verificationTokens.token': token });                         // 812
-        if (!user) throw new Meteor.Error(403, "Verify email link expired");                                           // 814
+      var user = Meteor.users.findOne({ 'services.email.verificationTokens.token': token });                           // 812
+      if (!user) throw new Meteor.Error(403, "Verify email link expired");                                             // 814
                                                                                                                        //
-        var tokenRecord = _.find(user.services.email.verificationTokens, function (t) {                                // 817
-          return t.token == token;                                                                                     // 819
-        });                                                                                                            //
-        if (!tokenRecord) return {                                                                                     // 821
-          userId: user._id,                                                                                            // 823
-          error: new Meteor.Error(403, "Verify email link expired")                                                    // 824
-        };                                                                                                             //
+      var tokenRecord = _.find(user.services.email.verificationTokens, function (t) {                                  // 817
+        return t.token == token;                                                                                       // 819
+      });                                                                                                              // 820
+      if (!tokenRecord) return {                                                                                       // 821
+        userId: user._id,                                                                                              // 823
+        error: new Meteor.Error(403, "Verify email link expired")                                                      // 824
+      };                                                                                                               // 822
                                                                                                                        //
-        var emailsRecord = _.find(user.emails, function (e) {                                                          // 827
-          return e.address == tokenRecord.address;                                                                     // 828
-        });                                                                                                            //
-        if (!emailsRecord) return {                                                                                    // 830
-          userId: user._id,                                                                                            // 832
-          error: new Meteor.Error(403, "Verify email link is for unknown address")                                     // 833
-        };                                                                                                             //
+      var emailsRecord = _.find(user.emails, function (e) {                                                            // 827
+        return e.address == tokenRecord.address;                                                                       // 828
+      });                                                                                                              // 829
+      if (!emailsRecord) return {                                                                                      // 830
+        userId: user._id,                                                                                              // 832
+        error: new Meteor.Error(403, "Verify email link is for unknown address")                                       // 833
+      };                                                                                                               // 831
                                                                                                                        //
-        // By including the address in the query, we can use 'emails.$' in the                                         //
-        // modifier to get a reference to the specific object in the emails                                            //
-        // array. See                                                                                                  //
-        // http://www.mongodb.org/display/DOCS/Updating/#Updating-The%24positionaloperator)                            //
-        // http://www.mongodb.org/display/DOCS/Updating#Updating-%24pull                                               //
-        Meteor.users.update({ _id: user._id,                                                                           // 809
-          'emails.address': tokenRecord.address }, { $set: { 'emails.$.verified': true },                              // 843
-          $pull: { 'services.email.verificationTokens': { address: tokenRecord.address } } });                         // 845
+      // By including the address in the query, we can use 'emails.$' in the                                           //
+      // modifier to get a reference to the specific object in the emails                                              //
+      // array. See                                                                                                    //
+      // http://www.mongodb.org/display/DOCS/Updating/#Updating-The%24positionaloperator)                              //
+      // http://www.mongodb.org/display/DOCS/Updating#Updating-%24pull                                                 //
+      Meteor.users.update({ _id: user._id,                                                                             // 841
+        'emails.address': tokenRecord.address }, { $set: { 'emails.$.verified': true },                                // 843
+        $pull: { 'services.email.verificationTokens': { address: tokenRecord.address } } });                           // 845
                                                                                                                        //
-        return { userId: user._id };                                                                                   // 847
-      });                                                                                                              //
-    }                                                                                                                  //
-                                                                                                                       //
-    return verifyEmail;                                                                                                //
-  }() });                                                                                                              //
+      return { userId: user._id };                                                                                     // 847
+    });                                                                                                                // 848
+  } });                                                                                                                // 850
                                                                                                                        //
 /**                                                                                                                    //
  * @summary Add an email address for a user. Use this instead of directly                                              //
@@ -902,7 +866,7 @@ Accounts.addEmail = function (userId, newEmail, verified) {                     
                                                                                                                        //
   if (_.isUndefined(verified)) {                                                                                       // 869
     verified = false;                                                                                                  // 870
-  }                                                                                                                    //
+  }                                                                                                                    // 871
                                                                                                                        //
   var user = Meteor.users.findOne(userId);                                                                             // 873
   if (!user) throw new Meteor.Error(403, "User not found");                                                            // 874
@@ -915,22 +879,22 @@ Accounts.addEmail = function (userId, newEmail, verified) {                     
   // then we are OK and (2) if this would create a conflict with other users                                           //
   // then there would already be a case-insensitive duplicate and we can't fix                                         //
   // that in this code anyway.                                                                                         //
-  var caseInsensitiveRegExp = new RegExp('^' + Meteor._escapeRegExp(newEmail) + '$', 'i');                             // 864
+  var caseInsensitiveRegExp = new RegExp('^' + Meteor._escapeRegExp(newEmail) + '$', 'i');                             // 885
                                                                                                                        //
   var didUpdateOwnEmail = _.any(user.emails, function (email, index) {                                                 // 888
     if (caseInsensitiveRegExp.test(email.address)) {                                                                   // 889
       Meteor.users.update({                                                                                            // 890
         _id: user._id,                                                                                                 // 891
         'emails.address': email.address                                                                                // 892
-      }, { $set: {                                                                                                     //
+      }, { $set: {                                                                                                     // 890
           'emails.$.address': newEmail,                                                                                // 894
           'emails.$.verified': verified                                                                                // 895
-        } });                                                                                                          //
+        } });                                                                                                          // 893
       return true;                                                                                                     // 897
-    }                                                                                                                  //
+    }                                                                                                                  // 898
                                                                                                                        //
     return false;                                                                                                      // 900
-  });                                                                                                                  //
+  });                                                                                                                  // 901
                                                                                                                        //
   // In the other updates below, we have to do another call to                                                         //
   // checkForCaseInsensitiveDuplicates to make sure that no conflicting values                                         //
@@ -939,34 +903,34 @@ Accounts.addEmail = function (userId, newEmail, verified) {                     
   // same as before, but only different because of capitalization. Read the                                            //
   // big comment above to understand why.                                                                              //
                                                                                                                        //
-  if (didUpdateOwnEmail) {                                                                                             // 864
+  if (didUpdateOwnEmail) {                                                                                             // 910
     return;                                                                                                            // 911
-  }                                                                                                                    //
+  }                                                                                                                    // 912
                                                                                                                        //
   // Perform a case insensitive check for duplicates before update                                                     //
-  checkForCaseInsensitiveDuplicates('emails.address', 'Email', newEmail, user._id);                                    // 864
+  checkForCaseInsensitiveDuplicates('emails.address', 'Email', newEmail, user._id);                                    // 915
                                                                                                                        //
   Meteor.users.update({                                                                                                // 917
     _id: user._id                                                                                                      // 918
-  }, {                                                                                                                 //
+  }, {                                                                                                                 // 917
     $addToSet: {                                                                                                       // 920
       emails: {                                                                                                        // 921
         address: newEmail,                                                                                             // 922
         verified: verified                                                                                             // 923
-      }                                                                                                                //
-    }                                                                                                                  //
-  });                                                                                                                  //
+      }                                                                                                                // 921
+    }                                                                                                                  // 920
+  });                                                                                                                  // 919
                                                                                                                        //
   // Perform another check after update, in case a matching user has been                                              //
   // inserted in the meantime                                                                                          //
-  try {                                                                                                                // 864
+  try {                                                                                                                // 930
     checkForCaseInsensitiveDuplicates('emails.address', 'Email', newEmail, user._id);                                  // 931
-  } catch (ex) {                                                                                                       //
+  } catch (ex) {                                                                                                       // 932
     // Undo update if the check fails                                                                                  //
     Meteor.users.update({ _id: user._id }, { $pull: { emails: { address: newEmail } } });                              // 934
     throw ex;                                                                                                          // 936
-  }                                                                                                                    //
-};                                                                                                                     //
+  }                                                                                                                    // 937
+};                                                                                                                     // 938
                                                                                                                        //
 /**                                                                                                                    //
  * @summary Remove an email address for a user. Use this instead of updating                                           //
@@ -984,7 +948,7 @@ Accounts.removeEmail = function (userId, email) {                               
   if (!user) throw new Meteor.Error(403, "User not found");                                                            // 953
                                                                                                                        //
   Meteor.users.update({ _id: user._id }, { $pull: { emails: { address: email } } });                                   // 956
-};                                                                                                                     //
+};                                                                                                                     // 958
                                                                                                                        //
 ///                                                                                                                    //
 /// CREATING USERS                                                                                                     //
@@ -1002,7 +966,7 @@ var _createUser = function _createUser(options) {                               
     username: Match.Optional(String),                                                                                  // 973
     email: Match.Optional(String),                                                                                     // 974
     password: Match.Optional(passwordValidator)                                                                        // 975
-  }));                                                                                                                 //
+  }));                                                                                                                 // 972
                                                                                                                        //
   var username = options.username;                                                                                     // 978
   var email = options.email;                                                                                           // 979
@@ -1012,58 +976,54 @@ var _createUser = function _createUser(options) {                               
   if (options.password) {                                                                                              // 984
     var hashed = hashPassword(options.password);                                                                       // 985
     user.services.password = { bcrypt: hashed };                                                                       // 986
-  }                                                                                                                    //
+  }                                                                                                                    // 987
                                                                                                                        //
   if (username) user.username = username;                                                                              // 989
   if (email) user.emails = [{ address: email, verified: false }];                                                      // 991
                                                                                                                        //
   // Perform a case insensitive check before insert                                                                    //
-  checkForCaseInsensitiveDuplicates('username', 'Username', username);                                                 // 969
+  checkForCaseInsensitiveDuplicates('username', 'Username', username);                                                 // 995
   checkForCaseInsensitiveDuplicates('emails.address', 'Email', email);                                                 // 996
                                                                                                                        //
   var userId = Accounts.insertUserDoc(options, user);                                                                  // 998
   // Perform another check after insert, in case a matching user has been                                              //
   // inserted in the meantime                                                                                          //
-  try {                                                                                                                // 969
+  try {                                                                                                                // 1001
     checkForCaseInsensitiveDuplicates('username', 'Username', username, userId);                                       // 1002
     checkForCaseInsensitiveDuplicates('emails.address', 'Email', email, userId);                                       // 1003
-  } catch (ex) {                                                                                                       //
+  } catch (ex) {                                                                                                       // 1004
     // Remove inserted user if the check fails                                                                         //
     Meteor.users.remove(userId);                                                                                       // 1006
     throw ex;                                                                                                          // 1007
-  }                                                                                                                    //
+  }                                                                                                                    // 1008
   return userId;                                                                                                       // 1009
-};                                                                                                                     //
+};                                                                                                                     // 1010
                                                                                                                        //
 // method for create user. Requests come from the client.                                                              //
-Meteor.methods({ createUser: function () {                                                                             // 1013
-    function createUser(options) {                                                                                     // 1013
-      var self = this;                                                                                                 // 1014
-      return Accounts._loginMethod(self, "createUser", arguments, "password", function () {                            // 1015
-        // createUser() above does more checking.                                                                      //
-        check(options, Object);                                                                                        // 1022
-        if (Accounts._options.forbidClientAccountCreation) return {                                                    // 1023
-          error: new Meteor.Error(403, "Signups forbidden")                                                            // 1025
-        };                                                                                                             //
+Meteor.methods({ createUser: function createUser(options) {                                                            // 1013
+    var self = this;                                                                                                   // 1014
+    return Accounts._loginMethod(self, "createUser", arguments, "password", function () {                              // 1015
+      // createUser() above does more checking.                                                                        //
+      check(options, Object);                                                                                          // 1022
+      if (Accounts._options.forbidClientAccountCreation) return {                                                      // 1023
+        error: new Meteor.Error(403, "Signups forbidden")                                                              // 1025
+      };                                                                                                               // 1024
                                                                                                                        //
-        // Create user. result contains id and token.                                                                  //
-        var userId = _createUser(options);                                                                             // 1020
-        // safety belt. createUser is supposed to throw on error. send 500 error                                       //
-        // instead of sending a verification email with empty userid.                                                  //
-        if (!userId) throw new Error("createUser failed to insert new user");                                          // 1020
+      // Create user. result contains id and token.                                                                    //
+      var userId = _createUser(options);                                                                               // 1029
+      // safety belt. createUser is supposed to throw on error. send 500 error                                         //
+      // instead of sending a verification email with empty userid.                                                    //
+      if (!userId) throw new Error("createUser failed to insert new user");                                            // 1032
                                                                                                                        //
-        // If `Accounts._options.sendVerificationEmail` is set, register                                               //
-        // a token to verify the user's primary email, and send it to                                                  //
-        // that address.                                                                                               //
-        if (options.email && Accounts._options.sendVerificationEmail) Accounts.sendVerificationEmail(userId, options.email);
+      // If `Accounts._options.sendVerificationEmail` is set, register                                                 //
+      // a token to verify the user's primary email, and send it to                                                    //
+      // that address.                                                                                                 //
+      if (options.email && Accounts._options.sendVerificationEmail) Accounts.sendVerificationEmail(userId, options.email);
                                                                                                                        //
-        // client gets logged in as the new user afterwards.                                                           //
-        return { userId: userId };                                                                                     // 1020
-      });                                                                                                              //
-    }                                                                                                                  //
-                                                                                                                       //
-    return createUser;                                                                                                 //
-  }() });                                                                                                              //
+      // client gets logged in as the new user afterwards.                                                             //
+      return { userId: userId };                                                                                       // 1042
+    });                                                                                                                // 1043
+  } });                                                                                                                // 1045
                                                                                                                        //
 // Create user directly on the server.                                                                                 //
 //                                                                                                                     //
@@ -1081,12 +1041,12 @@ Accounts.createUser = function (options, callback) {                            
   options = _.clone(options);                                                                                          // 1060
                                                                                                                        //
   // XXX allow an optional callback?                                                                                   //
-  if (callback) {                                                                                                      // 1059
+  if (callback) {                                                                                                      // 1063
     throw new Error("Accounts.createUser with callback not supported on the server yet.");                             // 1064
-  }                                                                                                                    //
+  }                                                                                                                    // 1065
                                                                                                                        //
   return _createUser(options);                                                                                         // 1067
-};                                                                                                                     //
+};                                                                                                                     // 1068
                                                                                                                        //
 ///                                                                                                                    //
 /// PASSWORD-SPECIFIC INDEXES ON USERS                                                                                 //
