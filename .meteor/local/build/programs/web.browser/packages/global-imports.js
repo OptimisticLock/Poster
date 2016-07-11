@@ -8,6 +8,7 @@ Tracker = Package.tracker.Tracker;
 Deps = Package.tracker.Deps;
 Avatar = Package['utilities:avatar'].Avatar;
 GoogleMaps = Package['dburles:google-maps'].GoogleMaps;
+Geolocation = Package['mdg:geolocation'].Geolocation;
 Meteor = Package.meteor.Meteor;
 global = Package.meteor.global;
 meteorEnv = Package.meteor.meteorEnv;

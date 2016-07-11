@@ -50,10 +50,11 @@
 </template>
 
 <template name="map">
-    <div id="map">
-        Map goes here!
-        <div class="map-container">
-            {{> googleMap name="exampleMap" options=exampleMapOptions}}
-        </div>
+    <div class="map-container">
+        {{#unless geolocationError}}
+            {{> googleMap name="map" options=mapOptions}}
+        {{else}}
+            Geolocation failed: {{geolocationError}}
+        {{/unless}}
     </div>
 </template>

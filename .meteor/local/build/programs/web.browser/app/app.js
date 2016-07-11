@@ -76,19 +76,25 @@ Template.__checkName("map");                                                    
 Template["map"] = new Template("Template.map", (function() {                                                      // 68
   var view = this;                                                                                                // 69
   return HTML.DIV({                                                                                               // 70
-    id: "map"                                                                                                     // 71
-  }, "\n        Map goes here!\n        ", HTML.DIV({                                                             // 72
-    "class": "map-container"                                                                                      // 73
-  }, "\n            ", Blaze._TemplateWith(function() {                                                           // 74
-    return {                                                                                                      // 75
-      name: Spacebars.call("exampleMap"),                                                                         // 76
-      options: Spacebars.call(view.lookup("exampleMapOptions"))                                                   // 77
-    };                                                                                                            // 78
-  }, function() {                                                                                                 // 79
-    return Spacebars.include(view.lookupTemplate("googleMap"));                                                   // 80
-  }), "\n        "), "\n    ");                                                                                   // 81
-}));                                                                                                              // 82
-                                                                                                                  // 83
+    "class": "map-container"                                                                                      // 71
+  }, "\n        ", Blaze.Unless(function() {                                                                      // 72
+    return Spacebars.call(view.lookup("geolocationError"));                                                       // 73
+  }, function() {                                                                                                 // 74
+    return [ "\n            ", Blaze._TemplateWith(function() {                                                   // 75
+      return {                                                                                                    // 76
+        name: Spacebars.call("map"),                                                                              // 77
+        options: Spacebars.call(view.lookup("mapOptions"))                                                        // 78
+      };                                                                                                          // 79
+    }, function() {                                                                                               // 80
+      return Spacebars.include(view.lookupTemplate("googleMap"));                                                 // 81
+    }), "\n        " ];                                                                                           // 82
+  }, function() {                                                                                                 // 83
+    return [ "\n            Geolocation failed: ", Blaze.View("lookup:geolocationError", function() {             // 84
+      return Spacebars.mustache(view.lookup("geolocationError"));                                                 // 85
+    }), "\n        " ];                                                                                           // 86
+  }), "\n    ");                                                                                                  // 87
+}));                                                                                                              // 88
+                                                                                                                  // 89
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 },"map.js":function(){

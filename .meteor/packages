@@ -29,3 +29,4 @@ summernote:standalone
 standard-minifier-css
 standard-minifier-js
 dburles:google-maps
+mdg:geolocation

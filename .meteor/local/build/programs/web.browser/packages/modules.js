@@ -200,13 +200,14 @@ install("summernote:standalone");                                            // 
 install("standard-minifier-css");                                            // 106
 install("standard-minifier-js");                                             // 107
 install("dburles:google-maps");                                              // 108
-install("webapp");                                                           // 109
-install("livedata");                                                         // 110
-install("hot-code-push");                                                    // 111
-install("launch-screen");                                                    // 112
-install("ui");                                                               // 113
-install("autoupdate");                                                       // 114
-                                                                             // 115
+install("mdg:geolocation");                                                  // 109
+install("webapp");                                                           // 110
+install("livedata");                                                         // 111
+install("hot-code-push");                                                    // 112
+install("launch-screen");                                                    // 113
+install("ui");                                                               // 114
+install("autoupdate");                                                       // 115
+                                                                             // 116
 ///////////////////////////////////////////////////////////////////////////////
 
 },"process.js":["process",function(require,exports,module){

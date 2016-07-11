@@ -57,11 +57,11 @@
       "where": "client",
       "type": "js",
       "cacheable": true,
-      "url": "/packages/modules.js?hash=a830b51c87ba814d7fe795e90666954764f6ad83",
+      "url": "/packages/modules.js?hash=ca501ad055044d5c3125a71aee6083d38463c89c",
       "sourceMap": "packages/modules.js.map",
-      "sourceMapUrl": "/packages/a830b51c87ba814d7fe795e90666954764f6ad83.map",
-      "size": 55228,
-      "hash": "a830b51c87ba814d7fe795e90666954764f6ad83"
+      "sourceMapUrl": "/packages/ca501ad055044d5c3125a71aee6083d38463c89c.map",
+      "size": 55312,
+      "hash": "ca501ad055044d5c3125a71aee6083d38463c89c"
     },
     {
       "path": "packages/es5-shim.js",
@@ -813,6 +813,17 @@
       "hash": "125cb6dbfcb8cee2445579b16703a66d5f43ddc1"
     },
     {
+      "path": "packages/mdg_geolocation.js",
+      "where": "client",
+      "type": "js",
+      "cacheable": true,
+      "url": "/packages/mdg_geolocation.js?hash=7bb9e8c35ff60356629064005e4bae7913aa0ea8",
+      "sourceMap": "packages/mdg_geolocation.js.map",
+      "sourceMapUrl": "/packages/7bb9e8c35ff60356629064005e4bae7913aa0ea8.map",
+      "size": 9175,
+      "hash": "7bb9e8c35ff60356629064005e4bae7913aa0ea8"
+    },
+    {
       "path": "packages/webapp.js",
       "where": "client",
       "type": "js",
@@ -877,20 +888,20 @@
       "where": "client",
       "type": "js",
       "cacheable": true,
-      "url": "/packages/global-imports.js?hash=3324446f36224c3f997d006b27055ce7834445e4",
-      "size": 1221,
-      "hash": "3324446f36224c3f997d006b27055ce7834445e4"
+      "url": "/packages/global-imports.js?hash=8e8146b41ccb6ad723ef077f6515bea67449397b",
+      "size": 1275,
+      "hash": "8e8146b41ccb6ad723ef077f6515bea67449397b"
     },
     {
       "path": "app/app.js",
       "where": "client",
       "type": "js",
       "cacheable": true,
-      "url": "/app/app.js?hash=13d270a9aabbb012410ea4c0a7f80c7d6f80e802",
+      "url": "/app/app.js?hash=c490d5d827a5e430654204c7df3f129388079856",
       "sourceMap": "app/app.js.map",
-      "sourceMapUrl": "/app/13d270a9aabbb012410ea4c0a7f80c7d6f80e802.map",
-      "size": 35544,
-      "hash": "13d270a9aabbb012410ea4c0a7f80c7d6f80e802"
+      "sourceMapUrl": "/app/c490d5d827a5e430654204c7df3f129388079856.map",
+      "size": 36264,
+      "hash": "c490d5d827a5e430654204c7df3f129388079856"
     },
     {
       "path": "merged-stylesheets.css",

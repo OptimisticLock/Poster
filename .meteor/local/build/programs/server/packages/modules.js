@@ -165,6 +165,7 @@ install("standard-minifier-css");
 install("standard-minifier-js");
 install("templating");
 install("dburles:google-maps");
+install("mdg:geolocation");
 install("livedata");
 install("hot-code-push");
 install("launch-screen");

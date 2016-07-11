@@ -362,6 +362,9 @@
       "path": "packages/dburles_google-maps.js"
     },
     {
+      "path": "packages/mdg_geolocation.js"
+    },
+    {
       "path": "packages/livedata.js"
     },
     {
